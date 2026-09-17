@@ -348,8 +348,8 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
       </div>
 
       {/* ===================== 2. MOBILE TAB SELECTOR (DROPDOWN) & APPLE-STYLE TABS ===================== */}
-      {/* Mobile Direct Tab Chooser */}
-      <div className="sm:hidden">
+      {/* Mobile / Tablet Direct Tab Chooser */}
+      <div className="md:hidden">
         <label className="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider block mb-1.5">
           <i className="fa-solid fa-list-check text-purple-600 mr-1"></i> Chọn mục quản trị:
         </label>
@@ -374,11 +374,11 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
         </div>
       </div>
 
-      {/* Horizontal Tabs with Touch-Friendly Scroll */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 pt-1 touch-pan-x -mx-1 px-1 scrollbar-thin">
+      {/* Tabs with Multi-Row Wrapping (Flex-Wrap) - Never gets cut off */}
+      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pt-1 pb-1">
         <button
           onClick={() => setActiveTab("overview")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+          className={`flex items-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
             activeTab === "overview"
               ? "bg-purple-600 text-white shadow-md shadow-purple-500/25 scale-[1.02]"
               : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80"
@@ -390,7 +390,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
 
         <button
           onClick={() => setActiveTab("users")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+          className={`flex items-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
             activeTab === "users"
               ? "bg-purple-600 text-white shadow-md shadow-purple-500/25 scale-[1.02]"
               : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80"
@@ -402,7 +402,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
 
         <button
           onClick={() => setActiveTab("payouts")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+          className={`flex items-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
             activeTab === "payouts"
               ? "bg-purple-600 text-white shadow-md shadow-purple-500/25 scale-[1.02]"
               : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80"
@@ -419,7 +419,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
 
         <button
           onClick={() => setActiveTab("shopee")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+          className={`flex items-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
             activeTab === "shopee"
               ? "bg-purple-600 text-white shadow-md shadow-purple-500/25 scale-[1.02]"
               : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80"
@@ -431,7 +431,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
 
         <button
           onClick={() => setActiveTab("tiktok")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+          className={`flex items-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
             activeTab === "tiktok"
               ? "bg-purple-600 text-white shadow-md shadow-purple-500/25 scale-[1.02]"
               : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80"
@@ -443,7 +443,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
 
         <button
           onClick={() => setActiveTab("import")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+          className={`flex items-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
             activeTab === "import"
               ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md shadow-orange-500/25 scale-[1.02]"
               : "bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-200"
@@ -455,26 +455,26 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
 
         <button
           onClick={() => setActiveTab("settings")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+          className={`flex items-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
             activeTab === "settings"
               ? "bg-purple-600 text-white shadow-md shadow-purple-500/25 scale-[1.02]"
               : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80"
           }`}
         >
           <i className="fa-solid fa-sliders text-xs"></i>
-          <span>Điều kiện Rút & Tỷ lệ chia</span>
+          <span>Điều kiện Rút & Chia</span>
         </button>
 
         <button
           onClick={() => setActiveTab("templates")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+          className={`flex items-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
             activeTab === "templates"
               ? "bg-purple-600 text-white shadow-md shadow-purple-500/25 scale-[1.02]"
               : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80"
           }`}
         >
           <i className="fa-solid fa-comment-dots text-xs"></i>
-          <span>Cấu hình Tin nhắn Bot</span>
+          <span>Cấu hình Bot Zalo</span>
         </button>
       </div>
 

@@ -347,13 +347,40 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
         )}
       </div>
 
-      {/* ===================== 2. APPLE-STYLE TABS ===================== */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+      {/* ===================== 2. MOBILE TAB SELECTOR (DROPDOWN) & APPLE-STYLE TABS ===================== */}
+      {/* Mobile Direct Tab Chooser */}
+      <div className="sm:hidden">
+        <label className="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider block mb-1.5">
+          <i className="fa-solid fa-list-check text-purple-600 mr-1"></i> Chọn mục quản trị:
+        </label>
+        <div className="relative">
+          <select
+            value={activeTab}
+            onChange={(e) => setActiveTab(e.target.value)}
+            className="w-full bg-white border-2 border-purple-400/95 rounded-2xl py-3 px-4 text-xs font-black text-slate-900 shadow-sm outline-none appearance-none cursor-pointer pr-10"
+          >
+            <option value="overview">📊 1. Tổng quan hoạt động</option>
+            <option value="users">👥 2. Người dùng ({zaloUsers.length})</option>
+            <option value="payouts">💸 3. Quản lý Rút tiền ({pendingPayouts.length > 0 ? `${pendingPayouts.length} chờ duyệt` : "0"})</option>
+            <option value="shopee">🛍️ 4. Đơn hàng Shopee ({shopeeOrders.length})</option>
+            <option value="tiktok">🎵 5. Đơn hàng TikTok ({tiktokOrders.length})</option>
+            <option value="import">☁️ 6. Nạp Excel dữ liệu</option>
+            <option value="settings">⚙️ 7. Điều kiện Rút & Tỷ lệ chia</option>
+            <option value="templates">💬 8. Cấu hình Tin nhắn Bot</option>
+          </select>
+          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-purple-600">
+            <i className="fa-solid fa-chevron-down text-xs"></i>
+          </div>
+        </div>
+      </div>
+
+      {/* Horizontal Tabs with Touch-Friendly Scroll */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 pt-1 touch-pan-x -mx-1 px-1 scrollbar-thin">
         <button
           onClick={() => setActiveTab("overview")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap shrink-0 ${
             activeTab === "overview"
-              ? "bg-purple-600 text-white shadow-md shadow-purple-500/25"
+              ? "bg-purple-600 text-white shadow-md shadow-purple-500/25 scale-[1.02]"
               : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80"
           }`}
         >
@@ -363,9 +390,9 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
 
         <button
           onClick={() => setActiveTab("users")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap shrink-0 ${
             activeTab === "users"
-              ? "bg-purple-600 text-white shadow-md shadow-purple-500/25"
+              ? "bg-purple-600 text-white shadow-md shadow-purple-500/25 scale-[1.02]"
               : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80"
           }`}
         >
@@ -375,16 +402,16 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
 
         <button
           onClick={() => setActiveTab("payouts")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap shrink-0 ${
             activeTab === "payouts"
-              ? "bg-purple-600 text-white shadow-md shadow-purple-500/25"
+              ? "bg-purple-600 text-white shadow-md shadow-purple-500/25 scale-[1.02]"
               : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80"
           }`}
         >
           <i className="fa-solid fa-money-bill-transfer text-xs"></i>
           <span>Rút tiền</span>
           {pendingPayouts.length > 0 && (
-            <span className="bg-rose-500 text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold">
+            <span className="bg-rose-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold ml-1 animate-bounce">
               {pendingPayouts.length}
             </span>
           )}
@@ -392,9 +419,9 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
 
         <button
           onClick={() => setActiveTab("shopee")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap shrink-0 ${
             activeTab === "shopee"
-              ? "bg-purple-600 text-white shadow-md shadow-purple-500/25"
+              ? "bg-purple-600 text-white shadow-md shadow-purple-500/25 scale-[1.02]"
               : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80"
           }`}
         >
@@ -404,9 +431,9 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
 
         <button
           onClick={() => setActiveTab("tiktok")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap shrink-0 ${
             activeTab === "tiktok"
-              ? "bg-purple-600 text-white shadow-md shadow-purple-500/25"
+              ? "bg-purple-600 text-white shadow-md shadow-purple-500/25 scale-[1.02]"
               : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80"
           }`}
         >
@@ -416,9 +443,9 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
 
         <button
           onClick={() => setActiveTab("import")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap shrink-0 ${
             activeTab === "import"
-              ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md shadow-orange-500/25"
+              ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md shadow-orange-500/25 scale-[1.02]"
               : "bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-200"
           }`}
         >
@@ -428,9 +455,9 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
 
         <button
           onClick={() => setActiveTab("settings")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap shrink-0 ${
             activeTab === "settings"
-              ? "bg-purple-600 text-white shadow-md shadow-purple-500/25"
+              ? "bg-purple-600 text-white shadow-md shadow-purple-500/25 scale-[1.02]"
               : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80"
           }`}
         >
@@ -440,9 +467,9 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
 
         <button
           onClick={() => setActiveTab("templates")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap shrink-0 ${
             activeTab === "templates"
-              ? "bg-purple-600 text-white shadow-md shadow-purple-500/25"
+              ? "bg-purple-600 text-white shadow-md shadow-purple-500/25 scale-[1.02]"
               : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80"
           }`}
         >
@@ -460,55 +487,55 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
               HOẠT ĐỘNG CHUNG
             </h2>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
               {/* Card 1: Tổng Thành Viên */}
-              <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-2xs">
-                <div className="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center text-sm font-bold mb-3">
+              <div className="bg-white rounded-2xl border border-slate-200/80 p-4 md:p-5 shadow-2xs">
+                <div className="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center text-sm font-bold mb-2 md:mb-3">
                   <i className="fa-solid fa-users"></i>
                 </div>
-                <div className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">
+                <div className="text-[10px] md:text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">
                   TỔNG THÀNH VIÊN
                 </div>
-                <div className="text-2xl md:text-3xl font-black text-slate-900 mt-1 font-display">
+                <div className="text-xl md:text-3xl font-black text-slate-900 mt-1 font-display">
                   {stats?.totalUsers || zaloUsers.length || 0}
                 </div>
               </div>
 
               {/* Card 2: Tổng Đơn Hàng */}
-              <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-2xs">
-                <div className="w-8 h-8 rounded-xl bg-rose-50 text-rose-500 flex items-center justify-center text-sm font-bold mb-3">
+              <div className="bg-white rounded-2xl border border-slate-200/80 p-4 md:p-5 shadow-2xs">
+                <div className="w-8 h-8 rounded-xl bg-rose-50 text-rose-500 flex items-center justify-center text-sm font-bold mb-2 md:mb-3">
                   <i className="fa-solid fa-box"></i>
                 </div>
-                <div className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">
+                <div className="text-[10px] md:text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">
                   TỔNG ĐƠN HÀNG
                 </div>
-                <div className="text-2xl md:text-3xl font-black text-slate-900 mt-1 font-display">
+                <div className="text-xl md:text-3xl font-black text-slate-900 mt-1 font-display">
                   {stats?.totalOrders || orders.length || 0}
                 </div>
               </div>
 
               {/* Card 3: Yêu Cầu Rút Chờ Duyệt */}
-              <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-2xs">
-                <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center text-sm font-bold mb-3">
+              <div className="bg-white rounded-2xl border border-slate-200/80 p-4 md:p-5 shadow-2xs">
+                <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center text-sm font-bold mb-2 md:mb-3">
                   <i className="fa-solid fa-clock"></i>
                 </div>
-                <div className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">
+                <div className="text-[10px] md:text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">
                   YÊU CẦU RÚT CHỜ DUYỆT
                 </div>
-                <div className="text-2xl md:text-3xl font-black text-slate-900 mt-1 font-display">
-                  {pendingPayouts.length} <span className="text-sm font-bold text-slate-500">lệnh</span>
+                <div className="text-xl md:text-3xl font-black text-slate-900 mt-1 font-display">
+                  {pendingPayouts.length} <span className="text-xs md:text-sm font-bold text-slate-500">lệnh</span>
                 </div>
               </div>
 
               {/* Card 4: Tiền Rút Chờ Duyệt */}
-              <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-2xs">
-                <div className="w-8 h-8 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center text-sm font-bold mb-3">
+              <div className="bg-white rounded-2xl border border-slate-200/80 p-4 md:p-5 shadow-2xs">
+                <div className="w-8 h-8 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center text-sm font-bold mb-2 md:mb-3">
                   <i className="fa-solid fa-money-bill"></i>
                 </div>
-                <div className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">
+                <div className="text-[10px] md:text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">
                   TIỀN RÚT CHỜ DUYỆT
                 </div>
-                <div className="text-xl md:text-2xl font-black text-slate-900 mt-1 font-display truncate">
+                <div className="text-lg md:text-2xl font-black text-slate-900 mt-1 font-display truncate">
                   {formatMoney(stats?.totalPendingAmount || 0)}
                 </div>
               </div>
@@ -550,11 +577,11 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
 
               {/* Card 3: 3. Hoa Hồng Sau Thuế (90%) */}
               <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs space-y-2">
-                <div className="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-xs font-bold">
+                <div className="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-500 flex items-center justify-center text-xs font-black">
                   <i className="fa-solid fa-scale-balanced"></i>
                 </div>
                 <div className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider leading-tight">
-                  3. HOA HỒNG SAU THUẾ ({100 - taxRate}%)
+                  3. HOA HỒNG SAU THUẾ ({afterTaxRate}%)
                 </div>
                 <div className="text-base md:text-lg font-black text-indigo-600 font-display truncate">
                   {formatMoney(stats?.totalAfterTaxCommission || 0)}
@@ -563,20 +590,20 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
 
               {/* Card 4: 4. Thành Viên Nhận (80%) */}
               <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs space-y-2">
-                <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs font-bold">
+                <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-500 flex items-center justify-center text-xs font-black">
                   <i className="fa-solid fa-user-check"></i>
                 </div>
                 <div className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider leading-tight">
                   4. THÀNH VIÊN NHẬN ({customerSplitRate}%)
                 </div>
                 <div className="text-base md:text-lg font-black text-emerald-600 font-display truncate">
-                  {formatMoney(stats?.totalUserCommission || 0)}
+                  {formatMoney(stats?.totalCustomerCommission || 0)}
                 </div>
               </div>
 
               {/* Card 5: 5. Admin Giữ Lại (20%) */}
               <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs space-y-2">
-                <div className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-xs font-bold">
+                <div className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-xs font-black">
                   <i className="fa-solid fa-briefcase"></i>
                 </div>
                 <div className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider leading-tight">
@@ -604,11 +631,54 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
               placeholder="Tìm theo Zalo ID, Tên, STK..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="px-3.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:border-purple-500 w-full sm:w-64"
+              className="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:border-purple-500 w-full sm:w-64"
             />
           </div>
 
-          <div className="overflow-x-auto">
+          {/* Mobile Card View (sm:hidden) */}
+          <div className="block sm:hidden divide-y divide-slate-100">
+            {filteredUsers.length === 0 ? (
+              <div className="p-8 text-center text-slate-400 text-xs">
+                Chưa có thành viên nào trong danh sách.
+              </div>
+            ) : (
+              filteredUsers.map((u) => (
+                <div key={u.id} className="p-4 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono font-black text-slate-900 text-xs bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200">
+                      ID: {u.zaloId}
+                    </span>
+                    <span className="text-xs font-bold text-slate-700">{u.zaloName || "—"}</span>
+                  </div>
+
+                  <div className="text-xs bg-slate-50 p-2.5 rounded-xl border border-slate-100 space-y-1">
+                    <div className="text-slate-500 text-[11px]">Thông tin ngân hàng:</div>
+                    {u.bankName ? (
+                      <div className="font-bold text-slate-900">
+                        {u.bankName} - {u.accountNumber} <span className="font-normal text-slate-600">({u.accountName})</span>
+                      </div>
+                    ) : (
+                      <div className="text-slate-400 italic text-[11px]">Chưa liên kết tài khoản ngân hàng</div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs pt-1">
+                    <div>
+                      <span className="text-[10px] text-slate-400 uppercase font-bold block">Số dư tích lũy</span>
+                      <span className="font-black text-emerald-600 text-sm font-display">{formatMoney(u.balance || 0)}</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[10px] text-slate-400 uppercase font-bold block">Đã rút</span>
+                      <span className="font-bold text-slate-600 text-xs font-display">{formatMoney(u.totalWithdrawn || 0)}</span>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Desktop Table View (hidden sm:block) */}
+          <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="bg-slate-50/80 text-slate-500 font-extrabold border-b border-slate-200/80 text-[11px] uppercase tracking-wider">
@@ -665,7 +735,92 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          {/* Mobile Card View (sm:hidden) */}
+          <div className="block sm:hidden divide-y divide-slate-100">
+            {payouts.length === 0 ? (
+              <div className="p-8 text-center text-slate-400 text-xs">
+                Không có yêu cầu rút tiền nào.
+              </div>
+            ) : (
+              payouts.map((p) => {
+                const isPending = p.status === "PENDING";
+                return (
+                  <div key={p.id} className="p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-black text-slate-900 text-xs bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200">
+                          #{p.id}
+                        </span>
+                        <span className="text-[11px] text-slate-400">{formatDate(p.createdAt)}</span>
+                      </div>
+                      <div>
+                        {isPending ? (
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-amber-50 text-amber-700 border border-amber-200">
+                            Chờ duyệt
+                          </span>
+                        ) : p.status === "COMPLETED" ? (
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            Đã chuyển
+                          </span>
+                        ) : (
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-rose-50 text-rose-700 border border-rose-200">
+                            Từ chối
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 space-y-1.5 text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-400 text-[11px]">Thành viên (Zalo ID):</span>
+                        <span className="font-mono font-bold text-slate-900">{p.zaloId}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-400 text-[11px]">Ngân hàng:</span>
+                        <span className="font-bold text-slate-900">{p.bankName}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-400 text-[11px]">Số tài khoản:</span>
+                        <span className="font-mono font-bold text-slate-900">{p.accountNumber}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-400 text-[11px]">Chủ tài khoản:</span>
+                        <span className="font-bold text-slate-700">{p.accountName}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1">
+                      <div>
+                        <span className="text-[10px] text-slate-400 uppercase font-bold block">Số tiền rút</span>
+                        <span className="font-black text-rose-600 text-base font-display">{formatMoney(p.amount || 0)}</span>
+                      </div>
+
+                      {isPending && (
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleRejectPayout(p.id)}
+                            className="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl text-xs font-bold border border-rose-200 transition cursor-pointer"
+                          >
+                            Từ chối
+                          </button>
+                          <button
+                            onClick={() => handleApprovePayout(p.id)}
+                            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black shadow-md shadow-emerald-500/20 transition cursor-pointer flex items-center gap-1.5"
+                          >
+                            <i className="fa-solid fa-check text-xs"></i>
+                            <span>Duyệt Rút</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Desktop Table View (hidden sm:block) */}
+          <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="bg-slate-50/80 text-slate-500 font-extrabold border-b border-slate-200/80 text-[11px] uppercase tracking-wider">
@@ -763,11 +918,54 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
               placeholder="Tìm theo Mã đơn, Sản phẩm, Zalo ID..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="px-3.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:border-purple-500 w-full sm:w-64"
+              className="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:border-purple-500 w-full sm:w-64"
             />
           </div>
 
-          <div className="overflow-x-auto">
+          {/* Mobile Card View (sm:hidden) */}
+          <div className="block sm:hidden divide-y divide-slate-100">
+            {filteredOrders.length === 0 ? (
+              <div className="p-8 text-center text-slate-400 text-xs">
+                Không tìm thấy đơn hàng nào.
+              </div>
+            ) : (
+              filteredOrders.map((o) => (
+                <div key={o.id} className="p-4 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono font-black text-slate-900 text-xs bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200">
+                      #{o.orderId}
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      {o.status || "Hoàn thành"}
+                    </span>
+                  </div>
+
+                  <div className="text-xs font-bold text-slate-800 line-clamp-2">
+                    {o.productName || "Sản phẩm Shopee / TikTok Shop"}
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                    <span className="text-slate-400 text-[11px]">Zalo ID:</span>
+                    <span className="font-mono font-bold text-slate-900">{o.zaloId || "—"}</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-xs pt-1">
+                    <div className="bg-slate-50/80 p-2 rounded-xl border border-slate-100">
+                      <span className="text-[10px] text-slate-400 uppercase font-bold block">Hoa hồng thô</span>
+                      <span className="font-mono font-bold text-slate-700">{formatMoney(o.rawCommission || 0)}</span>
+                    </div>
+                    <div className="bg-emerald-50/60 p-2 rounded-xl border border-emerald-100 text-right">
+                      <span className="text-[10px] text-emerald-600 uppercase font-black block">Khách nhận ({customerSplitRate}%)</span>
+                      <span className="font-black text-emerald-700 font-display">{formatMoney(o.finalCommission || 0)}</span>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Desktop Table View (hidden sm:block) */}
+          <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="bg-slate-50/80 text-slate-500 font-extrabold border-b border-slate-200/80 text-[11px] uppercase tracking-wider">

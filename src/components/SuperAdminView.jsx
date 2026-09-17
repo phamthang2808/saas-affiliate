@@ -232,7 +232,7 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin }) {
       </div>
 
       {/* ===================== METRIC STATS GRID ===================== */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         {/* Metric 1: Tổng tiền thuê hàng tháng */}
         <div className="metric-card">
           <div className="flex items-center justify-between">
@@ -301,17 +301,17 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin }) {
       {/* ===================== TENANTS LIST TABLE ===================== */}
       <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
         {/* Filter bar */}
-        <div className="p-5 border-b border-slate-100 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+        <div className="p-4 md:p-5 border-b border-slate-100 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
           <div>
             <h3 className="text-sm font-black text-slate-900">Danh Sách Trưởng Nhóm & Tình Trạng Thu Cước</h3>
             <p className="text-xs text-slate-400">Quản lý ngày đóng tiền hàng tháng và theo dõi nợ cước của từng nhóm</p>
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap self-stretch md:self-auto">
+          <div className="flex items-center gap-2 flex-wrap">
             {/* Payment Filter Tabs */}
-            <div className="bg-slate-100 p-1 rounded-xl flex gap-1 text-xs">
+            <div className="bg-slate-100 p-1 rounded-xl flex gap-1 text-xs w-full sm:w-auto">
               <button
-                className={`px-3 py-1 rounded-lg font-bold transition cursor-pointer ${
+                className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg font-bold transition cursor-pointer text-center ${
                   paymentFilter === "ALL" ? "bg-white text-orange-600 shadow-xs" : "text-slate-500"
                 }`}
                 onClick={() => setPaymentFilter("ALL")}
@@ -319,7 +319,7 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin }) {
                 Tất cả ({tenants.length})
               </button>
               <button
-                className={`px-3 py-1 rounded-lg font-bold transition cursor-pointer ${
+                className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg font-bold transition cursor-pointer text-center ${
                   paymentFilter === "PAID" ? "bg-white text-emerald-600 shadow-xs" : "text-slate-500"
                 }`}
                 onClick={() => setPaymentFilter("PAID")}
@@ -327,7 +327,7 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin }) {
                 Đã đóng ({paidTenantsCount})
               </button>
               <button
-                className={`px-3 py-1 rounded-lg font-bold transition cursor-pointer ${
+                className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg font-bold transition cursor-pointer text-center ${
                   paymentFilter === "UNPAID" ? "bg-white text-rose-600 shadow-xs" : "text-slate-500"
                 }`}
                 onClick={() => setPaymentFilter("UNPAID")}
@@ -336,25 +336,131 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin }) {
               </button>
             </div>
 
-            <input
-              type="text"
-              placeholder="🔍 Tìm theo tên, slug..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 outline-none focus:border-orange-500 w-full md:w-48"
-            />
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <input
+                type="text"
+                placeholder="🔍 Tìm theo tên, slug..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-orange-500 flex-1 sm:w-48"
+              />
 
-            <button
-              onClick={fetchTenantsAndStats}
-              className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition cursor-pointer shrink-0"
-              title="Làm mới"
-            >
-              <i className="fa-solid fa-rotate-right"></i>
-            </button>
+              <button
+                onClick={fetchTenantsAndStats}
+                className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition cursor-pointer shrink-0"
+                title="Làm mới"
+              >
+                <i className="fa-solid fa-rotate-right"></i>
+              </button>
+            </div>
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        {/* Mobile Card View (lg:hidden) */}
+        <div className="block lg:hidden divide-y divide-slate-100">
+          {filteredTenants.length === 0 ? (
+            <div className="text-center py-12 text-slate-400 text-xs font-medium">
+              {isLoading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <i className="fa-solid fa-spinner fa-spin text-orange-500"></i> Đang tải dữ liệu...
+                </span>
+              ) : (
+                "Không tìm thấy Trưởng Nhóm nào khớp điều kiện lọc."
+              )}
+            </div>
+          ) : (
+            filteredTenants.map((t) => {
+              const isPaid = (t.subscriptionStatus || "PAID").toUpperCase() === "PAID";
+              const cycleDay = t.billingCycleDay || 15;
+              const fee = t.monthlyFee || 500000;
+
+              return (
+                <div key={t.id} className="p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-10 h-10 rounded-2xl flex items-center justify-center text-white text-sm font-black shrink-0 shadow-xs"
+                        style={{ backgroundColor: t.primaryColor || "#f97316" }}
+                      >
+                        {t.name ? t.name.charAt(0).toUpperCase() : "T"}
+                      </div>
+                      <div>
+                        <div className="font-extrabold text-slate-900 text-sm">{t.name}</div>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="font-mono font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded text-[11px] border border-orange-200">
+                            /{t.slug}
+                          </span>
+                          <span className="text-[10px] text-slate-400">ID: #{t.id}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <span
+                      className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase inline-flex items-center gap-1 shrink-0 ${
+                        isPaid
+                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          : "bg-rose-50 text-rose-700 border border-rose-200 animate-pulse"
+                      }`}
+                    >
+                      <i className={`fa-solid ${isPaid ? "fa-circle-check" : "fa-circle-exclamation"}`}></i>
+                      <span>{isPaid ? "Đã đóng" : "Chưa đóng"}</span>
+                    </span>
+                  </div>
+
+                  <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <span className="text-[10px] text-slate-400 font-bold uppercase block">Tiền thuê hàng tháng</span>
+                      <span className="font-mono font-black text-slate-900 text-xs">{formatMoney(fee)}</span>
+                      <div className="text-[10px] text-orange-600 font-bold mt-0.5">
+                        Ngày {cycleDay} hàng tháng
+                      </div>
+                    </div>
+
+                    <div className="text-right">
+                      <span className="text-[10px] text-slate-400 font-bold uppercase block">Tỷ lệ phân chia</span>
+                      <div className="font-extrabold text-emerald-600 text-xs">Khách: {t.customerSplitRate || 80}%</div>
+                      <div className="text-[10px] text-slate-500">Thuế: {t.taxRate || 10}%</div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1 gap-2">
+                    <button
+                      onClick={() => handleTogglePayment(t)}
+                      className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition cursor-pointer border flex items-center justify-center gap-1.5 ${
+                        isPaid
+                          ? "bg-slate-50 hover:bg-slate-100 text-slate-600 border-slate-200"
+                          : "bg-emerald-500 hover:bg-emerald-600 text-white border-emerald-600 shadow-xs font-black"
+                      }`}
+                    >
+                      <i className={`fa-solid ${isPaid ? "fa-rotate-left" : "fa-check"}`}></i>
+                      <span>{isPaid ? "Đổi sang Chưa đóng" : "Xác nhận Thu Tiền"}</span>
+                    </button>
+
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => handleOpenEdit(t)}
+                        className="p-2 text-slate-600 hover:text-orange-600 bg-slate-100 hover:bg-orange-50 rounded-xl transition cursor-pointer border border-slate-200"
+                        title="Chỉnh sửa cước & thông tin"
+                      >
+                        <i className="fa-regular fa-pen-to-square"></i>
+                      </button>
+                      <button
+                        onClick={() => handleDeleteTenant(t.id, t.name)}
+                        className="p-2 text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-xl transition cursor-pointer border border-rose-200"
+                        title="Xóa Trưởng Nhóm"
+                      >
+                        <i className="fa-regular fa-trash-can"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Desktop Table View (hidden lg:block) */}
+        <div className="hidden lg:block overflow-x-auto">
           <table className="modern-table">
             <thead>
               <tr>

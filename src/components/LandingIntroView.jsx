@@ -37,11 +37,6 @@ export function LandingIntroView({ currentTenant, availableTenants, onSelectTena
 
           {/* Text Info */}
           <div className="text-center md:text-left flex-1 space-y-3">
-            <div className="inline-flex items-center gap-2 bg-orange-50 border border-orange-200 text-orange-700 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider">
-              <i className="fa-solid fa-sparkles text-amber-500"></i>
-              <span>Nền Tảng Hoàn Tiền Tiếp Thị Liên Kết 4.0</span>
-            </div>
-
             <h1 className="text-2xl md:text-4xl font-black text-slate-900 font-display tracking-tight">
               28AffiHub — Cổng Đối Soát & Quản Trị Hoàn Tiền Tự Động
             </h1>
@@ -76,69 +71,51 @@ export function LandingIntroView({ currentTenant, availableTenants, onSelectTena
         </div>
       </div>
 
-      {/* ===================== METRICS COUNTERS ===================== */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs text-center">
-          <div className="text-3xl font-black text-slate-900 font-display">1,500+</div>
-          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1">
-            Thành Viên Mua Hàng
-          </p>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs text-center">
-          <div className="text-3xl font-black text-orange-600 font-display">25,000+</div>
-          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1">
-            Đơn Hàng Đã Đối Soát
-          </p>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs text-center">
-          <div className="text-3xl font-black text-emerald-600 font-display">99.9%</div>
-          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1">
-            Tỷ Lệ Chi Trả Đúng Hẹn
-          </p>
-        </div>
-      </div>
-
-      {/* ===================== WHY CHOOSE SECTION ===================== */}
-      <div className="bg-white rounded-3xl border border-slate-200/80 p-6 md:p-8 shadow-xs space-y-6">
-        <div>
+      {/* ===================== 3 TÍNH NĂNG NỔI BẬT ===================== */}
+      <div className="space-y-4 pt-2">
+        <div className="text-center space-y-1">
           <h2 className="text-lg md:text-xl font-black text-slate-900 font-display">
             Tại Sao Nên Chọn Nền Tảng 28AffiHub?
           </h2>
-          <p className="text-xs text-slate-500 mt-1">
-            Hạ tầng công nghệ tự động hóa tối ưu hóa toàn diện cho cả Người Mua Hàng và Trưởng Nhóm
+          <p className="text-xs text-slate-500 font-medium">
+            Hạ tầng công nghệ chuyên biệt tối ưu cho hệ sinh thái Affiliate Marketing tự động
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/60 space-y-2.5">
-            <div className="w-10 h-10 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center text-lg font-bold">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-2xs hover:shadow-md transition group">
+            <div className="w-12 h-12 rounded-xl bg-orange-50 border border-orange-200 text-orange-600 flex items-center justify-center text-xl mb-3.5 group-hover:scale-110 transition">
+              <i className="fa-solid fa-robot"></i>
+            </div>
+            <h3 className="text-sm font-black text-slate-900 mb-1.5 font-display">
+              Bot Zalo Tự Động 24/7
+            </h3>
+            <p className="text-xs text-slate-600 leading-relaxed font-medium">
+              Mỗi Trưởng Nhóm sở hữu Bot Zalo riêng biệt, tự động chuyển đổi link Shopee & TikTok, tra cứu mã đơn và tương tác tự động.
+            </p>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-2xs hover:shadow-md transition group">
+            <div className="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center text-xl mb-3.5 group-hover:scale-110 transition">
               <i className="fa-solid fa-bolt"></i>
             </div>
-            <h3 className="font-extrabold text-sm text-slate-900">Tra Cứu Tức Thì 24/7</h3>
+            <h3 className="text-sm font-black text-slate-900 mb-1.5 font-display">
+              Đối Soát & Rút Tự Động
+            </h3>
             <p className="text-xs text-slate-600 leading-relaxed font-medium">
-              Chỉ cần nhập Zalo ID hoặc Mã đơn hàng, hệ thống tự động kiểm tra trạng thái từ Shopee và TikTok Shop trong 1 giây.
+              Tự động tính hoa hồng thực nhận sau thuế, cấu hình thời gian giữ tiền linh hoạt (0-14 ngày) và hỗ trợ rút tiền nhanh chóng.
             </p>
           </div>
 
-          <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/60 space-y-2.5">
-            <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-lg font-bold">
-              <i className="fa-solid fa-shield-check"></i>
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-2xs hover:shadow-md transition group">
+            <div className="w-12 h-12 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-600 flex items-center justify-center text-xl mb-3.5 group-hover:scale-110 transition">
+              <i className="fa-solid fa-shield-halved"></i>
             </div>
-            <h3 className="font-extrabold text-sm text-slate-900">Minh Bạch & Tự Động Trừ Thuế</h3>
+            <h3 className="text-sm font-black text-slate-900 mb-1.5 font-display">
+              Hạ Tầng Multi-Tenant Độc Lập
+            </h3>
             <p className="text-xs text-slate-600 leading-relaxed font-medium">
-              Công thức phân chia hoa hồng rõ ràng ({currentTenant?.customerSplitRate || 80}% cho khách), trừ thuế theo quy định, không lo sai sót số liệu.
-            </p>
-          </div>
-
-          <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/60 space-y-2.5">
-            <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center text-lg font-bold">
-              <i className="fa-solid fa-building-columns"></i>
-            </div>
-            <h3 className="font-extrabold text-sm text-slate-900">Rút Tiền Nhanh Qua VietQR</h3>
-            <p className="text-xs text-slate-600 leading-relaxed font-medium">
-              Lưu thông tin ngân hàng 1 lần, gửi lệnh rút tiền tự động và nhận tiền chuyển khoản về mọi ngân hàng tại Việt Nam.
+              Dữ liệu từng Trưởng Nhóm được cô lập an toàn, thương hiệu và giao diện tra cứu riêng biệt, tích hợp xác thực Google OAuth 2.0.
             </p>
           </div>
         </div>

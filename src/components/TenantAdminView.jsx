@@ -2,9 +2,26 @@ import React, { useState, useEffect } from "react";
 import { formatMoney, formatDate } from "../utils/formatters";
 import { APP_CONFIG } from "../config/api";
 
+// Standard default bot templates helper
+const getStandardBotTemplates = (tenant) => {
+  const groupName = tenant?.name || "Affiliate Cashback";
+  const splitRate = tenant?.customerSplitRate || 80;
+  return {
+    template_link: `@{user} 🛒 Link mua sắm hoàn tiền của bạn đã sẵn sàng:\n🔗 {affiliate_link}\n\n📌 Tỷ lệ hoàn: ${splitRate}% hoa hồng\n💡 Hãy bấm vào link trên để mở App Shopee/TikTok và hoàn tất đặt hàng để được ghi nhận đối soát nhé! 🥰`,
+    template_lookup_has_orders: `@{user} 🔍 TRA CỨU ĐƠN HÀNG & VÍ HOÀN TIỀN\n👉 Link tra cứu cá nhân (bấm là xem ngay & rút tiền):\n🌐 {link}\n\n💡 TÍNH NĂNG TRANG TRA CỨU:\n📦 Xem chi tiết toàn bộ đơn đã mua & hoa hồng từng đơn.\n💳 Quản lý ví tiền: Đang chờ / Đã hoàn thành / Khả dụng.\n💸 Rút tiền hoa hồng về STK Ngân hàng 1 chạm nhanh chóng!`,
+    template_lookup_no_orders: `@{user} 🔍 BẠN CHƯA CÓ ĐƠN HÀNG NÀO\n👉 Link tra cứu cá nhân: {link}\n\n💡 Hiện bạn chưa có đơn nào phát sinh tại nhóm ${groupName}.\n🛒 Hãy gửi bất kỳ link sản phẩm Shopee/TikTok vào nhóm để bot tạo link hoàn ${splitRate}% cho đơn đầu tiên nhé! 🥰`,
+    template_welcome: `Hi, chào @{user}\n🎉 Chào mừng bạn đã tham gia nhóm ${groupName}!\n📌 Bạn vui lòng đọc kỹ BÀI GHIM của nhóm hoặc gõ lệnh /help để xem hướng dẫn cách gửi link mua sắm và nhận hoàn ${splitRate}% hoa hồng nhé! 🥰`,
+    template_help: `@{user} 🤖 CÁC LỆNH BOT HỖ TRỢ SĂN SALE & HOÀN TIỀN:\n\n💳 /vitien hoặc #vitien — Xem ví tiền & hoa hồng hiện có\n🛒 /donhang hoặc #donhang — Xem danh sách các đơn đã đặt\n🔍 /tracuu hoặc #tracuu — Link tra cứu chi tiết bảo mật cá nhân\n🏦 /stk_[NGÂN_HÀNG]_[STK] — Lưu STK nhận tiền (VD: /stk_MB_0888728256)\n💸 /ruttien hoặc /rut — Yêu cầu rút toàn bộ hoa hồng khả dụng\n\n💡 Mẹo: Bạn chỉ cần gửi LINK sản phẩm Shopee/TikTok vào nhóm, bot sẽ tự động tạo link hoàn tiền ngay! 🥰`,
+    template_order_not_found: `@{user} ⚠️ Không tìm thấy thông tin cho mã đơn: {order_id}.\n📌 Lưu ý: Đơn hàng mới đặt thường được cập nhật vào kỳ đối soát sau 1 ngày. Vui lòng kiểm tra lại mã đơn hoặc nhắn /tracuu để xem toàn bộ đơn của bạn nhé!`,
+    template_invalid_command: `@{user} ❓ Lệnh "{command}" không hợp lệ.\n👉 Bạn có thể gõ /help để xem danh sách các lệnh được hỗ trợ nhé!`,
+    template_invalid_bank_syntax: `@{user} ⚠️ Sai cú pháp lưu STK!\n👉 Cú pháp đúng: /stk_[TÊN_NGÂN_HÀNG]_[SỐ_TÀI_KHOẢN]\n📌 Ví dụ: /stk_MB_0888728256 (Tên viết tắt các ngân hàng: MB, VCB, TCB, ACB, VPB, TPB, CTG, BIDV...)`,
+    template_withdraw_zero: `@{user} ⚠️ Số dư khả dụng của bạn hiện là {balance}đ (chưa đủ hạn mức rút tối thiểu 10.000đ).\n💡 Bạn hãy gõ /tracuu để kiểm tra chi tiết trạng thái ví nhé!`
+  };
+};
+
 export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSelectTenant, user, onOpenLogin }) {
   const activeTenant = currentTenant || (APP_CONFIG.isStandalone ? APP_CONFIG.tenant : null);
-  const [activeTab, setActiveTab] = useState("overview"); // 'overview' | 'users' | 'payouts' | 'shopee' | 'tiktok' | 'import'
+  const [activeTab, setActiveTab] = useState("overview"); // 'overview' | 'users' | 'payouts' | 'shopee' | 'tiktok' | 'import' | 'settings' | 'templates'
   const [stats, setStats] = useState(null);
   const [orders, setOrders] = useState([]);
   const [payouts, setPayouts] = useState([]);
@@ -12,9 +29,10 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Bot Templates state
-  const [botTemplates, setBotTemplates] = useState({});
-  const [defaultTemplates, setDefaultTemplates] = useState({});
+  // Bot Templates state - ALWAYS prefilled with rich standard templates
+  const initialTemplates = getStandardBotTemplates(activeTenant);
+  const [botTemplates, setBotTemplates] = useState(initialTemplates);
+  const [defaultTemplates, setDefaultTemplates] = useState(initialTemplates);
   const [isSavingTemplates, setIsSavingTemplates] = useState(false);
   const [templateSaveMessage, setTemplateSaveMessage] = useState("");
   const [templateSubTab, setTemplateSubTab] = useState("all");
@@ -79,22 +97,39 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
   };
 
   const fetchTenantTemplates = async () => {
-    if (!activeTenant?.slug) return;
+    const standard = getStandardBotTemplates(activeTenant);
+    if (!activeTenant?.slug) {
+      setBotTemplates(standard);
+      setDefaultTemplates(standard);
+      return;
+    }
     try {
       const res = await fetch(`${apiRoot}/api/saas/admin/${activeTenant.slug}/templates`);
       if (res.ok) {
         const data = await res.json();
-        setDefaultTemplates(data.defaultTemplates || {});
+        const defs = data.defaultTemplates && Object.keys(data.defaultTemplates).length > 0 ? data.defaultTemplates : standard;
+        setDefaultTemplates(defs);
         let custom = {};
         if (data.customTemplatesJson) {
           try {
             custom = JSON.parse(data.customTemplatesJson);
           } catch (e) {}
         }
-        setBotTemplates({ ...(data.defaultTemplates || {}), ...custom });
+        const merged = { ...defs };
+        Object.keys(defs).forEach((k) => {
+          if (custom[k] !== undefined && custom[k] !== null && String(custom[k]).trim() !== "") {
+            merged[k] = custom[k];
+          }
+        });
+        setBotTemplates(merged);
+      } else {
+        setBotTemplates(standard);
+        setDefaultTemplates(standard);
       }
     } catch (e) {
       console.error("Fetch templates error:", e);
+      setBotTemplates(standard);
+      setDefaultTemplates(standard);
     }
   };
 
@@ -1027,7 +1062,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                 </div>
                 <textarea
                   rows={4}
-                  value={botTemplates.template_link || ""}
+                  value={botTemplates.template_link || defaultTemplates.template_link || ""}
                   onChange={(e) => setBotTemplates({ ...botTemplates, template_link: e.target.value })}
                   placeholder={defaultTemplates.template_link || ""}
                   className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-800 focus:bg-white focus:border-purple-500 outline-hidden font-mono leading-relaxed"
@@ -1062,7 +1097,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                 </div>
                 <textarea
                   rows={6}
-                  value={botTemplates.template_lookup_has_orders || ""}
+                  value={botTemplates.template_lookup_has_orders || defaultTemplates.template_lookup_has_orders || ""}
                   onChange={(e) => setBotTemplates({ ...botTemplates, template_lookup_has_orders: e.target.value })}
                   placeholder={defaultTemplates.template_lookup_has_orders || ""}
                   className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-800 focus:bg-white focus:border-purple-500 outline-hidden font-mono leading-relaxed"
@@ -1097,7 +1132,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                 </div>
                 <textarea
                   rows={5}
-                  value={botTemplates.template_lookup_no_orders || ""}
+                  value={botTemplates.template_lookup_no_orders || defaultTemplates.template_lookup_no_orders || ""}
                   onChange={(e) => setBotTemplates({ ...botTemplates, template_lookup_no_orders: e.target.value })}
                   placeholder={defaultTemplates.template_lookup_no_orders || ""}
                   className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-800 focus:bg-white focus:border-purple-500 outline-hidden font-mono leading-relaxed"
@@ -1132,7 +1167,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                 </div>
                 <textarea
                   rows={4}
-                  value={botTemplates.template_welcome || ""}
+                  value={botTemplates.template_welcome || defaultTemplates.template_welcome || ""}
                   onChange={(e) => setBotTemplates({ ...botTemplates, template_welcome: e.target.value })}
                   placeholder={defaultTemplates.template_welcome || ""}
                   className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-800 focus:bg-white focus:border-purple-500 outline-hidden font-mono leading-relaxed"
@@ -1167,7 +1202,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                 </div>
                 <textarea
                   rows={6}
-                  value={botTemplates.template_help || ""}
+                  value={botTemplates.template_help || defaultTemplates.template_help || ""}
                   onChange={(e) => setBotTemplates({ ...botTemplates, template_help: e.target.value })}
                   placeholder={defaultTemplates.template_help || ""}
                   className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-800 focus:bg-white focus:border-purple-500 outline-hidden font-mono leading-relaxed"
@@ -1202,7 +1237,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                 </div>
                 <textarea
                   rows={4}
-                  value={botTemplates.template_order_not_found || ""}
+                  value={botTemplates.template_order_not_found || defaultTemplates.template_order_not_found || ""}
                   onChange={(e) => setBotTemplates({ ...botTemplates, template_order_not_found: e.target.value })}
                   placeholder={defaultTemplates.template_order_not_found || ""}
                   className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-800 focus:bg-white focus:border-purple-500 outline-hidden font-mono leading-relaxed"
@@ -1237,7 +1272,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                 </div>
                 <textarea
                   rows={3}
-                  value={botTemplates.template_invalid_command || ""}
+                  value={botTemplates.template_invalid_command || defaultTemplates.template_invalid_command || ""}
                   onChange={(e) => setBotTemplates({ ...botTemplates, template_invalid_command: e.target.value })}
                   placeholder={defaultTemplates.template_invalid_command || ""}
                   className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-800 focus:bg-white focus:border-purple-500 outline-hidden font-mono leading-relaxed"
@@ -1272,7 +1307,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                 </div>
                 <textarea
                   rows={4}
-                  value={botTemplates.template_invalid_bank_syntax || ""}
+                  value={botTemplates.template_invalid_bank_syntax || defaultTemplates.template_invalid_bank_syntax || ""}
                   onChange={(e) => setBotTemplates({ ...botTemplates, template_invalid_bank_syntax: e.target.value })}
                   placeholder={defaultTemplates.template_invalid_bank_syntax || ""}
                   className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-800 focus:bg-white focus:border-purple-500 outline-hidden font-mono leading-relaxed"
@@ -1307,7 +1342,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                 </div>
                 <textarea
                   rows={3}
-                  value={botTemplates.template_withdraw_zero || ""}
+                  value={botTemplates.template_withdraw_zero || defaultTemplates.template_withdraw_zero || ""}
                   onChange={(e) => setBotTemplates({ ...botTemplates, template_withdraw_zero: e.target.value })}
                   placeholder={defaultTemplates.template_withdraw_zero || ""}
                   className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-800 focus:bg-white focus:border-purple-500 outline-hidden font-mono leading-relaxed"

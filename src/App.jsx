@@ -11,6 +11,7 @@ import { PricingContactView } from "./components/PricingContactView";
 import { TenantAdminView } from "./components/TenantAdminView";
 import { SuperAdminView } from "./components/SuperAdminView";
 import { AuthModal } from "./components/AuthModal";
+import { AccessDeniedView } from "./components/AccessDeniedView";
 
 export default function App() {
   // Views: 'gioi-thieu' | 'tra-cuu' | 'huong-dan' | 'bao-gia' | 'tenant-admin' | 'super-admin'
@@ -145,6 +146,16 @@ export default function App() {
     }
   }, [token]);
 
+  // If user is TENANT_ADMIN, auto select their assigned tenant
+  useEffect(() => {
+    if (user?.role === "TENANT_ADMIN" && user?.tenantId && availableTenants.length > 0) {
+      const assigned = availableTenants.find((t) => t.id === user.tenantId);
+      if (assigned && (!currentTenant || currentTenant.id !== assigned.id)) {
+        setCurrentTenant(assigned);
+      }
+    }
+  }, [user, availableTenants]);
+
   const handleGoogleSuccess = async (googleResponse) => {
     let authData = googleResponse;
 
@@ -262,25 +273,65 @@ export default function App() {
 
           {/* 5. Quản trị Kênh (Admin Tenant) */}
           {currentView === "tenant-admin" && (
-            <TenantAdminView
-              apiRoot={API_URL_ROOT}
-              currentTenant={currentTenant}
-              availableTenants={availableTenants}
-              onSelectTenant={setCurrentTenant}
-              user={user}
-              token={token}
-              onOpenLogin={() => setIsAuthModalOpen(true)}
-            />
+            !token || !user ? (
+              <AccessDeniedView
+                type="login_required"
+                title="Khu Vực Quản Trị Trưởng Nhóm"
+                requiredRole="Trưởng Nhóm (TENANT_ADMIN)"
+                onOpenLogin={() => setIsAuthModalOpen(true)}
+                onNavigateHome={() => setCurrentView("gioi-thieu")}
+              />
+            ) : user.role !== "TENANT_ADMIN" && user.role !== "SUPER_ADMIN" ? (
+              <AccessDeniedView
+                type="forbidden"
+                title="Chưa Được Cấp Quyền Trưởng Nhóm"
+                requiredRole="TENANT_ADMIN"
+                user={user}
+                onOpenLogin={() => setIsAuthModalOpen(true)}
+                onLogout={handleLogout}
+                onNavigateHome={() => setCurrentView("gioi-thieu")}
+              />
+            ) : (
+              <TenantAdminView
+                apiRoot={API_URL_ROOT}
+                currentTenant={currentTenant}
+                availableTenants={availableTenants}
+                onSelectTenant={setCurrentTenant}
+                user={user}
+                token={token}
+                onOpenLogin={() => setIsAuthModalOpen(true)}
+              />
+            )
           )}
 
           {/* 6. Super Admin Portal */}
           {currentView === "super-admin" && (
-            <SuperAdminView
-              apiRoot={API_URL_ROOT}
-              user={user}
-              token={token}
-              onOpenLogin={() => setIsAuthModalOpen(true)}
-            />
+            !token || !user ? (
+              <AccessDeniedView
+                type="login_required"
+                title="Khu Vực Quản Trị Toàn Sàn (Super Admin)"
+                requiredRole="SUPER_ADMIN"
+                onOpenLogin={() => setIsAuthModalOpen(true)}
+                onNavigateHome={() => setCurrentView("gioi-thieu")}
+              />
+            ) : user.role !== "SUPER_ADMIN" ? (
+              <AccessDeniedView
+                type="forbidden"
+                title="Không Có Quyền Super Admin"
+                requiredRole="SUPER_ADMIN"
+                user={user}
+                onOpenLogin={() => setIsAuthModalOpen(true)}
+                onLogout={handleLogout}
+                onNavigateHome={() => setCurrentView("gioi-thieu")}
+              />
+            ) : (
+              <SuperAdminView
+                apiRoot={API_URL_ROOT}
+                user={user}
+                token={token}
+                onOpenLogin={() => setIsAuthModalOpen(true)}
+              />
+            )
           )}
         </main>
 

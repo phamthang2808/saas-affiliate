@@ -55,10 +55,16 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
   const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [settingsSaveMessage, setSettingsSaveMessage] = useState("");
 
+  const authHeaders = {
+    Authorization: token ? `Bearer ${token}` : "",
+  };
+
   const fetchTenantSettings = async () => {
     if (!activeTenant?.slug) return;
     try {
-      const res = await fetch(`${apiRoot}/api/saas/admin/${activeTenant.slug}/settings`);
+      const res = await fetch(`${apiRoot}/api/saas/admin/${activeTenant.slug}/settings`, {
+        headers: authHeaders,
+      });
       if (res.ok) {
         const data = await res.json();
         setSettings({
@@ -83,7 +89,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
     try {
       const res = await fetch(`${apiRoot}/api/saas/admin/${activeTenant.slug}/settings`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeaders },
         body: JSON.stringify(settings),
       });
       const data = await res.json();
@@ -109,7 +115,9 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
       return;
     }
     try {
-      const res = await fetch(`${apiRoot}/api/saas/admin/${activeTenant.slug}/templates`);
+      const res = await fetch(`${apiRoot}/api/saas/admin/${activeTenant.slug}/templates`, {
+        headers: authHeaders,
+      });
       if (res.ok) {
         const data = await res.json();
         const defs = data.defaultTemplates && Object.keys(data.defaultTemplates).length > 0 ? data.defaultTemplates : standard;
@@ -144,10 +152,10 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
     try {
       const slug = activeTenant.slug;
       const [resStats, resOrders, resPayouts, resUsers] = await Promise.all([
-        fetch(`${apiRoot}/api/saas/admin/${slug}/stats`),
-        fetch(`${apiRoot}/api/saas/admin/${slug}/orders`),
-        fetch(`${apiRoot}/api/saas/admin/${slug}/payouts`),
-        fetch(`${apiRoot}/api/saas/admin/${slug}/zalo-users`),
+        fetch(`${apiRoot}/api/saas/admin/${slug}/stats`, { headers: authHeaders }),
+        fetch(`${apiRoot}/api/saas/admin/${slug}/orders`, { headers: authHeaders }),
+        fetch(`${apiRoot}/api/saas/admin/${slug}/payouts`, { headers: authHeaders }),
+        fetch(`${apiRoot}/api/saas/admin/${slug}/zalo-users`, { headers: authHeaders }),
       ]);
 
       if (resStats.ok) setStats(await resStats.json());
@@ -169,7 +177,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
     try {
       const res = await fetch(`${apiRoot}/api/saas/admin/${activeTenant.slug}/templates`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeaders },
         body: JSON.stringify({
           templatesJson: JSON.stringify(botTemplates),
         }),
@@ -210,6 +218,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
     try {
       const res = await fetch(`${apiRoot}/api/saas/admin/${activeTenant.slug}/payouts/${payoutId}/approve`, {
         method: "PUT",
+        headers: authHeaders,
       });
       const data = await res.json();
       if (res.ok) {
@@ -230,7 +239,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
     try {
       const res = await fetch(`${apiRoot}/api/saas/admin/${activeTenant.slug}/payouts/${payoutId}/reject`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeaders },
         body: JSON.stringify({ note }),
       });
       const data = await res.json();
@@ -259,6 +268,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
 
       const res = await fetch(`${apiRoot}/api/saas/admin/${activeTenant.slug}/orders/import`, {
         method: "POST",
+        headers: authHeaders,
         body: formData,
       });
 
@@ -330,10 +340,10 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
           </div>
         </div>
 
-        {/* Quick Group Switcher for Multi-tenant mode */}
-        {!APP_CONFIG.isStandalone && availableTenants.length > 0 && (
+        {/* Quick Group Switcher for Multi-tenant mode (Chỉ Super Admin mới được đổi kênh) */}
+        {!APP_CONFIG.isStandalone && user?.role === "SUPER_ADMIN" && availableTenants.length > 0 && (
           <div className="flex items-center gap-2 bg-white border border-slate-200 px-3 py-1.5 rounded-2xl shadow-2xs">
-            <span className="text-xs font-bold text-slate-400">Chọn nhóm:</span>
+            <span className="text-xs font-bold text-slate-400">Chọn nhóm (Super Admin):</span>
             <select
               value={activeTenant?.slug || ""}
               onChange={(e) => {
@@ -344,10 +354,20 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
             >
               {availableTenants.map((t) => (
                 <option key={t.id} value={t.slug}>
-                  {t.name}
+                  {t.name} (/{t.slug})
                 </option>
               ))}
             </select>
+          </div>
+        )}
+
+        {/* Khóa kênh hiển thị cho Trưởng Nhóm */}
+        {!APP_CONFIG.isStandalone && user?.role === "TENANT_ADMIN" && (
+          <div className="flex items-center gap-2 bg-purple-50 border border-purple-200 px-3.5 py-1.5 rounded-2xl shadow-2xs">
+            <i className="fa-solid fa-store text-purple-600 text-xs"></i>
+            <span className="text-xs font-black text-purple-900">
+              Kênh quản trị: {groupDisplayName}
+            </span>
           </div>
         )}
       </div>

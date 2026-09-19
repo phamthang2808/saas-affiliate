@@ -117,19 +117,28 @@ export function Sidebar({
             className={navItemClass("tenant-admin")}
           >
             <i className="fa-solid fa-user-tie text-sm w-4 text-center"></i>
-            <span>Trưởng Nhóm (Quản Trị)</span>
+            <span className="flex-1 text-left">Trưởng Nhóm</span>
+            {(!user || user.role === "BUYER") && (
+              <i className="fa-solid fa-lock text-[10px] text-slate-400"></i>
+            )}
           </button>
 
+          {/* Super Admin item only active/highlighted for Super Admin */}
           <button
             onClick={() => handleNav("super-admin")}
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-[13px] font-bold transition-all cursor-pointer mt-1 ${
               currentView === "super-admin"
                 ? "bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/20 font-black"
-                : "text-amber-800 bg-amber-50/70 hover:bg-amber-100/80 border border-amber-200/60"
+                : user?.role === "SUPER_ADMIN"
+                ? "text-amber-800 bg-amber-50/70 hover:bg-amber-100/80 border border-amber-200/60"
+                : "text-slate-500 hover:bg-slate-100 border border-transparent"
             }`}
           >
             <i className="fa-solid fa-crown text-amber-500 text-sm w-4 text-center"></i>
-            <span>Quản Trị Viên</span>
+            <span className="flex-1 text-left">Super Admin</span>
+            {user?.role !== "SUPER_ADMIN" && (
+              <i className="fa-solid fa-lock text-[10px] text-slate-400"></i>
+            )}
           </button>
         </div>
       </div>
@@ -159,9 +168,7 @@ export function Sidebar({
                     user.role === "SUPER_ADMIN"
                       ? "bg-amber-100 text-amber-800 border border-amber-300"
                       : user.role === "TENANT_ADMIN"
-                      ? "bg-blue-100 text-blue-800 border border-blue-300"
-                      : user.role === "TENANT_STAFF"
-                      ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                      ? "bg-purple-100 text-purple-800 border border-purple-300"
                       : "bg-slate-200 text-slate-700"
                   }`}
                 >
@@ -169,9 +176,7 @@ export function Sidebar({
                     ? "👑 Super Admin"
                     : user.role === "TENANT_ADMIN"
                     ? "👔 Trưởng Nhóm"
-                    : user.role === "TENANT_STAFF"
-                    ? "🛠️ Hỗ Trợ Nhóm"
-                    : "👤 Khách Hàng"}
+                    : "🛍️ Thành Viên"}
                 </span>
               </div>
             </div>

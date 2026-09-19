@@ -28,6 +28,11 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
   const [zaloUsers, setZaloUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  
+  // Import Excel state
+  const [importFile, setImportFile] = useState(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const [importResult, setImportResult] = useState(null);
 
   // Bot Templates state - ALWAYS prefilled with rich standard templates
   const initialTemplates = getStandardBotTemplates(activeTenant);

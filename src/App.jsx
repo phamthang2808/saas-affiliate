@@ -145,17 +145,37 @@ export default function App() {
     }
   }, [token]);
 
-  const handleGoogleSuccess = (loginData) => {
-    setToken(loginData.token);
-    setUser(loginData.user);
-    localStorage.setItem("saasToken", loginData.token);
-    localStorage.setItem("saasUser", JSON.stringify(loginData.user));
+  const handleGoogleSuccess = async (googleResponse) => {
+    let authData = googleResponse;
+
+    // If receiving raw Google response containing ID token credential
+    if (googleResponse?.credential) {
+      const res = await fetch(`${API_URL_ROOT}/api/saas/auth/google-login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: googleResponse.credential }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || "Xác thực tài khoản Google thất bại");
+      }
+      authData = data;
+    }
+
+    if (!authData?.token || !authData?.user) {
+      throw new Error("Không nhận được phản hồi hợp lệ từ máy chủ");
+    }
+
+    setToken(authData.token);
+    setUser(authData.user);
+    localStorage.setItem("saasToken", authData.token);
+    localStorage.setItem("saasUser", JSON.stringify(authData.user));
     setIsAuthModalOpen(false);
 
     // If Super Admin, switch to super-admin view
-    if (loginData.user.role === "SUPER_ADMIN") {
+    if (authData.user.role === "SUPER_ADMIN") {
       setCurrentView("super-admin");
-    } else if (loginData.user.role === "TENANT_ADMIN") {
+    } else if (authData.user.role === "TENANT_ADMIN") {
       setCurrentView("tenant-admin");
     }
   };

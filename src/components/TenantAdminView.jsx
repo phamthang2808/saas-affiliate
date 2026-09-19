@@ -352,32 +352,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
         )}
       </div>
 
-      {/* ===================== 2. MOBILE TAB SELECTOR (DROPDOWN) & APPLE-STYLE TABS ===================== */}
-      {/* Mobile / Tablet Direct Tab Chooser */}
-      <div className="md:hidden">
-        <label className="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider block mb-1.5">
-          <i className="fa-solid fa-list-check text-purple-600 mr-1"></i> Chọn mục quản trị:
-        </label>
-        <div className="relative">
-          <select
-            value={activeTab}
-            onChange={(e) => setActiveTab(e.target.value)}
-            className="w-full bg-white border-2 border-purple-400/95 rounded-2xl py-3 px-4 text-xs font-black text-slate-900 shadow-sm outline-none appearance-none cursor-pointer pr-10"
-          >
-            <option value="overview">📊 1. Tổng quan hoạt động</option>
-            <option value="users">👥 2. Người dùng ({zaloUsers.length})</option>
-            <option value="payouts">💸 3. Quản lý Rút tiền ({pendingPayouts.length > 0 ? `${pendingPayouts.length} chờ duyệt` : "0"})</option>
-            <option value="shopee">🛍️ 4. Đơn hàng Shopee ({shopeeOrders.length})</option>
-            <option value="tiktok">🎵 5. Đơn hàng TikTok ({tiktokOrders.length})</option>
-            <option value="import">☁️ 6. Nạp Excel dữ liệu</option>
-            <option value="settings">⚙️ 7. Điều kiện Rút & Tỷ lệ chia</option>
-            <option value="templates">💬 8. Cấu hình Tin nhắn Bot</option>
-          </select>
-          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-purple-600">
-            <i className="fa-solid fa-chevron-down text-xs"></i>
-          </div>
-        </div>
-      </div>
+      {/* ===================== 2. APPLE-STYLE TABS ===================== */}
 
       {/* Tabs with Multi-Row Wrapping (Flex-Wrap) - Never gets cut off */}
       <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pt-1 pb-1">

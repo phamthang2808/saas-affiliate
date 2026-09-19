@@ -2,12 +2,17 @@
 // Cấu hình Nền tảng & Thông tin Trưởng Nhóm qua Biến Môi Trường (Environment Variables)
 
 export const APP_CONFIG = {
-  // 1. Backend API Base URL
-  apiUrl:
-    import.meta.env.VITE_API_URL ||
-    (window.location.hostname === "localhost"
-      ? "http://localhost:8081"
-      : window.location.origin),
+  // 1. Backend API Base URL (Dùng relative URL "" khi deploy Production qua Vercel proxy, localhost:8081 khi Dev)
+  apiUrl: (() => {
+    if (import.meta.env.PROD) {
+      return import.meta.env.VITE_API_URL || "";
+    }
+    const hostname = window.location.hostname;
+    if (hostname === "localhost" || hostname === "127.0.0.1") {
+      return import.meta.env.VITE_API_URL || "http://localhost:8081";
+    }
+    return import.meta.env.VITE_API_URL || "";
+  })(),
 
   // 2. Chế độ Hoạt động:
   // - Nếu có VITE_TENANT_SLUG: Chế độ Web Độc Lập cho 1 Trưởng Nhóm (Standalone Trưởng Nhóm Portal)

@@ -482,17 +482,124 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin }) {
             </div>
           </div>
 
-          {/* TENANTS TABLE */}
-          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
+          {/* MOBILE & TABLET CARD VIEW (Ẩn trên Desktop >= lg) */}
+          <div className="block lg:hidden space-y-3">
+            {isLoading ? (
+              <div className="bg-white rounded-2xl border border-slate-200/80 p-8 text-center text-slate-400 shadow-2xs">
+                <i className="fa-solid fa-circle-notch fa-spin text-xl text-orange-500 mb-2 block"></i>
+                Đang tải dữ liệu Kênh Đối Tác...
+              </div>
+            ) : filteredTenants.length === 0 ? (
+              <div className="bg-white rounded-2xl border border-slate-200/80 p-8 text-center text-slate-400 shadow-2xs">
+                <i className="fa-solid fa-store-slash text-2xl text-slate-300 mb-2 block"></i>
+                Không tìm thấy Kênh nào phù hợp.
+              </div>
+            ) : (
+              filteredTenants.map((t) => {
+                const isPaid = (t.subscriptionStatus || "PAID").toUpperCase() === "PAID";
+                return (
+                  <div
+                    key={t.id}
+                    className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs space-y-3 hover:border-orange-200 transition"
+                  >
+                    {/* Header: Logo, Name, Slug, Payment Button */}
+                    <div className="flex items-start justify-between gap-2.5">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div
+                          className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-white text-sm shadow-2xs shrink-0"
+                          style={{ backgroundColor: t.primaryColor || "#f97316" }}
+                        >
+                          {t.name.charAt(0)}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-bold text-slate-900 text-sm leading-snug truncate">{t.name}</p>
+                          <p className="text-[11px] font-mono text-slate-400">/{t.slug}</p>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => handleTogglePayment(t)}
+                        className={`px-3 py-1 rounded-full text-[11px] font-black cursor-pointer transition shadow-2xs inline-flex items-center gap-1.5 shrink-0 ${
+                          isPaid
+                            ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border border-emerald-300"
+                            : "bg-rose-100 text-rose-800 hover:bg-rose-200 border border-rose-300 animate-pulse"
+                        }`}
+                      >
+                        <i className={`fa-solid ${isPaid ? "fa-circle-check text-emerald-600" : "fa-clock text-rose-600"}`}></i>
+                        <span>{isPaid ? "Đã đóng tiền" : "Chưa đóng"}</span>
+                      </button>
+                    </div>
+
+                    {/* Details Box */}
+                    <div className="bg-slate-50/80 rounded-xl p-3 border border-slate-100 space-y-2 text-xs">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-slate-400 font-medium text-[11px] shrink-0">Domain:</span>
+                        <div className="truncate text-right">
+                          {t.publicLookupDomain ? (
+                            <span className="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200 font-mono text-[11px] font-semibold">
+                              {t.publicLookupDomain}
+                            </span>
+                          ) : (
+                            <span className="text-slate-500 font-mono text-[11px]">28affihub.store/{t.slug}</span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-slate-400 font-medium text-[11px] shrink-0">Tỷ lệ chia:</span>
+                        <span className="text-[11px] font-bold">
+                          <span className="text-orange-600">{t.customerSplitRate || 80}%</span>
+                          <span className="text-slate-400 mx-1">-</span>
+                          <span className="text-slate-700">{100 - (t.customerSplitRate || 80)}%</span>
+                          <span className="text-[10px] text-slate-400 font-normal ml-1">(Thuế {t.taxRate || 10}%)</span>
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-slate-400 font-medium text-[11px] shrink-0">Tiền thuê / tháng:</span>
+                        <span className="font-bold text-slate-900 font-display text-xs">
+                          {formatMoney(t.monthlyFee || 500000)}
+                          <span className="text-[10px] font-normal text-slate-400 ml-1">
+                            (Ngày {t.billingCycleDay || 15})
+                          </span>
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-2 pt-1">
+                      <button
+                        onClick={() => handleOpenEdit(t)}
+                        className="flex-1 py-2 bg-orange-50 hover:bg-orange-100 text-orange-700 rounded-xl font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1.5 border border-orange-200"
+                      >
+                        <i className="fa-solid fa-pen-to-square text-xs"></i>
+                        <span>Chỉnh Sửa</span>
+                      </button>
+                      <button
+                        onClick={() => handleDeleteTenant(t.id, t.name)}
+                        className="py-2 px-3 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1.5 border border-rose-200"
+                        title="Xóa Kênh"
+                      >
+                        <i className="fa-solid fa-trash-can text-xs"></i>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* DESKTOP TABLE VIEW (Hiện trên màn hình >= lg) */}
+          <div className="hidden lg:block bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-black text-slate-500 uppercase tracking-wider">
-                    <th className="py-3.5 px-4">Kênh Trưởng Nhóm</th>
-                    <th className="py-3.5 px-4">Cổng Tra Cứu</th>
-                    <th className="py-3.5 px-4">Tỷ Lệ Chia (Khách - Admin)</th>
-                    <th className="py-3.5 px-4">Tiền Thuê / Tháng</th>
-                    <th className="py-3.5 px-4 text-center">Thu Phí Tháng Này</th>
+                    <th className="py-3.5 px-4">Kênh Đối Tác</th>
+                    <th className="py-3.5 px-4">Tên Miền / Đường Dẫn Tra Cứu</th>
+                    <th className="py-3.5 px-4">Tỷ Lệ Chia (Khách - Trưởng Nhóm)</th>
+                    <th className="py-3.5 px-4">Tiền Thuê / Chu Kỳ</th>
+                    <th className="py-3.5 px-4 text-center">Thu Phí Thuê</th>
                     <th className="py-3.5 px-4 text-right">Thao Tác</th>
                   </tr>
                 </thead>
@@ -604,8 +711,8 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin }) {
       {adminSubTab === "users" && (
         <div className="space-y-4 animate-fade-in">
           {/* SEARCH & ROLE FILTER BAR */}
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="relative w-full sm:w-80">
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 sm:p-4 shadow-2xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+            <div className="relative w-full md:w-80 shrink-0">
               <i className="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
               <input
                 type="text"
@@ -616,12 +723,12 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin }) {
               />
             </div>
 
-            <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
               <button
                 onClick={() => setUserRoleFilter("ALL")}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition whitespace-nowrap ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition whitespace-nowrap shrink-0 ${
                   userRoleFilter === "ALL"
-                    ? "bg-slate-900 text-white"
+                    ? "bg-slate-900 text-white shadow-2xs"
                     : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                 }`}
               >
@@ -629,9 +736,9 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin }) {
               </button>
               <button
                 onClick={() => setUserRoleFilter("SUPER_ADMIN")}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition whitespace-nowrap ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition whitespace-nowrap shrink-0 ${
                   userRoleFilter === "SUPER_ADMIN"
-                    ? "bg-amber-600 text-white"
+                    ? "bg-amber-600 text-white shadow-2xs"
                     : "bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200"
                 }`}
               >
@@ -639,9 +746,9 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin }) {
               </button>
               <button
                 onClick={() => setUserRoleFilter("TENANT_ADMIN")}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition whitespace-nowrap ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition whitespace-nowrap shrink-0 ${
                   userRoleFilter === "TENANT_ADMIN"
-                    ? "bg-purple-600 text-white"
+                    ? "bg-purple-600 text-white shadow-2xs"
                     : "bg-purple-50 text-purple-800 hover:bg-purple-100 border border-purple-200"
                 }`}
               >
@@ -649,9 +756,9 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin }) {
               </button>
               <button
                 onClick={() => setUserRoleFilter("BUYER")}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition whitespace-nowrap ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition whitespace-nowrap shrink-0 ${
                   userRoleFilter === "BUYER"
-                    ? "bg-slate-700 text-white"
+                    ? "bg-slate-700 text-white shadow-2xs"
                     : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                 }`}
               >
@@ -660,8 +767,133 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin }) {
             </div>
           </div>
 
-          {/* USERS TABLE */}
-          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
+          {/* MOBILE & TABLET CARD VIEW (Ẩn trên Desktop >= lg) */}
+          <div className="block lg:hidden space-y-3">
+            {isLoadingUsers ? (
+              <div className="bg-white rounded-2xl border border-slate-200/80 p-8 text-center text-slate-400 shadow-2xs">
+                <i className="fa-solid fa-circle-notch fa-spin text-xl text-purple-600 mb-2 block"></i>
+                Đang tải danh sách tài khoản...
+              </div>
+            ) : filteredUsers.length === 0 ? (
+              <div className="bg-white rounded-2xl border border-slate-200/80 p-8 text-center text-slate-400 shadow-2xs">
+                <i className="fa-solid fa-user-slash text-2xl text-slate-300 mb-2 block"></i>
+                Không có người dùng nào khớp điều kiện.
+              </div>
+            ) : (
+              filteredUsers.map((u) => {
+                const isCurrentUser = user && user.id === u.id;
+                return (
+                  <div
+                    key={u.id}
+                    className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs space-y-3 hover:border-purple-200 transition"
+                  >
+                    {/* Header: Avatar, Name, ID, Role */}
+                    <div className="flex items-start justify-between gap-2.5">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <img
+                          src={
+                            u.avatarUrl ||
+                            `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                              u.name || "User"
+                            )}&background=8b5cf6&color=fff`
+                          }
+                          alt={u.name}
+                          className="w-10 h-10 rounded-full object-cover border border-slate-200 shadow-2xs shrink-0"
+                        />
+                        <div className="min-w-0">
+                          <p className="font-bold text-slate-900 text-sm leading-snug flex items-center gap-1.5 flex-wrap">
+                            <span className="truncate">{u.name || "Chưa đặt tên"}</span>
+                            {isCurrentUser && (
+                              <span className="text-[9px] font-black px-1.5 py-0.2 bg-emerald-100 text-emerald-800 rounded-full border border-emerald-200">
+                                Bạn
+                              </span>
+                            )}
+                          </p>
+                          <p className="text-[11px] text-slate-400 font-mono">ID #{u.id}</p>
+                        </div>
+                      </div>
+
+                      <div className="shrink-0">
+                        {u.role === "SUPER_ADMIN" ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-gradient-to-r from-amber-100 to-orange-100 text-amber-900 border border-amber-300 shadow-2xs">
+                            <i className="fa-solid fa-crown text-amber-600 text-[10px]"></i>
+                            <span>Super Admin</span>
+                          </span>
+                        ) : u.role === "TENANT_ADMIN" ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-purple-100 text-purple-900 border border-purple-300 shadow-2xs">
+                            <i className="fa-solid fa-user-tie text-purple-600 text-[10px]"></i>
+                            <span>Trưởng Nhóm</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                            <i className="fa-solid fa-bag-shopping text-slate-400 text-[10px]"></i>
+                            <span>Thành Viên</span>
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Details Box */}
+                    <div className="bg-slate-50/80 rounded-xl p-3 border border-slate-100 space-y-2 text-xs">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-slate-400 font-medium text-[11px] flex items-center gap-1.5 shrink-0">
+                          <i className="fa-regular fa-envelope text-slate-400"></i>
+                          Email:
+                        </span>
+                        <span className="font-mono text-slate-800 text-[11px] truncate font-semibold">
+                          {u.email}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-slate-400 font-medium text-[11px] flex items-center gap-1.5 shrink-0">
+                          <i className="fa-solid fa-store text-slate-400"></i>
+                          Kênh:
+                        </span>
+                        <div className="text-right truncate">
+                          {u.role === "TENANT_ADMIN" ? (
+                            u.tenantName ? (
+                              <span className="font-bold text-purple-700 bg-purple-100/60 px-2 py-0.5 rounded-lg border border-purple-200 text-[11px]">
+                                {u.tenantName} <span className="text-slate-400 font-mono text-[10px]">({u.tenantSlug})</span>
+                              </span>
+                            ) : (
+                              <span className="text-rose-500 font-bold text-[11px]">⚠️ Chưa gán kênh</span>
+                            )
+                          ) : u.role === "SUPER_ADMIN" ? (
+                            <span className="text-amber-700 font-bold text-[11px]">🌐 Toàn bộ tất cả kênh</span>
+                          ) : (
+                            <span className="text-slate-400 text-[11px]">—</span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-slate-400 font-medium text-[11px] flex items-center gap-1.5 shrink-0">
+                          <i className="fa-regular fa-calendar text-slate-400"></i>
+                          Tham gia:
+                        </span>
+                        <span className="text-slate-600 font-medium text-[11px]">
+                          {u.createdAt ? formatDate(u.createdAt) : "—"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Action Button */}
+                    <button
+                      onClick={() => handleOpenEditUserRole(u)}
+                      className="w-full py-2 bg-slate-100 hover:bg-purple-100 active:bg-purple-200 text-slate-700 hover:text-purple-800 rounded-xl font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1.5 border border-slate-200/80"
+                    >
+                      <i className="fa-solid fa-user-pen text-xs"></i>
+                      <span>Phân Quyền / Đổi Role</span>
+                    </button>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* DESKTOP TABLE VIEW (Hiện trên màn hình >= lg) */}
+          <div className="hidden lg:block bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
@@ -715,7 +947,7 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin }) {
                                     </span>
                                   )}
                                 </p>
-                                <p className="text-[11px] text-slate-400">ID #{u.id}</p>
+                                <p className="text-[11px] text-slate-400 font-mono">ID #{u.id}</p>
                               </div>
                             </div>
                           </td>

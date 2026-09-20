@@ -1,6 +1,9 @@
 import React from "react";
 
 export function MobileBottomNav({ currentView, setCurrentView, user, onOpenLogin }) {
+  const isSuperAdmin = user?.role === "SUPER_ADMIN";
+  const isTenantAdmin = user?.role === "TENANT_ADMIN" || isSuperAdmin;
+
   const navItems = [
     {
       key: "gioi-thieu",
@@ -17,16 +20,24 @@ export function MobileBottomNav({ currentView, setCurrentView, user, onOpenLogin
       label: "Báo giá",
       icon: "fa-solid fa-rocket",
     },
-    {
-      key: "tenant-admin",
-      label: "Trưởng nhóm",
-      icon: "fa-solid fa-user-tie",
-    },
-    {
-      key: "super-admin",
-      label: "Quản trị",
-      icon: "fa-solid fa-shield-halved",
-    },
+    ...(isTenantAdmin
+      ? [
+          {
+            key: "tenant-admin",
+            label: "Trưởng nhóm",
+            icon: "fa-solid fa-user-tie",
+          },
+        ]
+      : []),
+    ...(isSuperAdmin
+      ? [
+          {
+            key: "super-admin",
+            label: "Quản trị",
+            icon: "fa-solid fa-shield-halved",
+          },
+        ]
+      : []),
   ];
 
   return (

@@ -1,17 +1,17 @@
-import React, { useState, useEffect } from "react";
-import { API_URL_ROOT, APP_CONFIG } from "./config/api";
-import { Sidebar } from "./components/Sidebar";
-import { TopBar } from "./components/TopBar";
-import { MobileBottomNav } from "./components/MobileBottomNav";
-import { Footer } from "./components/Footer";
-import { LandingIntroView } from "./components/LandingIntroView";
-import { PublicLookupView } from "./components/PublicLookupView";
-import { GuideView } from "./components/GuideView";
-import { PricingContactView } from "./components/PricingContactView";
-import { TenantAdminView } from "./components/TenantAdminView";
-import { SuperAdminView } from "./components/SuperAdminView";
-import { AuthModal } from "./components/AuthModal";
+import { useEffect, useState } from "react";
 import { AccessDeniedView } from "./components/AccessDeniedView";
+import { AuthModal } from "./components/AuthModal";
+import { Footer } from "./components/Footer";
+import { GuideView } from "./components/GuideView";
+import { LandingIntroView } from "./components/LandingIntroView";
+import { MobileBottomNav } from "./components/MobileBottomNav";
+import { PricingContactView } from "./components/PricingContactView";
+import { PublicLookupView } from "./components/PublicLookupView";
+import { Sidebar } from "./components/Sidebar";
+import { SuperAdminView } from "./components/SuperAdminView";
+import { TenantAdminView } from "./components/TenantAdminView";
+import { TopBar } from "./components/TopBar";
+import { API_URL_ROOT, APP_CONFIG } from "./config/api";
 
 export default function App() {
   // Views: 'gioi-thieu' | 'tra-cuu' | 'huong-dan' | 'bao-gia' | 'tenant-admin' | 'super-admin'
@@ -145,6 +145,19 @@ export default function App() {
         });
     }
   }, [token]);
+
+  // Auto-redirect unauthorized users away from restricted admin views
+  useEffect(() => {
+    if (currentView === "super-admin" && user?.role !== "SUPER_ADMIN") {
+      setCurrentView("gioi-thieu");
+    } else if (
+      currentView === "tenant-admin" &&
+      user?.role !== "TENANT_ADMIN" &&
+      user?.role !== "SUPER_ADMIN"
+    ) {
+      setCurrentView("gioi-thieu");
+    }
+  }, [currentView, user]);
 
   // If user is TENANT_ADMIN, auto select their assigned tenant
   useEffect(() => {
@@ -340,6 +353,7 @@ export default function App() {
         <Footer
           currentTenant={currentTenant}
           onNavigate={(view) => setCurrentView(view)}
+          user={user}
         />
       </div>
 

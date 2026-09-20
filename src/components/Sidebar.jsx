@@ -1,4 +1,3 @@
-import React from "react";
 import logoImg from "../assets/logo.png";
 
 export function Sidebar({
@@ -107,40 +106,37 @@ export function Sidebar({
         </div>
 
         {/* ===================== HỆ THỐNG QUẢN TRỊ ===================== */}
-        <div className="space-y-1">
-          <p className="px-3 text-[10px] font-black uppercase tracking-wider text-slate-400">
-            HỆ THỐNG QUẢN TRỊ
-          </p>
+        {(user?.role === "TENANT_ADMIN" || user?.role === "SUPER_ADMIN") && (
+          <div className="space-y-1">
+            <p className="px-3 text-[10px] font-black uppercase tracking-wider text-slate-400">
+              HỆ THỐNG QUẢN TRỊ
+            </p>
 
-          <button
-            onClick={() => handleNav("tenant-admin")}
-            className={navItemClass("tenant-admin")}
-          >
-            <i className="fa-solid fa-user-tie text-sm w-4 text-center"></i>
-            <span className="flex-1 text-left">Trưởng Nhóm</span>
-            {(!user || user.role === "BUYER") && (
-              <i className="fa-solid fa-lock text-[10px] text-slate-400"></i>
-            )}
-          </button>
+            {/* Trưởng nhóm: Hiển thị cho cả TENANT_ADMIN và SUPER_ADMIN */}
+            <button
+              onClick={() => handleNav("tenant-admin")}
+              className={navItemClass("tenant-admin")}
+            >
+              <i className="fa-solid fa-user-tie text-sm w-4 text-center"></i>
+              <span className="flex-1 text-left">Trưởng Nhóm</span>
+            </button>
 
-          {/* Super Admin item only active/highlighted for Super Admin */}
-          <button
-            onClick={() => handleNav("super-admin")}
-            className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-[13px] font-bold transition-all cursor-pointer mt-1 ${
-              currentView === "super-admin"
-                ? "bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/20 font-black"
-                : user?.role === "SUPER_ADMIN"
-                ? "text-amber-800 bg-amber-50/70 hover:bg-amber-100/80 border border-amber-200/60"
-                : "text-slate-500 hover:bg-slate-100 border border-transparent"
-            }`}
-          >
-            <i className="fa-solid fa-crown text-amber-500 text-sm w-4 text-center"></i>
-            <span className="flex-1 text-left">Super Admin</span>
-            {user?.role !== "SUPER_ADMIN" && (
-              <i className="fa-solid fa-lock text-[10px] text-slate-400"></i>
+            {/* Super Admin: CHỈ hiển thị duy nhất khi là SUPER_ADMIN */}
+            {user?.role === "SUPER_ADMIN" && (
+              <button
+                onClick={() => handleNav("super-admin")}
+                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-[13px] font-bold transition-all cursor-pointer mt-1 ${
+                  currentView === "super-admin"
+                    ? "bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/20 font-black"
+                    : "text-amber-800 bg-amber-50/70 hover:bg-amber-100/80 border border-amber-200/60"
+                }`}
+              >
+                <i className="fa-solid fa-crown text-amber-500 text-sm w-4 text-center"></i>
+                <span className="flex-1 text-left">Super Admin</span>
+              </button>
             )}
-          </button>
-        </div>
+          </div>
+        )}
       </div>
 
       {/* ===================== USER PROFILE BOX ===================== */}

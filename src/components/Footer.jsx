@@ -1,7 +1,7 @@
 import React from "react";
 import logoImg from "../assets/logo.png";
 
-export function Footer({ currentTenant, onNavigate }) {
+export function Footer({ currentTenant, onNavigate, user }) {
   const groupName = currentTenant?.name || "28AffiHub";
   const zaloSupport = currentTenant?.contactZalo || "0888.728.256";
 
@@ -82,15 +82,17 @@ export function Footer({ currentTenant, onNavigate }) {
                   <span>Báo giá thuê nền tảng SaaS</span>
                 </button>
               </li>
-              <li>
-                <button
-                  onClick={() => onNavigate && onNavigate("tenant-admin")}
-                  className="text-slate-500 hover:text-orange-600 transition flex items-center gap-1.5 cursor-pointer"
-                >
-                  <i className="fa-solid fa-angle-right text-[10px] text-slate-400"></i>
-                  <span>Khu vực Quản trị Trưởng Nhóm</span>
-                </button>
-              </li>
+              {(user?.role === "TENANT_ADMIN" || user?.role === "SUPER_ADMIN") && (
+                <li>
+                  <button
+                    onClick={() => onNavigate && onNavigate("tenant-admin")}
+                    className="text-slate-500 hover:text-orange-600 transition flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <i className="fa-solid fa-angle-right text-[10px] text-slate-400"></i>
+                    <span>Khu vực Quản trị Trưởng Nhóm</span>
+                  </button>
+                </li>
+              )}
               <li>
                 <a
                   href={`https://zalo.me/${zaloSupport.replace(/\D/g, "")}`}

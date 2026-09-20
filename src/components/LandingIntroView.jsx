@@ -1,7 +1,7 @@
 import React from "react";
 import logoImg from "../assets/logo.png";
 
-export function LandingIntroView({ currentTenant, availableTenants, onSelectTenant, onNavigate }) {
+export function LandingIntroView({ currentTenant, availableTenants, onSelectTenant, onNavigate, user }) {
   const groupName = currentTenant?.name || "28AffiHub";
   const primaryColor = currentTenant?.primaryColor || "#f97316";
 
@@ -46,12 +46,23 @@ export function LandingIntroView({ currentTenant, availableTenants, onSelectTena
             </p>
 
             <div className="pt-2 flex flex-wrap gap-3 justify-center md:justify-start">
-              <button
-                onClick={() => onNavigate("tenant-admin")}
-                className="px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white text-xs font-black rounded-2xl shadow-md shadow-orange-500/25 transition transform hover:-translate-y-0.5 cursor-pointer flex items-center gap-2"
-              >
-                <i className="fa-solid fa-user-tie"></i> Đăng Nhập Trưởng Nhóm
-              </button>
+              {!user && (
+                <button
+                  onClick={() => onNavigate("tenant-admin")}
+                  className="px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white text-xs font-black rounded-2xl shadow-md shadow-orange-500/25 transition transform hover:-translate-y-0.5 cursor-pointer flex items-center gap-2"
+                >
+                  <i className="fa-solid fa-user-tie"></i> Đăng Nhập Trưởng Nhóm
+                </button>
+              )}
+
+              {user && (user.role === "TENANT_ADMIN" || user.role === "SUPER_ADMIN") && (
+                <button
+                  onClick={() => onNavigate("tenant-admin")}
+                  className="px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-black rounded-2xl shadow-md shadow-purple-500/25 transition transform hover:-translate-y-0.5 cursor-pointer flex items-center gap-2"
+                >
+                  <i className="fa-solid fa-shield-halved"></i> Vào Bảng Quản Trị Trưởng Nhóm
+                </button>
+              )}
 
               <button
                 onClick={() => onNavigate("bao-gia")}

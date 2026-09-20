@@ -244,6 +244,7 @@ export default function App() {
               availableTenants={availableTenants}
               onSelectTenant={setCurrentTenant}
               onNavigate={(view) => setCurrentView(view)}
+              user={user}
             />
           )}
 

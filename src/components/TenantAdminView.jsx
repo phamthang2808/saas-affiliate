@@ -19,7 +19,7 @@ const getStandardBotTemplates = (tenant) => {
   };
 };
 
-export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSelectTenant, user, onOpenLogin }) {
+export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSelectTenant, user, token, onOpenLogin }) {
   const activeTenant = currentTenant || (APP_CONFIG.isStandalone ? APP_CONFIG.tenant : null);
   const [activeTab, setActiveTab] = useState("overview"); // 'overview' | 'users' | 'payouts' | 'shopee' | 'tiktok' | 'import' | 'settings' | 'templates'
   const [stats, setStats] = useState(null);
@@ -55,8 +55,9 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
   const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [settingsSaveMessage, setSettingsSaveMessage] = useState("");
 
+  const authToken = token || localStorage.getItem("saasToken") || "";
   const authHeaders = {
-    Authorization: token ? `Bearer ${token}` : "",
+    Authorization: authToken ? `Bearer ${authToken}` : "",
   };
 
   const fetchTenantSettings = async () => {

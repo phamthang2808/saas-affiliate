@@ -250,7 +250,9 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
         if (data.qrBase64) {
           setRealQrBase64(data.qrBase64);
           setIsGeneratingQr(false);
-          setQrMessage("Mã QR Zalo Đăng Nhập Thật đã sẵn sàng! Hãy mở ứng dụng Zalo trên điện thoại quét mã.");
+          setQrMessage("🟢 Mã QR Zalo Đăng Nhập Thật đã sẵn sàng! Mở ứng dụng Zalo trên điện thoại quét ngay.");
+        } else if (data.status === "GENERATING_QR") {
+          setQrMessage("⏳ Đang nhận mã QR từ máy chủ Zalo (vui lòng chờ 2-3 giây)...");
         }
         if (data.status === "CONNECTED") {
           setShowQrModal(false);
@@ -270,7 +272,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
     }
     setIsGeneratingQr(true);
     setRealQrBase64(null);
-    setQrMessage("Đang kết nối Server Zalo để tạo mã QR thực...");
+    setQrMessage("⏳ Đang kết nối máy chủ Zalo để tạo mã QR thực...");
     try {
       const res = await fetch(`${apiRoot}/api/saas/admin/${activeTenant.slug}/bot/generate-qr`, {
         method: "POST",
@@ -278,12 +280,14 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
       });
       const data = await res.json();
       if (res.ok) {
-        setQrMessage(data.message || "Đã khởi tạo phiên QR Zalo. Đang chờ Zalo phát hành mã...");
+        setQrMessage("⏳ Đang tải mã QR từ Server Zalo...");
         fetchTenantBots();
-        // Polling QR image every 2 seconds
+        // Immediately fetch once
+        await fetchRealQrImage();
+        // Polling QR image every 1.5 seconds
         const pollTimer = setInterval(async () => {
           await fetchRealQrImage();
-        }, 2000);
+        }, 1500);
         setTimeout(() => clearInterval(pollTimer), 60000);
       } else {
         alert("❌ " + (data.message || "Lỗi tạo phiên QR"));

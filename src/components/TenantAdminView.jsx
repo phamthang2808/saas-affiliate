@@ -187,6 +187,25 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
     }
   };
 
+  const convertEnglishToVietnamesePlaceholders = (text) => {
+    if (!text) return text;
+    return String(text)
+      .replace(/@\{user\}/g, "@{ten_zalo}")
+      .replace(/\{user\}/g, "{ten_zalo}")
+      .replace(/\{affiliate_link\}/g, "{link_mua_sam}")
+      .replace(/\{link\}/g, "{link_tra_cuu}")
+      .replace(/\{split_rate\}/g, "{ty_le_hoan}")
+      .replace(/\{group_name\}/g, "{ten_nhom}")
+      .replace(/\{product_name\}/g, "{ten_san_pham}")
+      .replace(/\{price\}/g, "{gia_san_pham}")
+      .replace(/\{total_rate\}/g, "{tong_hoahong_phantram}")
+      .replace(/\{commission_rate\}/g, "{tong_hoahong_phantram}")
+      .replace(/\{commission_amount\}/g, "{tong_hoahong_tien}")
+      .replace(/\{balance\}/g, "{so_du_vi}")
+      .replace(/\{order_id\}/g, "{ma_don_hang}")
+      .replace(/\{command\}/g, "{lenh_sai}");
+  };
+
   const fetchTenantTemplates = async () => {
     const standard = getStandardBotTemplates(activeTenant);
     if (!activeTenant?.slug) {
@@ -200,8 +219,13 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
       });
       if (res.ok) {
         const data = await res.json();
-        const defs = data.defaultTemplates && Object.keys(data.defaultTemplates).length > 0 ? data.defaultTemplates : standard;
+        const rawDefs = data.defaultTemplates && Object.keys(data.defaultTemplates).length > 0 ? data.defaultTemplates : standard;
+        const defs = {};
+        Object.keys(rawDefs).forEach((k) => {
+          defs[k] = convertEnglishToVietnamesePlaceholders(rawDefs[k]);
+        });
         setDefaultTemplates(defs);
+
         let custom = {};
         if (data.customTemplatesJson) {
           try {
@@ -211,7 +235,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
         const merged = { ...defs };
         Object.keys(defs).forEach((k) => {
           if (custom[k] !== undefined && custom[k] !== null && String(custom[k]).trim() !== "") {
-            merged[k] = custom[k];
+            merged[k] = convertEnglishToVietnamesePlaceholders(custom[k]);
           }
         });
         setBotTemplates(merged);
@@ -958,41 +982,41 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
             ) : (
               /* ĐÃ KẾT NỐI: HIỂN THỊ THÔNG TIN BOT & NÚT NGẮT KẾT NỐI / ĐỔI ACC */
               tenantBots.map((bot) => (
-                <div key={bot.id} className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white rounded-3xl p-6 shadow-md border border-slate-700 space-y-4">
+                <div key={bot.id} className="bg-gradient-to-br from-emerald-50/90 via-teal-50/40 to-white text-slate-800 rounded-3xl p-6 shadow-2xs border border-emerald-200/90 space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
-                      <div className="w-14 h-14 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 text-emerald-400 font-black text-2xl flex items-center justify-center shrink-0">
+                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white font-black text-2xl flex items-center justify-center shrink-0 shadow-md shadow-emerald-500/20">
                         {bot.zaloName ? bot.zaloName.charAt(0).toUpperCase() : "B"}
                       </div>
                       <div className="space-y-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <h4 className="text-base font-black text-white">{bot.zaloName || bot.botName}</h4>
-                          <span className={`text-[10px] font-extrabold px-3 py-0.5 rounded-full border ${
+                          <h4 className="text-base font-black text-slate-900 font-display">{bot.zaloName || bot.botName}</h4>
+                          <span className={`text-[10px] font-black px-3 py-0.5 rounded-full border ${
                             bot.status === "ACTIVE"
-                              ? "bg-emerald-500/20 text-emerald-300 border-emerald-400/30"
-                              : "bg-amber-500/20 text-amber-300 border-amber-400/30 animate-pulse"
+                              ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                              : "bg-amber-100 text-amber-800 border-amber-300 animate-pulse"
                           }`}>
                             {bot.status === "ACTIVE" ? "🟢 ĐANG HOẠT ĐỘNG 24/7" : "⏳ CHỜ QUÉT QR"}
                           </span>
                         </div>
-                        <p className="text-xs text-slate-300 font-mono">
-                          Zalo ID (UID): <span className="font-bold text-amber-300">{bot.zaloId || "Đang cập nhật..."}</span>
+                        <p className="text-xs text-slate-500 font-medium">
+                          Zalo ID (UID): <span className="font-bold font-mono text-emerald-700">{bot.zaloId || "Đang cập nhật..."}</span>
                         </p>
                       </div>
                     </div>
 
                     <button
                       onClick={() => handleDisconnectBot(bot.id)}
-                      className="px-5 py-2.5 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-400/40 rounded-2xl font-black text-xs cursor-pointer transition flex items-center gap-2 self-start sm:self-auto shrink-0"
+                      className="px-5 py-2.5 bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 hover:border-rose-300 rounded-2xl font-black text-xs cursor-pointer transition flex items-center gap-2 self-start sm:self-auto shrink-0 shadow-2xs"
                     >
-                      <i className="fa-solid fa-power-off text-xs"></i>
+                      <i className="fa-solid fa-power-off text-rose-500"></i>
                       <span>Ngắt kết nối / Quét Acc Khác</span>
                     </button>
                   </div>
 
-                  <div className="pt-3 border-t border-slate-700/60 flex items-center justify-between text-[11px] text-slate-400 font-medium">
-                    <span>Tên phân loại Bot: <strong className="text-slate-200">{bot.botName || "Bot Zalo"}</strong></span>
-                    <span>Ngày kết nối: <strong className="text-slate-200">{bot.createdAt ? formatDate(bot.createdAt) : "Vừa xong"}</strong></span>
+                  <div className="pt-3 border-t border-emerald-100/80 flex items-center justify-between text-[11px] text-slate-500 font-medium flex-wrap gap-2">
+                    <span>Tên phân loại Bot: <strong className="text-slate-800">{bot.botName || `Bot Phụ Zalo (${groupDisplayName})`}</strong></span>
+                    <span>Ngày kết nối: <strong className="text-slate-800">{bot.createdAt ? formatDate(bot.createdAt) : "Vừa xong"}</strong></span>
                   </div>
                 </div>
               ))
@@ -1123,19 +1147,20 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
       {(activeTab === "shopee" || activeTab === "tiktok") && !isLoading && (
         <div className="space-y-6">
           {/* TIKTOK SYNC CONTROL BANNER */}
+          {/* BANNER TIKTOK SHOP - ĐỒNG BỘ MÀU SẮC GIAO DIỆN */}
           {activeTab === "tiktok" && (
-            <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 rounded-3xl p-5 sm:p-6 text-white shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4 border border-slate-700">
+            <div className="bg-gradient-to-r from-slate-900 via-neutral-900 to-zinc-900 rounded-3xl p-5 sm:p-6 text-white shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4 border border-slate-800">
               <div className="flex items-center gap-3.5">
-                <div className="w-11 h-11 rounded-2xl bg-white/10 flex items-center justify-center text-2xl text-white shrink-0 shadow-inner">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-rose-500 via-purple-600 to-cyan-400 flex items-center justify-center text-2xl text-white shrink-0 shadow-md shadow-purple-500/30">
                   <i className="fa-brands fa-tiktok"></i>
                 </div>
                 <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-extrabold text-sm tracking-wide text-white">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="font-extrabold text-sm tracking-wide text-white font-display">
                       Quản lý Đơn Hàng TikTok Shop — Kênh {groupDisplayName}
                     </h3>
-                    <span className="bg-orange-500/20 text-orange-300 text-[9px] font-black px-2.5 py-0.5 rounded-full border border-orange-400/30">
-                      TỰ ĐỘNG SYNC RIOHUB 60S
+                    <span className="bg-gradient-to-r from-rose-500/20 to-purple-500/20 text-rose-300 text-[9px] font-black px-2.5 py-0.5 rounded-full border border-rose-400/30">
+                      ⚡ TỰ ĐỘNG SYNC RIOHUB 60S
                     </span>
                   </div>
                   <p className="text-xs text-slate-300 font-medium mt-0.5">
@@ -1149,15 +1174,15 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                   type="button"
                   onClick={handleSyncTiktokManual}
                   disabled={isSyncingTiktok}
-                  className="px-5 py-2.5 bg-white hover:bg-slate-100 text-slate-900 rounded-2xl text-xs font-black transition flex items-center gap-2 shadow-md cursor-pointer disabled:opacity-50"
+                  className="px-5 py-2.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-2xl text-xs font-black transition flex items-center gap-2 shadow-md shadow-orange-500/20 cursor-pointer disabled:opacity-50"
                 >
                   {isSyncingTiktok ? (
                     <>
-                      <i className="fa-solid fa-spinner fa-spin text-orange-600"></i> Đang đồng bộ...
+                      <i className="fa-solid fa-spinner fa-spin"></i> Đang đồng bộ...
                     </>
                   ) : (
                     <>
-                      <i className="fa-solid fa-arrows-rotate text-orange-600"></i> Đồng bộ đơn TikTok ngay
+                      <i className="fa-solid fa-arrows-rotate"></i> Đồng bộ đơn TikTok ngay
                     </>
                   )}
                 </button>
@@ -1638,23 +1663,59 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
           )}
 
           {/* Placeholders Help Card */}
-          <div className="p-4 bg-purple-50/60 border border-purple-200 rounded-2xl space-y-2">
+          <div className="p-4 bg-purple-50/60 border border-purple-200 rounded-2xl space-y-3">
             <h4 className="text-xs font-black text-purple-900 flex items-center gap-1.5">
-              <i className="fa-solid fa-code text-purple-600"></i> BẢNG TỪ KHÓA ĐỘNG (PLACEHOLDER):
+              <i className="fa-solid fa-code text-purple-600"></i> BẢNG TỪ KHÓA ĐỘNG (PLACEHOLDER & VÍ DỤ):
             </h4>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
-              <div className="p-2 bg-white rounded-xl border border-purple-100"><code className="font-bold text-purple-700">@{`{ten_zalo}`}</code>: Tag tên Zalo thành viên</div>
-              <div className="p-2 bg-white rounded-xl border border-purple-100"><code className="font-bold text-purple-700">{`{link_mua_sam}`}</code>: Link mua sắm hoàn tiền</div>
-              <div className="p-2 bg-white rounded-xl border border-purple-100"><code className="font-bold text-purple-700">{`{link_tra_cuu}`}</code>: Link tra cứu cá nhân</div>
-              <div className="p-2 bg-white rounded-xl border border-purple-100"><code className="font-bold text-purple-700">{`{ty_le_hoan}`}</code>: Tỷ lệ hoàn ({customerSplitRate}%)</div>
-              <div className="p-2 bg-white rounded-xl border border-purple-100"><code className="font-bold text-purple-700">{`{ten_nhom}`}</code>: Tên nhóm / Kênh</div>
-              <div className="p-2 bg-white rounded-xl border border-purple-100"><code className="font-bold text-purple-700">{`{ten_san_pham}`}</code>: Tên sản phẩm Shopee</div>
-              <div className="p-2 bg-white rounded-xl border border-purple-100"><code className="font-bold text-purple-700">{`{gia_san_pham}`}</code>: Giá sản phẩm (đ)</div>
-              <div className="p-2 bg-white rounded-xl border border-purple-100"><code className="font-bold text-purple-700">{`{tong_hoahong_phantram}`}</code>: % hoa hồng tích lũy</div>
-              <div className="p-2 bg-white rounded-xl border border-purple-100"><code className="font-bold text-purple-700">{`{tong_hoahong_tien}`}</code>: Tiền hoa hồng (đ)</div>
-              <div className="p-2 bg-white rounded-xl border border-purple-100"><code className="font-bold text-purple-700">{`{so_du_vi}`}</code>: Số dư ví hiện tại</div>
-              <div className="p-2 bg-white rounded-xl border border-purple-100"><code className="font-bold text-purple-700">{`{ma_don_hang}`}</code>: Mã đơn hàng</div>
-              <div className="p-2 bg-white rounded-xl border border-purple-100"><code className="font-bold text-purple-700">{`{lenh_sai}`}</code>: Lệnh gõ sai</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-[11px]">
+              <div className="p-2.5 bg-white rounded-xl border border-purple-100 flex flex-col justify-between shadow-2xs">
+                <div><code className="font-bold text-purple-700">@{`{ten_zalo}`}</code>: Tag tên Zalo thành viên</div>
+                <div className="text-[10px] text-purple-900/70 font-semibold bg-purple-50 px-2 py-1 rounded-lg mt-1.5">👉 VD khi Bot gửi: <span className="font-bold text-purple-950">@Bảo Đỗ</span></div>
+              </div>
+              <div className="p-2.5 bg-white rounded-xl border border-purple-100 flex flex-col justify-between shadow-2xs">
+                <div><code className="font-bold text-purple-700">{`{link_mua_sam}`}</code>: Link mua sắm hoàn tiền</div>
+                <div className="text-[10px] text-purple-900/70 font-semibold bg-purple-50 px-2 py-1 rounded-lg mt-1.5 truncate">👉 VD: <span className="font-bold text-purple-950">https://s.shopee.vn/...</span></div>
+              </div>
+              <div className="p-2.5 bg-white rounded-xl border border-purple-100 flex flex-col justify-between shadow-2xs">
+                <div><code className="font-bold text-purple-700">{`{link_tra_cuu}`}</code>: Link tra cứu cá nhân</div>
+                <div className="text-[10px] text-purple-900/70 font-semibold bg-purple-50 px-2 py-1 rounded-lg mt-1.5 truncate">👉 VD: <span className="font-bold text-purple-950">https://28affihub.store/...</span></div>
+              </div>
+              <div className="p-2.5 bg-white rounded-xl border border-purple-100 flex flex-col justify-between shadow-2xs">
+                <div><code className="font-bold text-purple-700">{`{ty_le_hoan}`}</code>: Tỷ lệ hoàn tiền Kênh</div>
+                <div className="text-[10px] text-purple-900/70 font-semibold bg-purple-50 px-2 py-1 rounded-lg mt-1.5">👉 VD: <span className="font-bold text-purple-950">{customerSplitRate}%</span></div>
+              </div>
+              <div className="p-2.5 bg-white rounded-xl border border-purple-100 flex flex-col justify-between shadow-2xs">
+                <div><code className="font-bold text-purple-700">{`{ten_nhom}`}</code>: Tên Nhóm / Kênh</div>
+                <div className="text-[10px] text-purple-900/70 font-semibold bg-purple-50 px-2 py-1 rounded-lg mt-1.5 truncate">👉 VD: <span className="font-bold text-purple-950">{groupDisplayName}</span></div>
+              </div>
+              <div className="p-2.5 bg-white rounded-xl border border-purple-100 flex flex-col justify-between shadow-2xs">
+                <div><code className="font-bold text-purple-700">{`{ten_san_pham}`}</code>: Tên sản phẩm Shopee</div>
+                <div className="text-[10px] text-purple-900/70 font-semibold bg-purple-50 px-2 py-1 rounded-lg mt-1.5 truncate">👉 VD: <span className="font-bold text-purple-950">Giày Bóng Chuyền Hỏa Trâu</span></div>
+              </div>
+              <div className="p-2.5 bg-white rounded-xl border border-purple-100 flex flex-col justify-between shadow-2xs">
+                <div><code className="font-bold text-purple-700">{`{gia_san_pham}`}</code>: Giá sản phẩm (đ)</div>
+                <div className="text-[10px] text-purple-900/70 font-semibold bg-purple-50 px-2 py-1 rounded-lg mt-1.5">👉 VD: <span className="font-bold text-purple-950">522.500đ</span></div>
+              </div>
+              <div className="p-2.5 bg-white rounded-xl border border-purple-100 flex flex-col justify-between shadow-2xs">
+                <div><code className="font-bold text-purple-700">{`{tong_hoahong_phantram}`}</code>: % Hoa hồng tích lũy</div>
+                <div className="text-[10px] text-purple-900/70 font-semibold bg-purple-50 px-2 py-1 rounded-lg mt-1.5">👉 VD: <span className="font-bold text-purple-950">7%</span></div>
+              </div>
+              <div className="p-2.5 bg-white rounded-xl border border-purple-100 flex flex-col justify-between shadow-2xs">
+                <div><code className="font-bold text-purple-700">{`{tong_hoahong_tien}`}</code>: Tiền hoa hồng (đ)</div>
+                <div className="text-[10px] text-purple-900/70 font-semibold bg-purple-50 px-2 py-1 rounded-lg mt-1.5">👉 VD: <span className="font-bold text-purple-950">36.575đ</span></div>
+              </div>
+              <div className="p-2.5 bg-white rounded-xl border border-purple-100 flex flex-col justify-between shadow-2xs">
+                <div><code className="font-bold text-purple-700">{`{so_du_vi}`}</code>: Số dư ví hiện tại</div>
+                <div className="text-[10px] text-purple-900/70 font-semibold bg-purple-50 px-2 py-1 rounded-lg mt-1.5">👉 VD: <span className="font-bold text-purple-950">150.000đ</span></div>
+              </div>
+              <div className="p-2.5 bg-white rounded-xl border border-purple-100 flex flex-col justify-between shadow-2xs">
+                <div><code className="font-bold text-purple-700">{`{ma_don_hang}`}</code>: Mã đơn hàng</div>
+                <div className="text-[10px] text-purple-900/70 font-semibold bg-purple-50 px-2 py-1 rounded-lg mt-1.5">👉 VD: <span className="font-bold text-purple-950">28378388192</span></div>
+              </div>
+              <div className="p-2.5 bg-white rounded-xl border border-purple-100 flex flex-col justify-between shadow-2xs">
+                <div><code className="font-bold text-purple-700">{`{lenh_sai}`}</code>: Lệnh gõ không đúng</div>
+                <div className="text-[10px] text-purple-900/70 font-semibold bg-purple-50 px-2 py-1 rounded-lg mt-1.5">👉 VD: <span className="font-bold text-purple-950">/donhang2</span></div>
+              </div>
             </div>
           </div>
 

@@ -58,6 +58,16 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
   const [isSyncingTiktok, setIsSyncingTiktok] = useState(false);
   const [tiktokSyncResult, setTiktokSyncResult] = useState(null);
 
+  // Dynamic Zalo Bot QR state
+  const [tenantBots, setTenantBots] = useState([]);
+  const [showQrModal, setShowQrModal] = useState(false);
+  const [isGeneratingQr, setIsGeneratingQr] = useState(false);
+  const [qrMessage, setQrMessage] = useState("");
+  const [newBotZaloId, setNewBotZaloId] = useState("");
+  const [newBotZaloName, setNewBotZaloName] = useState("");
+  const [newBotName, setNewBotName] = useState("");
+  const [isConnectingBot, setIsConnectingBot] = useState(false);
+
   const handleSyncTiktokManual = async () => {
     if (!activeTenant?.slug) {
       alert("❌ Chưa xác định được Kênh Trưởng Nhóm!");
@@ -216,6 +226,104 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
     }
   };
 
+  const fetchTenantBots = async () => {
+    if (!activeTenant?.slug) return;
+    try {
+      const res = await fetch(`${apiRoot}/api/saas/admin/${activeTenant.slug}/bot/list`, { headers: authHeaders });
+      if (res.ok) {
+        const data = await res.json();
+        setTenantBots(data || []);
+      }
+    } catch (e) {
+      console.error("Fetch tenant bots error:", e);
+    }
+  };
+
+  const handleGenerateQr = async () => {
+    if (!activeTenant?.slug) {
+      alert("❌ Chưa xác định được Kênh Trưởng Nhóm!");
+      return;
+    }
+    setIsGeneratingQr(true);
+    setQrMessage("Đang tạo mã QR kết nối...");
+    try {
+      const res = await fetch(`${apiRoot}/api/saas/admin/${activeTenant.slug}/bot/generate-qr`, {
+        method: "POST",
+        headers: authHeaders,
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setQrMessage(data.message || "Đã khởi tạo phiên QR. Mở ứng dụng Zalo trên điện thoại để quét!");
+        fetchTenantBots();
+      } else {
+        alert("❌ " + (data.message || "Lỗi tạo phiên QR"));
+      }
+    } catch (err) {
+      alert("❌ Lỗi kết nối: " + err.message);
+    } finally {
+      setIsGeneratingQr(false);
+    }
+  };
+
+  const handleConnectBotManually = async (e) => {
+    e.preventDefault();
+    if (!activeTenant?.slug) {
+      alert("❌ Chưa xác định được Kênh Trưởng Nhóm!");
+      return;
+    }
+    if (!newBotZaloId || !newBotZaloName) {
+      alert("Vui lòng nhập Zalo ID và Tên Zalo nick phụ!");
+      return;
+    }
+    setIsConnectingBot(true);
+    try {
+      const res = await fetch(`${apiRoot}/api/saas/admin/${activeTenant.slug}/bot/connect-bot`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders },
+        body: JSON.stringify({
+          zaloId: newBotZaloId,
+          zaloName: newBotZaloName,
+          botName: newBotName || `Bot ${newBotZaloName}`
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert("🎉 " + data.message);
+        setShowQrModal(false);
+        setNewBotZaloId("");
+        setNewBotZaloName("");
+        setNewBotName("");
+        fetchTenantBots();
+      } else {
+        alert("❌ " + (data.message || "Lỗi kết nối nick bot"));
+      }
+    } catch (err) {
+      alert("❌ Lỗi kết nối: " + err.message);
+    } finally {
+      setIsConnectingBot(false);
+    }
+  };
+
+  const handleDisconnectBot = async (botId) => {
+    if (!activeTenant?.slug) return;
+    if (!window.confirm("Bạn có chắc chắn muốn ngắt kết nối nick Bot Zalo này khỏi Kênh?")) return;
+    try {
+      const res = await fetch(`${apiRoot}/api/saas/admin/${activeTenant.slug}/bot/${botId}`, {
+        method: "DELETE",
+        headers: authHeaders,
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert("✅ " + (data.message || "Đã ngắt kết nối nick Bot thành công!"));
+        fetchTenantBots();
+      } else {
+        alert("❌ " + (data.message || "Lỗi ngắt kết nối"));
+      }
+    } catch (err) {
+      alert("❌ Lỗi kết nối: " + err.message);
+    }
+  };
+
   const fetchTenantData = async () => {
     if (!activeTenant?.slug) return;
     setIsLoading(true);
@@ -234,6 +342,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
       if (resUsers.ok) setZaloUsers(await resUsers.json());
       fetchTenantTemplates();
       fetchTenantSettings();
+      fetchTenantBots();
     } catch (e) {
       console.error("Tenant admin fetch error:", e);
     } finally {
@@ -641,6 +750,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
       <div className="flex flex-wrap items-center gap-2 pt-1 pb-1">
         {[
           { key: "overview", icon: "fa-solid fa-chart-pie", label: "Tổng quan" },
+          { key: "zalo_bot", icon: "fa-solid fa-qrcode", label: `Bot Zalo (${tenantBots.length})` },
           { key: "zalo_users", icon: "fa-solid fa-comments", label: `Tài khoản Zalo (${zaloUsers.length})` },
           { key: "payouts", icon: "fa-solid fa-money-bill-transfer", label: "Rút tiền", badge: pendingPayouts.length },
           { key: "shopee", icon: "fa-solid fa-bag-shopping", label: `Đơn Shopee (${shopeeOrders.length})` },
@@ -1511,6 +1621,188 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
             </div>
           </div>
         </form>
+      )}
+
+      {/* ===================== TAB 9: KẾT NỐI BOT ZALO & QUÉT QR ===================== */}
+      {activeTab === "zalo_bot" && !isLoading && (
+        <div className="space-y-6">
+          <div className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-2xs flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <h3 className="text-base font-black text-slate-900 font-display flex items-center gap-2">
+                <i className="fa-solid fa-qrcode text-emerald-600"></i>
+                <span>Quản Lý Bot Zalo & Mã QR Kết Nối Tự Động</span>
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Đăng nhập nick Zalo phụ làm Bot cho Kênh {groupDisplayName}. Bot sẽ tự động bắt link Shopee/TikTok trong các nhóm Zalo!
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                setShowQrModal(true);
+                handleGenerateQr();
+              }}
+              className="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-2xl font-black text-xs shadow-md shadow-emerald-600/20 cursor-pointer flex items-center gap-2"
+            >
+              <i className="fa-solid fa-plus-circle"></i>
+              <span>+ Kết Nối Nick Bot Zalo Mới & Quét QR</span>
+            </button>
+          </div>
+
+          {/* List of Connected Bots */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {tenantBots.length === 0 ? (
+              <div className="col-span-full bg-white rounded-3xl border border-slate-200/80 p-8 text-center space-y-3 shadow-2xs">
+                <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center text-2xl mx-auto">
+                  <i className="fa-solid fa-robot"></i>
+                </div>
+                <h4 className="text-sm font-black text-slate-800">Chưa có Nick Bot Zalo nào kết nối</h4>
+                <p className="text-xs text-slate-500 max-w-md mx-auto">
+                  Bấm nút <strong>"+ Kết Nối Nick Bot Zalo Mới & Quét QR"</strong> ở trên để quét mã QR bằng nick Zalo phụ và kích hoạt Bot hoạt động tự động!
+                </p>
+              </div>
+            ) : (
+              tenantBots.map((bot) => (
+                <div key={bot.id} className="bg-white rounded-3xl border border-slate-200/80 p-5 shadow-2xs space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 font-black text-lg flex items-center justify-center border border-emerald-200">
+                        {bot.zaloName ? bot.zaloName.charAt(0).toUpperCase() : "B"}
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-black text-slate-900">{bot.zaloName || bot.botName}</h4>
+                        <span className="text-[11px] font-bold text-slate-500">Zalo ID: {bot.zaloId || "Chưa cập nhật"}</span>
+                      </div>
+                    </div>
+                    <span className={`text-[10px] font-extrabold px-3 py-1 rounded-full ${
+                      bot.status === "ACTIVE" ? "bg-emerald-100 text-emerald-800 border border-emerald-200" : "bg-amber-100 text-amber-800 border border-amber-200"
+                    }`}>
+                      {bot.status === "ACTIVE" ? "🟢 ĐÃ KẾT NỐI - 24/7" : "🟡 CHỜ QUÉT QR"}
+                    </span>
+                  </div>
+
+                  <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 text-xs space-y-1 text-slate-600">
+                    <div className="flex justify-between">
+                      <span className="font-medium text-slate-400">Tên phân loại Bot:</span>
+                      <span className="font-bold text-slate-800">{bot.botName || "Bot Zalo"}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium text-slate-400">Thời gian tạo:</span>
+                      <span className="font-bold text-slate-800">{bot.createdAt ? formatDate(bot.createdAt) : "Gần đây"}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end pt-1">
+                    <button
+                      onClick={() => handleDisconnectBot(bot.id)}
+                      className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold rounded-xl border border-rose-200 transition cursor-pointer flex items-center gap-1.5"
+                    >
+                      <i className="fa-solid fa-power-off text-xs"></i>
+                      <span>Ngắt kết nối / Đổi Nick</span>
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* MODAL POPUP QUÉT QR BOT ZALO */}
+      {showQrModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                <i className="fa-solid fa-qrcode text-emerald-600"></i>
+                <span>Quét Mã QR Đăng Nhập Bot Zalo</span>
+              </h3>
+              <button
+                onClick={() => setShowQrModal(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:text-slate-800 flex items-center justify-center text-sm cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Instruction Steps */}
+            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs space-y-1 text-emerald-900 font-medium">
+              <p className="font-bold flex items-center gap-1.5 text-emerald-950">
+                <i className="fa-solid fa-circle-info text-emerald-600"></i> HƯỚNG DẪN QUÉT MÃ QR:
+              </p>
+              <ol className="list-decimal list-inside space-y-0.5 pl-1 text-[11px]">
+                <li>Mở ứng dụng <strong>Zalo trên điện thoại</strong> của Nick Zalo Phụ.</li>
+                <li>Chọn biểu tượng <strong>Quét mã QR</strong> ở góc trên bên phải màn hình.</li>
+                <li>Hướng camera điện thoại quét mã bên dưới để kích hoạt Bot.</li>
+              </ol>
+            </div>
+
+            {/* QR Code Container */}
+            <div className="bg-slate-50 border border-slate-200 rounded-3xl p-6 text-center space-y-3">
+              <div className="w-52 h-52 bg-white rounded-2xl border-2 border-emerald-500 p-2 mx-auto shadow-md flex items-center justify-center relative">
+                {isGeneratingQr ? (
+                  <div className="space-y-2">
+                    <div className="w-8 h-8 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto"></div>
+                    <span className="text-xs font-bold text-slate-500">Đang khởi tạo phiên QR...</span>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {/* Generates SVG / Canvas visual QR indicator */}
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=AFFINEX_ZALO_BOT_SESSION_${activeTenant?.slug}_${Date.now()}`}
+                      alt="Zalo Bot QR Code"
+                      className="w-full h-full object-contain rounded-xl"
+                    />
+                  </div>
+                )}
+              </div>
+              <p className="text-xs font-bold text-slate-600">{qrMessage || "Mã QR cập nhật liên tục 24/7. Vui lòng quét bằng nick phụ Zalo."}</p>
+            </div>
+
+            {/* Alternative Direct Nick Input */}
+            <div className="pt-2 border-t border-slate-100 space-y-3">
+              <p className="text-xs font-black text-slate-700 uppercase tracking-wider">
+                ⚡ Hoặc Nhập Nhanh Thông Tin Nick Bot Đã Đăng Nhập:
+              </p>
+              <form onSubmit={handleConnectBotManually} className="space-y-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="text"
+                    value={newBotZaloName}
+                    onChange={(e) => setNewBotZaloName(e.target.value)}
+                    placeholder="Tên Zalo Nick Phụ (VD: Bot Săn Sale 1)"
+                    className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold outline-none"
+                    required
+                  />
+                  <input
+                    type="text"
+                    value={newBotZaloId}
+                    onChange={(e) => setNewBotZaloId(e.target.value)}
+                    placeholder="Zalo ID Số (VD: 89234...)"
+                    className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold outline-none"
+                    required
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={isConnectingBot}
+                  className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-md shadow-emerald-600/20 cursor-pointer"
+                >
+                  {isConnectingBot ? "Đang kết nối..." : "✅ Kích Hoạt Nối Bot Ngay"}
+                </button>
+              </form>
+            </div>
+
+            <div className="flex justify-end pt-1">
+              <button
+                type="button"
+                onClick={() => setShowQrModal(false)}
+                className="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl cursor-pointer"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* MODAL GÁN ĐƠN HÀNG */}

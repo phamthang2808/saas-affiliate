@@ -247,17 +247,20 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
       const res = await fetch(`${apiRoot}/api/saas/admin/${activeTenant.slug}/bot/qr-image`, { headers: authHeaders });
       if (res.ok) {
         const data = await res.json();
+        if (data.status === "CONNECTED" || data.status === "ACTIVE") {
+          setShowQrModal(false);
+          setIsGeneratingQr(false);
+          setRealQrBase64(null);
+          alert("🎉 Đã quét mã QR và đăng nhập Bot Zalo thành công!");
+          fetchTenantBots();
+          return;
+        }
         if (data.qrBase64) {
           setRealQrBase64(data.qrBase64);
           setIsGeneratingQr(false);
           setQrMessage("🟢 Mã QR Zalo Đăng Nhập Thật đã sẵn sàng! Mở ứng dụng Zalo trên điện thoại quét ngay.");
         } else if (data.status === "GENERATING_QR") {
           setQrMessage("⏳ Đang nhận mã QR từ máy chủ Zalo (vui lòng chờ 2-3 giây)...");
-        }
-        if (data.status === "CONNECTED") {
-          setShowQrModal(false);
-          alert("🎉 Đã quét QR và đăng nhập Bot Zalo thành công!");
-          fetchTenantBots();
         }
       }
     } catch (e) {
@@ -1885,39 +1888,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
               <p className="text-xs font-bold text-slate-600">{qrMessage || "Mã QR cập nhật từ Zalo Server. Mở App Zalo trên điện thoại để quét mã."}</p>
             </div>
 
-            {/* Alternative Direct Nick Input */}
-            <div className="pt-2 border-t border-slate-100 space-y-3">
-              <p className="text-xs font-black text-slate-700 uppercase tracking-wider">
-                ⚡ Hoặc Nhập Nhanh Thông Tin Nick Bot Đã Đăng Nhập:
-              </p>
-              <form onSubmit={handleConnectBotManually} className="space-y-3">
-                <div className="grid grid-cols-2 gap-2">
-                  <input
-                    type="text"
-                    value={newBotZaloName}
-                    onChange={(e) => setNewBotZaloName(e.target.value)}
-                    placeholder="Tên Zalo Nick Phụ (VD: Bot Săn Sale 1)"
-                    className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold outline-none"
-                    required
-                  />
-                  <input
-                    type="text"
-                    value={newBotZaloId}
-                    onChange={(e) => setNewBotZaloId(e.target.value)}
-                    placeholder="Zalo ID Số (VD: 89234...)"
-                    className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold outline-none"
-                    required
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={isConnectingBot}
-                  className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-md shadow-emerald-600/20 cursor-pointer"
-                >
-                  {isConnectingBot ? "Đang kết nối..." : "✅ Kích Hoạt Nối Bot Ngay"}
-                </button>
-              </form>
-            </div>
+
 
             <div className="flex justify-end pt-1">
               <button

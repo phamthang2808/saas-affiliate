@@ -7,15 +7,15 @@ const getStandardBotTemplates = (tenant) => {
   const groupName = tenant?.name || "Affiliate Cashback";
   const splitRate = tenant?.customerSplitRate || 80;
   return {
-    template_link: `@{user} 🛒 Link mua sắm hoàn tiền của bạn đã sẵn sàng:\n🔗 {affiliate_link}\n\n📌 Tỷ lệ hoàn: ${splitRate}% hoa hồng\n💡 Hãy bấm vào link trên để mở App Shopee/TikTok và hoàn tất đặt hàng để được ghi nhận đối soát nhé! 🥰`,
-    template_lookup_has_orders: `@{user} 🔍 TRA CỨU ĐƠN HÀNG & VÍ HOÀN TIỀN\n👉 Link tra cứu cá nhân (bấm là xem ngay & rút tiền):\n🌐 {link}\n\n💡 TÍNH NĂNG TRANG TRA CỨU:\n📦 Xem chi tiết toàn bộ đơn đã mua & hoa hồng từng đơn.\n💳 Quản lý ví tiền: Đang chờ / Đã hoàn thành / Khả dụng.\n💸 Rút tiền hoa hồng về STK Ngân hàng 1 chạm nhanh chóng!`,
-    template_lookup_no_orders: `@{user} 🔍 BẠN CHƯA CÓ ĐƠN HÀNG NÀO\n👉 Link tra cứu cá nhân: {link}\n\n💡 Hiện bạn chưa có đơn nào phát sinh tại nhóm ${groupName}.\n🛒 Hãy gửi bất kỳ link sản phẩm Shopee/TikTok vào nhóm để bot tạo link hoàn ${splitRate}% cho đơn đầu tiên nhé! 🥰`,
-    template_welcome: `Hi, chào @{user}\n🎉 Chào mừng bạn đã tham gia nhóm ${groupName}!\n📌 Bạn vui lòng đọc kỹ BÀI GHIM của nhóm hoặc gõ lệnh /help để xem hướng dẫn cách gửi link mua sắm và nhận hoàn ${splitRate}% hoa hồng nhé! 🥰`,
-    template_help: `@{user} 🤖 CÁC LỆNH BOT HỖ TRỢ SĂN SALE & HOÀN TIỀN:\n\n💳 /vitien hoặc #vitien — Xem ví tiền & hoa hồng hiện có\n🛒 /donhang hoặc #donhang — Xem danh sách các đơn đã đặt\n🔍 /tracuu hoặc #tracuu — Link tra cứu chi tiết bảo mật cá nhân\n🏦 /stk_[NGÂN_HÀNG]_[STK] — Lưu STK nhận tiền (VD: /stk_MB_0888728256)\n💸 /ruttien hoặc /rut — Yêu cầu rút toàn bộ hoa hồng khả dụng\n\n💡 Mẹo: Bạn chỉ cần gửi LINK sản phẩm Shopee/TikTok vào nhóm, bot sẽ tự động tạo link hoàn tiền ngay! 🥰`,
-    template_order_not_found: `@{user} ⚠️ Không tìm thấy thông tin cho mã đơn: {order_id}.\n📌 Lưu ý: Đơn hàng mới đặt thường được cập nhật vào kỳ đối soát sau 1 ngày. Vui lòng kiểm tra lại mã đơn hoặc nhắn /tracuu để xem toàn bộ đơn của bạn nhé!`,
-    template_invalid_command: `@{user} ❓ Lệnh "{command}" không hợp lệ.\n👉 Bạn có thể gõ /help để xem danh sách các lệnh được hỗ trợ nhé!`,
-    template_invalid_bank_syntax: `@{user} ⚠️ Sai cú pháp lưu STK!\n👉 Cú pháp đúng: /stk_[TÊN_NGÂN_HÀNG]_[SỐ_TÀI_KHOẢN]\n📌 Ví dụ: /stk_MB_0888728256 (Tên viết tắt các ngân hàng: MB, VCB, TCB, ACB, VPB, TPB, CTG, BIDV...)`,
-    template_withdraw_zero: `@{user} ⚠️ Số dư khả dụng của bạn hiện là {balance}đ (chưa đủ hạn mức rút tối thiểu 10.000đ).\n💡 Bạn hãy gõ /tracuu để kiểm tra chi tiết trạng thái ví nhé!`
+    template_link: `@{ten_zalo} mua qua link này để được hoàn hoa hồng nha 🥰\n🛍️ 1. {ten_san_pham}\n🧧 Hoa hồng dự kiến {tong_hoahong_phantram}% (~{tong_hoahong_tien})\n🔗 {link_mua_sam}\n📌 Lưu ý:\n1. Trước khi mua nên xóa giỏ hàng cũ\n2. Tránh xem Live hoặc Video Shopee trước và trong lúc mua\n3. Nên bấm 2-3 lần vào link trước khi mua\n4. Gõ /donhang hoặc /tracuu để kiểm tra đơn vào 9H hôm sau`,
+    template_lookup_has_orders: `@{ten_zalo} 🔍 TRA CỨU ĐƠN HÀNG & VÍ HOÀN TIỀN\n👉 Link tra cứu cá nhân (bấm là xem ngay & rút tiền):\n🌐 {link_tra_cuu}\n\n💡 TÍNH NĂNG TRANG TRA CỨU:\n📦 Xem chi tiết toàn bộ đơn đã mua & hoa hồng từng đơn.\n💳 Quản lý ví tiền: Đang chờ / Đã hoàn thành / Khả dụng.\n💸 Rút tiền hoa hồng về STK Ngân hàng 1 chạm nhanh chóng!`,
+    template_lookup_no_orders: `@{ten_zalo} 🔍 BẠN CHƯA CÓ ĐƠN HÀNG NÀO\n👉 Link tra cứu cá nhân: {link_tra_cuu}\n\n💡 Hiện bạn chưa có đơn nào phát sinh tại nhóm {ten_nhom}.\n🛒 Hãy gửi bất kỳ link sản phẩm Shopee/TikTok vào nhóm để bot tạo link hoàn {ty_le_hoan}% cho đơn đầu tiên nhé! 🥰`,
+    template_welcome: `Hi, chào @{ten_zalo}\n🎉 Chào mừng bạn đã tham gia nhóm {ten_nhom}!\n📌 Bạn vui lòng đọc kỹ BÀI GHIM của nhóm hoặc gõ lệnh /help để xem hướng dẫn cách gửi link mua sắm và nhận hoàn {ty_le_hoan}% hoa hồng nhé! 🥰`,
+    template_help: `@{ten_zalo} 🤖 CÁC LỆNH BOT HỖ TRỢ SĂN SALE & HOÀN TIỀN:\n\n💳 /vitien hoặc #vitien — Xem ví tiền & hoa hồng hiện có\n🛒 /donhang hoặc #donhang — Xem danh sách các đơn đã đặt\n🔍 /tracuu hoặc #tracuu — Link tra cứu chi tiết bảo mật cá nhân\n🏦 /stk_[NGÂN_HÀNG]_[STK] — Lưu STK nhận tiền (VD: /stk_MB_0888728256)\n💸 /ruttien hoặc /rut — Yêu cầu rút toàn bộ hoa hồng khả dụng\n\n💡 Mẹo: Bạn chỉ cần gửi LINK sản phẩm Shopee/TikTok vào nhóm, bot sẽ tự động tạo link hoàn tiền ngay! 🥰`,
+    template_order_not_found: `@{ten_zalo} ⚠️ Không tìm thấy thông tin cho mã đơn: {ma_don_hang}.\n📌 Lưu ý: Đơn hàng mới đặt thường được cập nhật vào kỳ đối soát sau 1 ngày. Vui lòng kiểm tra lại mã đơn hoặc nhắn /tracuu để xem toàn bộ đơn của bạn nhé!`,
+    template_invalid_command: `@{ten_zalo} ❓ Lệnh "{lenh_sai}" không hợp lệ.\n👉 Bạn có thể gõ /help để xem danh sách các lệnh được hỗ trợ nhé!`,
+    template_invalid_bank_syntax: `@{ten_zalo} ⚠️ Sai cú pháp lưu STK!\n👉 Cú pháp đúng: /stk_[TÊN_NGÂN_HÀNG]_[SỐ_TÀI_KHOẢN]\n📌 Ví dụ: /stk_MB_0888728256 (Tên viết tắt các ngân hàng: MB, VCB, TCB, ACB, VPB, TPB, CTG, BIDV...)`,
+    template_withdraw_zero: `@{ten_zalo} ⚠️ Số dư khả dụng của bạn hiện là {so_du_vi}đ (chưa đủ hạn mức rút tối thiểu 10.000đ).\n💡 Bạn hãy gõ /tracuu để kiểm tra chi tiết trạng thái ví nhé!`
   };
 };
 
@@ -1643,14 +1643,18 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
               <i className="fa-solid fa-code text-purple-600"></i> BẢNG TỪ KHÓA ĐỘNG (PLACEHOLDER):
             </h4>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
-              <div className="p-2 bg-white rounded-xl border border-purple-100"><code className="font-bold text-purple-700">@{`{user}`}</code>: Tag tên Zalo</div>
-              <div className="p-2 bg-white rounded-xl border border-purple-100"><code className="font-bold text-purple-700">{`{link}`}</code>: Link tra cứu</div>
-              <div className="p-2 bg-white rounded-xl border border-purple-100"><code className="font-bold text-purple-700">{`{split_rate}`}</code>: Tỷ lệ hoàn ({customerSplitRate}%)</div>
-              <div className="p-2 bg-white rounded-xl border border-purple-100"><code className="font-bold text-purple-700">{`{group_name}`}</code>: Tên nhóm</div>
-              <div className="p-2 bg-white rounded-xl border border-purple-100"><code className="font-bold text-purple-700">{`{affiliate_link}`}</code>: Link mua sắm</div>
-              <div className="p-2 bg-white rounded-xl border border-purple-100"><code className="font-bold text-purple-700">{`{order_id}`}</code>: Mã đơn</div>
-              <div className="p-2 bg-white rounded-xl border border-purple-100"><code className="font-bold text-purple-700">{`{balance}`}</code>: Số dư ví</div>
-              <div className="p-2 bg-white rounded-xl border border-purple-100"><code className="font-bold text-purple-700">{`{command}`}</code>: Lệnh gõ sai</div>
+              <div className="p-2 bg-white rounded-xl border border-purple-100"><code className="font-bold text-purple-700">@{`{ten_zalo}`}</code>: Tag tên Zalo thành viên</div>
+              <div className="p-2 bg-white rounded-xl border border-purple-100"><code className="font-bold text-purple-700">{`{link_mua_sam}`}</code>: Link mua sắm hoàn tiền</div>
+              <div className="p-2 bg-white rounded-xl border border-purple-100"><code className="font-bold text-purple-700">{`{link_tra_cuu}`}</code>: Link tra cứu cá nhân</div>
+              <div className="p-2 bg-white rounded-xl border border-purple-100"><code className="font-bold text-purple-700">{`{ty_le_hoan}`}</code>: Tỷ lệ hoàn ({customerSplitRate}%)</div>
+              <div className="p-2 bg-white rounded-xl border border-purple-100"><code className="font-bold text-purple-700">{`{ten_nhom}`}</code>: Tên nhóm / Kênh</div>
+              <div className="p-2 bg-white rounded-xl border border-purple-100"><code className="font-bold text-purple-700">{`{ten_san_pham}`}</code>: Tên sản phẩm Shopee</div>
+              <div className="p-2 bg-white rounded-xl border border-purple-100"><code className="font-bold text-purple-700">{`{gia_san_pham}`}</code>: Giá sản phẩm (đ)</div>
+              <div className="p-2 bg-white rounded-xl border border-purple-100"><code className="font-bold text-purple-700">{`{tong_hoahong_phantram}`}</code>: % hoa hồng tích lũy</div>
+              <div className="p-2 bg-white rounded-xl border border-purple-100"><code className="font-bold text-purple-700">{`{tong_hoahong_tien}`}</code>: Tiền hoa hồng (đ)</div>
+              <div className="p-2 bg-white rounded-xl border border-purple-100"><code className="font-bold text-purple-700">{`{so_du_vi}`}</code>: Số dư ví hiện tại</div>
+              <div className="p-2 bg-white rounded-xl border border-purple-100"><code className="font-bold text-purple-700">{`{ma_don_hang}`}</code>: Mã đơn hàng</div>
+              <div className="p-2 bg-white rounded-xl border border-purple-100"><code className="font-bold text-purple-700">{`{lenh_sai}`}</code>: Lệnh gõ sai</div>
             </div>
           </div>
 
@@ -1746,6 +1750,18 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                 onChange={(e) => setSettings({ ...settings, taxRate: e.target.value })}
                 className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 text-xs font-bold text-slate-800 outline-none"
               />
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="block text-xs font-black text-slate-700 mb-1.5">Mã Shopee Affiliate Publisher ID (Shopee Pub ID):</label>
+              <input
+                type="text"
+                placeholder="Ví dụ: 1730052001 hoặc an_1730052001"
+                value={settings.shopeePubId || ""}
+                onChange={(e) => setSettings({ ...settings, shopeePubId: e.target.value })}
+                className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-orange-500 transition"
+              />
+              <span className="text-[11px] text-slate-400 mt-1 block">Mã ID tiếp thị Shopee Affiliate của Trưởng Nhóm dùng để gắn vào link tạo hoa hồng.</span>
             </div>
 
             <div className="md:col-span-2 pt-3 border-t border-slate-100">

@@ -1,6 +1,5 @@
-import React from "react";
-import { APP_CONFIG } from "../config/api";
 import logoImg from "../assets/logo.png";
+import { APP_CONFIG } from "../config/api";
 
 export function TopBar({
   currentView,

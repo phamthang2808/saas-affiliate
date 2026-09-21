@@ -51,10 +51,47 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
   const [assignZaloId, setAssignZaloId] = useState("");
   const [isSubmittingAssign, setIsSubmittingAssign] = useState(false);
 
-  // Import Excel state
+  // Import Excel & TikTok Sync state
   const [importFile, setImportFile] = useState(null);
   const [isImporting, setIsImporting] = useState(false);
   const [importResult, setImportResult] = useState(null);
+  const [isSyncingTiktok, setIsSyncingTiktok] = useState(false);
+  const [tiktokSyncResult, setTiktokSyncResult] = useState(null);
+
+  const handleSyncTiktokManual = async () => {
+    if (!activeTenant?.slug) {
+      alert("❌ Chưa xác định được Kênh Trưởng Nhóm!");
+      return;
+    }
+    setIsSyncingTiktok(true);
+    setTiktokSyncResult(null);
+    try {
+      const res = await fetch(`${apiRoot}/api/saas/admin/${activeTenant.slug}/orders/sync-tiktok`, {
+        method: "POST",
+        headers: authHeaders,
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setTiktokSyncResult({
+          success: true,
+          message: data.message || `Đã đồng bộ đơn hàng TikTok Shop cho Kênh ${activeTenant?.name} thành công! 🎉`,
+        });
+        fetchTenantData();
+      } else {
+        setTiktokSyncResult({
+          success: false,
+          message: data.message || "Lỗi đồng bộ TikTok",
+        });
+      }
+    } catch (err) {
+      setTiktokSyncResult({
+        success: false,
+        message: "Lỗi kết nối máy chủ: " + err.message,
+      });
+    } finally {
+      setIsSyncingTiktok(false);
+    }
+  };
 
   // Bot Templates state
   const initialTemplates = getStandardBotTemplates(activeTenant);
@@ -853,6 +890,60 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
       {/* ===================== TAB 5 & 6: ĐƠN SHOPEE & TIKTOK ===================== */}
       {(activeTab === "shopee" || activeTab === "tiktok") && !isLoading && (
         <div className="space-y-6">
+          {/* TIKTOK SYNC CONTROL BANNER */}
+          {activeTab === "tiktok" && (
+            <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 rounded-3xl p-5 sm:p-6 text-white shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4 border border-slate-700">
+              <div className="flex items-center gap-3.5">
+                <div className="w-11 h-11 rounded-2xl bg-white/10 flex items-center justify-center text-2xl text-white shrink-0 shadow-inner">
+                  <i className="fa-brands fa-tiktok"></i>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-extrabold text-sm tracking-wide text-white">
+                      Quản lý Đơn Hàng TikTok Shop — Kênh {groupDisplayName}
+                    </h3>
+                    <span className="bg-orange-500/20 text-orange-300 text-[9px] font-black px-2.5 py-0.5 rounded-full border border-orange-400/30">
+                      TỰ ĐỘNG SYNC RIOHUB 60S
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-300 font-medium mt-0.5">
+                    Đơn hàng TikTok được tự động kéo về từ RioHub API và tự động khớp SubID thành viên Kênh {groupDisplayName}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 self-start md:self-auto">
+                <button
+                  type="button"
+                  onClick={handleSyncTiktokManual}
+                  disabled={isSyncingTiktok}
+                  className="px-5 py-2.5 bg-white hover:bg-slate-100 text-slate-900 rounded-2xl text-xs font-black transition flex items-center gap-2 shadow-md cursor-pointer disabled:opacity-50"
+                >
+                  {isSyncingTiktok ? (
+                    <>
+                      <i className="fa-solid fa-spinner fa-spin text-orange-600"></i> Đang đồng bộ...
+                    </>
+                  ) : (
+                    <>
+                      <i className="fa-solid fa-arrows-rotate text-orange-600"></i> Đồng bộ đơn TikTok ngay
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {tiktokSyncResult && activeTab === "tiktok" && (
+            <div className={`p-4 rounded-2xl text-xs font-bold flex items-center justify-between gap-3 ${tiktokSyncResult.success ? "bg-emerald-50 text-emerald-800 border border-emerald-200" : "bg-rose-50 text-rose-800 border border-rose-200"}`}>
+              <div className="flex items-center gap-2.5">
+                <i className={`fa-solid ${tiktokSyncResult.success ? "fa-circle-check text-emerald-600" : "fa-circle-exclamation text-rose-600"} text-base`}></i>
+                <span>{tiktokSyncResult.message}</span>
+              </div>
+              <button onClick={() => setTiktokSyncResult(null)} className="text-xs opacity-60 hover:opacity-100">
+                <i className="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+          )}
           {/* EMBEDDED IMPORT BOX FOR SHOPEE/TIKTOK */}
           <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-6 shadow-2xs space-y-4">
             <div className="flex items-center justify-between flex-wrap gap-2">

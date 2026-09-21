@@ -3,6 +3,82 @@ import { formatMoney, formatDate } from "../utils/formatters";
 import { APP_CONFIG } from "../config/api";
 
 // Standard default bot templates helper
+// Standard default bot templates helper
+const TEMPLATE_META = {
+  template_link: {
+    title: "1. Mẫu tin nhắn Trả Link Mua Sắm Hoàn Tiền",
+    badge: "Tự động phản hồi khi thành viên gửi Link Shopee / TikTok",
+    icon: "fa-solid fa-link text-emerald-600",
+    desc: "Tin nhắn Bot tự động tạo link hoàn tiền và phản hồi ngay sau khi thành viên gửi 1 đường link sản phẩm vào nhóm Zalo."
+  },
+  template_lookup_has_orders: {
+    title: "2. Mẫu tin nhắn Tra Cứu Đơn Hàng & Ví Tiền (Khi Đã Có Đơn)",
+    command: "/tracuu hoặc #tracuu",
+    icon: "fa-solid fa-magnifying-glass text-purple-600",
+    desc: "Tin nhắn Bot phản hồi kèm đường link Web tra cứu cá nhân 1 chạm khi thành viên gõ lệnh /tracuu."
+  },
+  template_lookup_no_orders: {
+    title: "3. Mẫu tin nhắn Tra Cứu (Khi Ví Trống / Chưa Có Đơn Hàng)",
+    command: "/tracuu (khi chưa có đơn phát sinh)",
+    icon: "fa-solid fa-folder-open text-amber-600",
+    desc: "Tin nhắn thông báo và hướng dẫn thành viên gửi link mua sắm đầu tiên khi họ chưa có đơn hàng nào."
+  },
+  template_withdraw_success: {
+    title: "4. Mẫu tin nhắn Yêu Cầu Rút Tiền Thành Công",
+    command: "/ruttien hoặc /rut (khi ĐỦ hạn mức)",
+    icon: "fa-solid fa-paper-plane text-emerald-600",
+    desc: "Tin nhắn thông báo khi thành viên lập lệnh rút tiền thành công và gửi thông tin STK chờ Trưởng Nhóm duyệt."
+  },
+  template_withdraw_zero: {
+    title: "5. Mẫu tin nhắn Báo Chưa Đủ Hạn Mức Rút Tiền",
+    command: "/ruttien hoặc /rut (khi CHƯA ĐỦ hạn mức)",
+    icon: "fa-solid fa-wallet text-amber-600",
+    desc: "Tin nhắn thông báo khi số dư khả dụng của thành viên chưa đạt hạn mức tối thiểu để lập lệnh rút."
+  },
+  template_welcome: {
+    title: "6. Mẫu tin nhắn Chào Mừng Thành Viên Mới Gia Nhập Nhóm",
+    badge: "Tự động khi có người mới vào nhóm Zalo",
+    icon: "fa-solid fa-handshake text-blue-600",
+    desc: "Tin nhắn Bot tag tên chào mừng và hướng dẫn đọc bài ghim khi có thành viên mới vào nhóm."
+  },
+  template_help: {
+    title: "7. Mẫu tin nhắn Trợ Giúp & Danh Sách Các Câu Lệnh",
+    command: "/help hoặc #help",
+    icon: "fa-solid fa-circle-question text-indigo-600",
+    desc: "Danh sách tổng hợp toàn bộ các câu lệnh Bot hỗ trợ để gửi cho thành viên khi họ cần trợ giúp."
+  },
+  template_order_detail: {
+    title: "8. Mẫu tin nhắn Tra Cứu Chi Tiết Mã Đơn Hàng",
+    command: "/donhang [mã_đơn]",
+    icon: "fa-solid fa-box text-blue-600",
+    desc: "Tin nhắn thông báo thông tin và số tiền hoa hồng của một mã đơn hàng cụ thể khi tra cứu thành công."
+  },
+  template_order_not_found: {
+    title: "9. Mẫu tin nhắn Không Tìm Thấy Thông Tin Mã Đơn Hàng",
+    command: "/donhang [mã_đơn] (khi chưa thấy đơn)",
+    icon: "fa-solid fa-box-open text-rose-600",
+    desc: "Tin nhắn thông báo khi người dùng tra cứu một mã đơn hàng chưa được cập nhật đối soát."
+  },
+  template_invalid_bank_syntax: {
+    title: "10. Mẫu tin nhắn Báo Sai Cú Pháp Lưu Số Tài Khoản",
+    command: "/stk_[NGÂN_HÀNG]_[STK]",
+    icon: "fa-solid fa-credit-card text-rose-500",
+    desc: "Tin nhắn hướng dẫn lại cú pháp lưu số tài khoản ngân hàng khi người dùng gõ sai cú pháp /stk."
+  },
+  template_invalid_command: {
+    title: "11. Mẫu tin nhắn Phản Hồi Khi Gõ Sai Cú Pháp Lệnh",
+    badge: "Khi người dùng gõ sai lệnh",
+    icon: "fa-solid fa-triangle-exclamation text-amber-500",
+    desc: "Tin nhắn nhắc nhở kèm gợi ý gõ /help khi người dùng gõ một câu lệnh không có trong hệ thống."
+  },
+  template_approve_payout: {
+    title: "12. Mẫu tin nhắn Thông Báo Duyệt Rút Tiền Thành Công",
+    command: "/duyet_[MÃ_ID] (Chỉ Trưởng Nhóm)",
+    icon: "fa-solid fa-circle-check text-purple-600",
+    desc: "Tin nhắn thông báo trong nhóm Zalo khi Trưởng Nhóm thực hiện lệnh duyệt tiền thành công cho thành viên."
+  }
+};
+
 const getStandardBotTemplates = (tenant) => {
   const groupName = tenant?.name || "Affiliate Cashback";
   const splitRate = tenant?.customerSplitRate || 80;
@@ -10,12 +86,15 @@ const getStandardBotTemplates = (tenant) => {
     template_link: `@{ten_zalo} mua qua link này để được hoàn hoa hồng nha 🥰\n🛍️ 1. {ten_san_pham}\n🧧 Hoa hồng dự kiến {tong_hoahong_phantram}% (~{tong_hoahong_tien})\n🔗 {link_mua_sam}\n📌 Lưu ý:\n1. Trước khi mua nên xóa giỏ hàng cũ\n2. Tránh xem Live hoặc Video Shopee trước và trong lúc mua\n3. Nên bấm 2-3 lần vào link trước khi mua\n4. Gõ /donhang hoặc /tracuu để kiểm tra đơn vào 9H hôm sau`,
     template_lookup_has_orders: `@{ten_zalo} 🔍 TRA CỨU ĐƠN HÀNG & VÍ HOÀN TIỀN\n👉 Link tra cứu cá nhân (bấm là xem ngay & rút tiền):\n🌐 {link_tra_cuu}\n\n💡 TÍNH NĂNG TRANG TRA CỨU:\n📦 Xem chi tiết toàn bộ đơn đã mua & hoa hồng từng đơn.\n💳 Quản lý ví tiền: Đang chờ / Đã hoàn thành / Khả dụng.\n💸 Rút tiền hoa hồng về STK Ngân hàng 1 chạm nhanh chóng!`,
     template_lookup_no_orders: `@{ten_zalo} 🔍 BẠN CHƯA CÓ ĐƠN HÀNG NÀO\n👉 Link tra cứu cá nhân: {link_tra_cuu}\n\n💡 Hiện bạn chưa có đơn nào phát sinh tại nhóm {ten_nhom}.\n🛒 Hãy gửi bất kỳ link sản phẩm Shopee/TikTok vào nhóm để bot tạo link hoàn {ty_le_hoan}% cho đơn đầu tiên nhé! 🥰`,
+    template_withdraw_success: `@{ten_zalo} 🎉 YÊU CẦU RÚT TIỀN THÀNH CÔNG!\n💸 Số tiền rút: {so_tien_rut}đ\n🏦 Về tài khoản: {ngan_hang} - {so_tai_khoan} ({chu_tai_khoan})\n⏳ Trạng thái: Đã chuyển thông tin tới Trưởng Nhóm {ten_nhom} duyệt chi trả.`,
+    template_withdraw_zero: `@{ten_zalo} ⚠️ Số dư khả dụng của bạn hiện là {so_du_vi}đ (chưa đủ hạn mức rút tối thiểu 10.000đ).\n💡 Bạn hãy gõ /tracuu để kiểm tra chi tiết trạng thái ví nhé!`,
     template_welcome: `Hi, chào @{ten_zalo}\n🎉 Chào mừng bạn đã tham gia nhóm {ten_nhom}!\n📌 Bạn vui lòng đọc kỹ BÀI GHIM của nhóm hoặc gõ lệnh /help để xem hướng dẫn cách gửi link mua sắm và nhận hoàn {ty_le_hoan}% hoa hồng nhé! 🥰`,
-    template_help: `@{ten_zalo} 🤖 CÁC LỆNH BOT HỖ TRỢ SĂN SALE & HOÀN TIỀN:\n\n💳 /vitien hoặc #vitien — Xem ví tiền & hoa hồng hiện có\n🛒 /donhang hoặc #donhang — Xem danh sách các đơn đã đặt\n🔍 /tracuu hoặc #tracuu — Link tra cứu chi tiết bảo mật cá nhân\n🏦 /stk_[NGÂN_HÀNG]_[STK] — Lưu STK nhận tiền (VD: /stk_MB_0888728256)\n💸 /ruttien hoặc /rut — Yêu cầu rút toàn bộ hoa hồng khả dụng\n\n💡 Mẹo: Bạn chỉ cần gửi LINK sản phẩm Shopee/TikTok vào nhóm, bot sẽ tự động tạo link hoàn tiền ngay! 🥰`,
+    template_help: `@{ten_zalo} 🤖 CÁC LỆNH BOT HỖ TRỢ SĂN SALE & HOÀN TIỀN:\n\n💳 /vitien hoặc #vitien — Xem ví tiền & hoa hồng hiện có\n🛒 /donhang hoặc #donhang — Xem danh sách các đơn đã đặt\n🔍 /tracuu hoặc #tracuu — Link tra cứu chi tiết bảo mật cá nhân\n🏦 /stk_[NGÂN_HÀNG]_[STK] — Lưu STK nhận tiền (VD: /stk_MB_0888728256)\n💸 /ruttien hoặc /rut — Yêu cầu rút toàn bộ hoa hồng khả dụng\n⚡ /duyet_[MÃ_ID] — Lệnh duyệt tiền (Chỉ Trưởng Nhóm)\n\n💡 Mẹo: Bạn chỉ cần gửi LINK sản phẩm Shopee/TikTok vào nhóm, bot sẽ tự động tạo link hoàn tiền ngay! 🥰`,
+    template_order_detail: `@{ten_zalo} 📦 THÔNG TIN ĐƠN HÀNG #{ma_don_hang}:\n🛍️ Sản phẩm: {ten_san_pham}\n💰 Giá trị đơn: {gia_san_pham}đ\n🧧 Hoa hồng nhận: {tong_hoahong_tien}đ ({ty_le_hoan}%)\n📌 Trạng thái: {trang_thai_don}`,
     template_order_not_found: `@{ten_zalo} ⚠️ Không tìm thấy thông tin cho mã đơn: {ma_don_hang}.\n📌 Lưu ý: Đơn hàng mới đặt thường được cập nhật vào kỳ đối soát sau 1 ngày. Vui lòng kiểm tra lại mã đơn hoặc nhắn /tracuu để xem toàn bộ đơn của bạn nhé!`,
-    template_invalid_command: `@{ten_zalo} ❓ Lệnh "{lenh_sai}" không hợp lệ.\n👉 Bạn có thể gõ /help để xem danh sách các lệnh được hỗ trợ nhé!`,
     template_invalid_bank_syntax: `@{ten_zalo} ⚠️ Sai cú pháp lưu STK!\n👉 Cú pháp đúng: /stk_[TÊN_NGÂN_HÀNG]_[SỐ_TÀI_KHOẢN]\n📌 Ví dụ: /stk_MB_0888728256 (Tên viết tắt các ngân hàng: MB, VCB, TCB, ACB, VPB, TPB, CTG, BIDV...)`,
-    template_withdraw_zero: `@{ten_zalo} ⚠️ Số dư khả dụng của bạn hiện là {so_du_vi}đ (chưa đủ hạn mức rút tối thiểu 10.000đ).\n💡 Bạn hãy gõ /tracuu để kiểm tra chi tiết trạng thái ví nhé!`
+    template_invalid_command: `@{ten_zalo} ❓ Lệnh "{lenh_sai}" không hợp lệ.\n👉 Bạn có thể gõ /help để xem danh sách các lệnh được hỗ trợ nhé!`,
+    template_approve_payout: `🎉 THÔNG BÁO DUYỆT RÚT TIỀN THÀNH CÔNG!\n✅ Đã duyệt lệnh rút #{ma_giao_dich} cho thành viên @{ten_zalo}.\n💸 Số tiền: {so_tien_rut}đ\n🏦 Ngân hàng: {ngan_hang} - {so_tai_khoan}`
   };
 };
 
@@ -844,39 +923,78 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
         )}
       </div>
 
-      {/* ===================== 2. LỲ-STYLE TAB BAR ===================== */}
-      <div className="flex flex-wrap items-center gap-2 pt-1 pb-1">
-        {[
-          { key: "overview", icon: "fa-solid fa-chart-pie", label: "Tổng quan" },
-          { key: "zalo_bot", icon: "fa-solid fa-qrcode", label: `Bot Zalo (${tenantBots.length})` },
-          { key: "zalo_users", icon: "fa-solid fa-comments", label: `Tài khoản Zalo (${zaloUsers.length})` },
-          { key: "payouts", icon: "fa-solid fa-money-bill-transfer", label: "Rút tiền", badge: pendingPayouts.length },
-          { key: "shopee", icon: "fa-solid fa-bag-shopping", label: `Đơn Shopee (${shopeeOrders.length})` },
-          { key: "tiktok", icon: "fa-brands fa-tiktok", label: `Đơn TikTok (${tiktokOrders.length})` },
-          { key: "templates", icon: "fa-solid fa-robot", label: "Cấu hình Bot Zalo" },
-          { key: "settings", icon: "fa-solid fa-sliders", label: "Điều kiện Rút & Chia" },
-        ].map((tab) => {
-          const isActive = activeTab === tab.key;
-          return (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap border ${
-                isActive
-                  ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white border-transparent shadow-md shadow-orange-500/20 scale-[1.02]"
-                  : "bg-white text-slate-700 hover:bg-slate-50 border-slate-200/80 shadow-2xs"
-              }`}
-            >
-              <i className={tab.icon}></i>
-              <span>{tab.label}</span>
-              {tab.badge > 0 && (
-                <span className="bg-rose-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold ml-1 animate-bounce">
-                  {tab.badge}
-                </span>
-              )}
-            </button>
-          );
-        })}
+      {/* ===================== 2. TWO-GROUP TAB BAR SYSTEM ===================== */}
+      <div className="bg-white rounded-3xl border border-slate-200/80 p-4 shadow-2xs space-y-3">
+        {/* GROUP 1: CẤU HÌNH & KẾT NỐI (STEP-BY-STEP SETUP) */}
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-[10px] font-black uppercase tracking-wider text-purple-900 bg-purple-100 border border-purple-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+              <i className="fa-solid fa-gears text-purple-600"></i> NHÓM 1: THIẾT LẬP KÊNH (THỰC HIỆN THEO THỨ TỰ BƯỚC 1 ➔ BƯỚC 3)
+            </span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {[
+              { key: "settings", icon: "fa-solid fa-sliders", label: "Bước 1. Điều Kiện Rút & Chia" },
+              { key: "templates", icon: "fa-solid fa-robot", label: "Bước 2. Mẫu Tin Nhắn Bot" },
+              { key: "zalo_bot", icon: "fa-solid fa-qrcode", label: `Bước 3. Kết Nối Bot Zalo (${tenantBots.length})` },
+            ].map((tab) => {
+              const isActive = activeTab === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap border ${
+                    isActive
+                      ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-transparent shadow-md shadow-purple-500/20 scale-[1.02]"
+                      : "bg-slate-50 text-slate-700 hover:bg-purple-50 hover:text-purple-900 border-slate-200/80 shadow-2xs"
+                  }`}
+                >
+                  <i className={tab.icon}></i>
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* GROUP 2: QUẢN LÝ BÁO CÁO & ĐỐI SOÁT */}
+        <div className="border-t border-slate-100 pt-3">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-[10px] font-black uppercase tracking-wider text-orange-900 bg-orange-100 border border-orange-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+              <i className="fa-solid fa-chart-bar text-orange-600"></i> NHÓM 2: QUẢN LÝ DỮ LIỆU & ĐỐI SOÁT ĐƠN HÀNG
+            </span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {[
+              { key: "overview", icon: "fa-solid fa-chart-pie", label: "Tổng quan" },
+              { key: "shopee", icon: "fa-solid fa-bag-shopping", label: `Đơn Shopee (${shopeeOrders.length})` },
+              { key: "tiktok", icon: "fa-brands fa-tiktok", label: `Đơn TikTok (${tiktokOrders.length})` },
+              { key: "payouts", icon: "fa-solid fa-money-bill-transfer", label: "Lệnh Rút tiền", badge: pendingPayouts.length },
+              { key: "zalo_users", icon: "fa-solid fa-comments", label: `Thành viên Zalo (${zaloUsers.length})` },
+            ].map((tab) => {
+              const isActive = activeTab === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap border ${
+                    isActive
+                      ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white border-transparent shadow-md shadow-orange-500/20 scale-[1.02]"
+                      : "bg-slate-50 text-slate-700 hover:bg-orange-50 hover:text-orange-900 border-slate-200/80 shadow-2xs"
+                  }`}
+                >
+                  <i className={tab.icon}></i>
+                  <span>{tab.label}</span>
+                  {tab.badge > 0 && (
+                    <span className="bg-rose-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold ml-1 animate-bounce">
+                      {tab.badge}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       {isLoading && (
@@ -1147,23 +1265,23 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
       {(activeTab === "shopee" || activeTab === "tiktok") && !isLoading && (
         <div className="space-y-6">
           {/* TIKTOK SYNC CONTROL BANNER */}
-          {/* BANNER TIKTOK SHOP - ĐỒNG BỘ MÀU SẮC GIAO DIỆN */}
+          {/* BANNER TIKTOK SHOP - NỀN SÁNG ĐỒNG BỘ MÀU SẮC GIAO DIỆN */}
           {activeTab === "tiktok" && (
-            <div className="bg-gradient-to-r from-slate-900 via-neutral-900 to-zinc-900 rounded-3xl p-5 sm:p-6 text-white shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4 border border-slate-800">
+            <div className="bg-gradient-to-br from-rose-50/90 via-purple-50/40 to-white rounded-3xl p-5 sm:p-6 text-slate-800 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4 border border-rose-200/80">
               <div className="flex items-center gap-3.5">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-rose-500 via-purple-600 to-cyan-400 flex items-center justify-center text-2xl text-white shrink-0 shadow-md shadow-purple-500/30">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-slate-900 via-rose-600 to-purple-600 text-white flex items-center justify-center text-2xl shrink-0 shadow-md shadow-rose-500/20">
                   <i className="fa-brands fa-tiktok"></i>
                 </div>
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-extrabold text-sm tracking-wide text-white font-display">
+                    <h3 className="font-extrabold text-sm tracking-wide text-slate-900 font-display">
                       Quản lý Đơn Hàng TikTok Shop — Kênh {groupDisplayName}
                     </h3>
-                    <span className="bg-gradient-to-r from-rose-500/20 to-purple-500/20 text-rose-300 text-[9px] font-black px-2.5 py-0.5 rounded-full border border-rose-400/30">
+                    <span className="bg-rose-100 text-rose-800 text-[9px] font-black px-2.5 py-0.5 rounded-full border border-rose-300">
                       ⚡ TỰ ĐỘNG SYNC RIOHUB 60S
                     </span>
                   </div>
-                  <p className="text-xs text-slate-300 font-medium mt-0.5">
+                  <p className="text-xs text-slate-500 font-medium mt-0.5">
                     Đơn hàng TikTok được tự động kéo về từ RioHub API và tự động khớp SubID thành viên Kênh {groupDisplayName}
                   </p>
                 </div>
@@ -1719,26 +1837,68 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
             </div>
           </div>
 
-          <div className="space-y-4">
-            {Object.keys(botTemplates).map((key) => (
-              <div key={key} className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-black text-slate-800 font-mono">{key}</label>
-                  <button
-                    onClick={() => handleResetTemplate(key)}
-                    className="text-[10px] font-bold text-slate-400 hover:text-orange-600"
-                  >
-                    Khôi phục mặc định
-                  </button>
+          <div className="space-y-5">
+            {Object.keys(botTemplates).map((key) => {
+              const meta = TEMPLATE_META[key] || { title: key, desc: "" };
+              const val = botTemplates[key] || "";
+              const lineCount = (val.match(/\n/g) || []).length + 1;
+              const dynamicRows = Math.max(4, Math.min(16, lineCount + 2));
+
+              return (
+                <div key={key} className="p-5 bg-slate-50/80 rounded-3xl border border-slate-200/80 space-y-3 shadow-2xs hover:border-purple-300 transition">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                      <div className="w-8 h-8 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-sm shadow-2xs">
+                        <i className={meta.icon || "fa-solid fa-message text-purple-600"}></i>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-black text-slate-900 font-display flex items-center gap-2 flex-wrap">
+                          <span>{meta.title}</span>
+                          <span className="font-mono text-[10px] text-slate-400 font-normal">({key})</span>
+                        </h4>
+                        {meta.desc && (
+                          <p className="text-[11px] text-slate-500 font-medium mt-0.5">{meta.desc}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {meta.command && (
+                        <span className="px-3 py-1 bg-purple-100 text-purple-900 rounded-xl text-[11px] font-black border border-purple-200 shadow-2xs">
+                          ⚡ Lệnh gõ: <code className="font-mono text-purple-950 font-bold">{meta.command}</code>
+                        </span>
+                      )}
+                      {meta.badge && (
+                        <span className="px-3 py-1 bg-amber-100 text-amber-900 rounded-xl text-[11px] font-black border border-amber-200 shadow-2xs">
+                          📌 {meta.badge}
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => handleResetTemplate(key)}
+                        className="px-3 py-1 text-[11px] font-bold text-slate-500 hover:text-orange-600 bg-white hover:bg-orange-50 border border-slate-200 hover:border-orange-200 rounded-xl transition flex items-center gap-1 cursor-pointer shadow-2xs ml-1"
+                        title="Khôi phục mẫu này về mặc định hệ thống"
+                      >
+                        <i className="fa-solid fa-rotate-left text-[10px]"></i>
+                        <span>Khôi phục</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <textarea
+                    rows={dynamicRows}
+                    value={val}
+                    onChange={(e) => setBotTemplates({ ...botTemplates, [key]: e.target.value })}
+                    onInput={(e) => {
+                      e.target.style.height = "auto";
+                      e.target.style.height = Math.max(110, e.target.scrollHeight) + "px";
+                    }}
+                    placeholder="Nhập nội dung mẫu tin nhắn bot..."
+                    className="w-full bg-white border border-slate-200 focus:border-purple-500 rounded-2xl p-4 text-xs font-medium text-slate-800 outline-none transition shadow-2xs leading-relaxed font-sans resize-y min-h-[110px]"
+                  />
                 </div>
-                <textarea
-                  rows={3}
-                  value={botTemplates[key] || ""}
-                  onChange={(e) => setBotTemplates({ ...botTemplates, [key]: e.target.value })}
-                  className="w-full bg-white border border-slate-200 rounded-xl p-3 text-xs font-medium text-slate-800 outline-none focus:border-purple-500 transition"
-                />
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

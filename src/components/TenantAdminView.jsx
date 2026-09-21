@@ -239,13 +239,38 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
     }
   };
 
+  const [realQrBase64, setRealQrBase64] = useState(null);
+
+  const fetchRealQrImage = async () => {
+    if (!activeTenant?.slug) return;
+    try {
+      const res = await fetch(`${apiRoot}/api/saas/admin/${activeTenant.slug}/bot/qr-image`, { headers: authHeaders });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.qrBase64) {
+          setRealQrBase64(data.qrBase64);
+          setIsGeneratingQr(false);
+          setQrMessage("Mã QR Zalo Đăng Nhập Thật đã sẵn sàng! Hãy mở ứng dụng Zalo trên điện thoại quét mã.");
+        }
+        if (data.status === "CONNECTED") {
+          setShowQrModal(false);
+          alert("🎉 Đã quét QR và đăng nhập Bot Zalo thành công!");
+          fetchTenantBots();
+        }
+      }
+    } catch (e) {
+      console.error("Fetch real QR image error:", e);
+    }
+  };
+
   const handleGenerateQr = async () => {
     if (!activeTenant?.slug) {
       alert("❌ Chưa xác định được Kênh Trưởng Nhóm!");
       return;
     }
     setIsGeneratingQr(true);
-    setQrMessage("Đang tạo mã QR kết nối...");
+    setRealQrBase64(null);
+    setQrMessage("Đang kết nối Server Zalo để tạo mã QR thực...");
     try {
       const res = await fetch(`${apiRoot}/api/saas/admin/${activeTenant.slug}/bot/generate-qr`, {
         method: "POST",
@@ -253,14 +278,19 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
       });
       const data = await res.json();
       if (res.ok) {
-        setQrMessage(data.message || "Đã khởi tạo phiên QR. Mở ứng dụng Zalo trên điện thoại để quét!");
+        setQrMessage(data.message || "Đã khởi tạo phiên QR Zalo. Đang chờ Zalo phát hành mã...");
         fetchTenantBots();
+        // Polling QR image every 2 seconds
+        const pollTimer = setInterval(async () => {
+          await fetchRealQrImage();
+        }, 2000);
+        setTimeout(() => clearInterval(pollTimer), 60000);
       } else {
         alert("❌ " + (data.message || "Lỗi tạo phiên QR"));
+        setIsGeneratingQr(false);
       }
     } catch (err) {
       alert("❌ Lỗi kết nối: " + err.message);
-    } finally {
       setIsGeneratingQr(false);
     }
   };
@@ -838,6 +868,85 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===================== TAB 2: QUẢN LÝ BOT ZALO ===================== */}
+      {activeTab === "zalo_bot" && !isLoading && (
+        <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden p-6 space-y-6">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <h3 className="text-base font-black text-slate-900 font-display flex items-center gap-2">
+                <i className="fa-solid fa-qrcode text-emerald-600"></i>
+                <span>Nick Bot Zalo Đang Hoạt Động (Kênh {groupDisplayName})</span>
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Quét mã QR bằng ứng dụng Zalo trên điện thoại để kết nối nick Zalo phụ làm Bot trả lời tự động cho Kênh.
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                setShowQrModal(true);
+                handleGenerateQr();
+              }}
+              className="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-2xl font-black text-xs shadow-md shadow-emerald-600/20 cursor-pointer flex items-center gap-2"
+            >
+              <i className="fa-solid fa-plus text-sm"></i>
+              <span>+ Kết Nối Nick Bot Zalo Mới & Quét QR</span>
+            </button>
+          </div>
+
+          <div className="overflow-x-auto border border-slate-100 rounded-2xl">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="bg-slate-50/80 text-slate-500 text-[11px] font-black uppercase tracking-wider border-b border-slate-100">
+                  <th className="p-3.5">Tên Bot</th>
+                  <th className="p-3.5">Nick Zalo Phụ</th>
+                  <th className="p-3.5">Zalo ID (UID)</th>
+                  <th className="p-3.5 text-center">Trạng Thái</th>
+                  <th className="p-3.5 text-right">Thao Tác</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                {tenantBots.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="p-8 text-center text-slate-400">
+                      <div className="space-y-2">
+                        <i className="fa-solid fa-robot text-3xl text-slate-300"></i>
+                        <p className="text-xs font-bold text-slate-500">Chưa kết nối nick Bot Zalo nào cho Kênh này.</p>
+                        <p className="text-[11px] text-slate-400">Hãy bấm "+ Kết Nối Nick Bot Zalo Mới & Quét QR" để mở ứng dụng Zalo quét mã đăng nhập thật.</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  tenantBots.map((bot) => (
+                    <tr key={bot.id} className="hover:bg-slate-50/80 transition">
+                      <td className="p-3.5 font-bold text-slate-900">{bot.botName || `Bot #${bot.id}`}</td>
+                      <td className="p-3.5 font-extrabold text-purple-700">{bot.zaloName || "Chưa xác định"}</td>
+                      <td className="p-3.5 font-mono text-slate-500">{bot.zaloId || "—"}</td>
+                      <td className="p-3.5 text-center">
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                          bot.status === "ACTIVE"
+                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                            : "bg-amber-50 text-amber-700 border border-amber-200 animate-pulse"
+                        }`}>
+                          {bot.status === "ACTIVE" ? "🟢 Đang Hoạt Động" : "⏳ Chờ Quét QR"}
+                        </span>
+                      </td>
+                      <td className="p-3.5 text-right">
+                        <button
+                          onClick={() => handleDisconnectBot(bot.id)}
+                          className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl font-bold text-xs cursor-pointer transition"
+                        >
+                          Ngắt kết nối
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
@@ -1738,24 +1847,32 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
 
             {/* QR Code Container */}
             <div className="bg-slate-50 border border-slate-200 rounded-3xl p-6 text-center space-y-3">
-              <div className="w-52 h-52 bg-white rounded-2xl border-2 border-emerald-500 p-2 mx-auto shadow-md flex items-center justify-center relative">
+              <div className="w-52 h-52 bg-white rounded-2xl border-2 border-emerald-500 p-2 mx-auto shadow-md flex items-center justify-center relative overflow-hidden">
                 {isGeneratingQr ? (
                   <div className="space-y-2">
                     <div className="w-8 h-8 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto"></div>
-                    <span className="text-xs font-bold text-slate-500">Đang khởi tạo phiên QR...</span>
+                    <span className="text-xs font-bold text-slate-500">Đang khởi tạo phiên QR Zalo từ Server...</span>
                   </div>
+                ) : realQrBase64 ? (
+                  <img
+                    src={realQrBase64}
+                    alt="Mã QR Đăng Nhập Zalo Thật"
+                    className="w-full h-full object-contain rounded-xl"
+                  />
                 ) : (
-                  <div className="space-y-2">
-                    {/* Generates SVG / Canvas visual QR indicator */}
-                    <img
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=AFFINEX_ZALO_BOT_SESSION_${activeTenant?.slug}_${Date.now()}`}
-                      alt="Zalo Bot QR Code"
-                      className="w-full h-full object-contain rounded-xl"
-                    />
+                  <div className="flex flex-col items-center justify-center gap-2 p-3 text-center">
+                    <i className="fa-solid fa-qrcode text-4xl text-slate-300"></i>
+                    <button
+                      type="button"
+                      onClick={handleGenerateQr}
+                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-md cursor-pointer"
+                    >
+                      ⚡ Bắt Đầu Khởi Tạo QR Zalo Thật
+                    </button>
                   </div>
                 )}
               </div>
-              <p className="text-xs font-bold text-slate-600">{qrMessage || "Mã QR cập nhật liên tục 24/7. Vui lòng quét bằng nick phụ Zalo."}</p>
+              <p className="text-xs font-bold text-slate-600">{qrMessage || "Mã QR cập nhật từ Zalo Server. Mở App Zalo trên điện thoại để quét mã."}</p>
             </div>
 
             {/* Alternative Direct Nick Input */}

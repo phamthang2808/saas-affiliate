@@ -878,79 +878,146 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
 
       {/* ===================== TAB 2: QUẢN LÝ BOT ZALO ===================== */}
       {activeTab === "zalo_bot" && !isLoading && (
-        <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden p-6 space-y-6">
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <div>
-              <h3 className="text-base font-black text-slate-900 font-display flex items-center gap-2">
-                <i className="fa-solid fa-qrcode text-emerald-600"></i>
-                <span>Nick Bot Zalo Đang Hoạt Động (Kênh {groupDisplayName})</span>
-              </h3>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Quét mã QR bằng ứng dụng Zalo trên điện thoại để kết nối nick Zalo phụ làm Bot trả lời tự động cho Kênh.
-              </p>
+        <div className="space-y-6">
+          {/* Header Card */}
+          <div className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-2xs">
+            <h3 className="text-base font-black text-slate-900 font-display flex items-center gap-2">
+              <i className="fa-solid fa-qrcode text-emerald-600"></i>
+              <span>Quản Lý & Kết Nối Nick Bot Zalo (Kênh {groupDisplayName})</span>
+            </h3>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Trưởng nhóm có thể chọn 1 trong 2 cách đơn giản bên dưới để kết nối nick Zalo phụ làm Bot trả lời tự động cho Kênh.
+            </p>
+
+            {/* 2 OPTIONS SIDE BY SIDE */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-5">
+              {/* CÁCH 1: QUÉT MÃ QR */}
+              <div className="bg-gradient-to-br from-emerald-50/70 via-teal-50/40 to-white rounded-3xl border border-emerald-200/80 p-5 space-y-4 shadow-2xs flex flex-col justify-between">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-emerald-900">
+                    <span className="w-7 h-7 rounded-xl bg-emerald-600 text-white font-black text-xs flex items-center justify-center shrink-0">1</span>
+                    <h4 className="text-sm font-black font-display">CÁCH 1: Kết Nối Tự Động Bằng Mã QR (Khuyên Dùng)</h4>
+                  </div>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    Dùng ứng dụng <strong>Zalo trên điện thoại</strong> quét mã QR phát hành từ máy chủ để tự động đăng nhập nick phụ làm Bot.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowQrModal(true);
+                    handleGenerateQr();
+                  }}
+                  className="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-2xl font-black text-xs shadow-md shadow-emerald-600/20 cursor-pointer flex items-center justify-center gap-2 transition"
+                >
+                  <i className="fa-solid fa-qrcode text-base"></i>
+                  <span>📱 + Bật Mã QR Quét Đăng Nhập Zalo</span>
+                </button>
+              </div>
+
+              {/* CÁCH 2: NHẬP THỦ CÔNG */}
+              <div className="bg-gradient-to-br from-purple-50/70 via-indigo-50/40 to-white rounded-3xl border border-purple-200/80 p-5 space-y-4 shadow-2xs flex flex-col justify-between">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-purple-900">
+                    <span className="w-7 h-7 rounded-xl bg-purple-600 text-white font-black text-xs flex items-center justify-center shrink-0">2</span>
+                    <h4 className="text-sm font-black font-display">CÁCH 2: Nhập Nhanh Zalo ID / SĐT (Thủ Công)</h4>
+                  </div>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    Nhập tên Nick Zalo Phụ và Zalo ID (hoặc SĐT) để kích hoạt nối nhanh trực tiếp không cần camera.
+                  </p>
+                </div>
+                <form onSubmit={handleConnectBotManually} className="space-y-2.5">
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      type="text"
+                      value={newBotZaloName}
+                      onChange={(e) => setNewBotZaloName(e.target.value)}
+                      placeholder="Tên Nick Zalo Phụ"
+                      className="w-full bg-white border border-purple-200 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:border-purple-600"
+                      required
+                    />
+                    <input
+                      type="text"
+                      value={newBotZaloId}
+                      onChange={(e) => setNewBotZaloId(e.target.value)}
+                      placeholder="Zalo ID (UID/SĐT)"
+                      className="w-full bg-white border border-purple-200 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:border-purple-600"
+                      required
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={isConnectingBot}
+                    className="w-full py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-black text-xs rounded-2xl shadow-md shadow-purple-600/20 cursor-pointer flex items-center justify-center gap-2 transition"
+                  >
+                    <i className="fa-solid fa-bolt text-amber-300"></i>
+                    <span>{isConnectingBot ? "Đang kết nối..." : "⚡ Kích Hoạt Nối Bot Ngay"}</span>
+                  </button>
+                </form>
+              </div>
             </div>
-            <button
-              onClick={() => {
-                setShowQrModal(true);
-                handleGenerateQr();
-              }}
-              className="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-2xl font-black text-xs shadow-md shadow-emerald-600/20 cursor-pointer flex items-center gap-2"
-            >
-              <i className="fa-solid fa-plus text-sm"></i>
-              <span>+ Kết Nối Nick Bot Zalo Mới & Quét QR</span>
-            </button>
           </div>
 
-          <div className="overflow-x-auto border border-slate-100 rounded-2xl">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="bg-slate-50/80 text-slate-500 text-[11px] font-black uppercase tracking-wider border-b border-slate-100">
-                  <th className="p-3.5">Tên Bot</th>
-                  <th className="p-3.5">Nick Zalo Phụ</th>
-                  <th className="p-3.5">Zalo ID (UID)</th>
-                  <th className="p-3.5 text-center">Trạng Thái</th>
-                  <th className="p-3.5 text-right">Thao Tác</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-                {tenantBots.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="p-8 text-center text-slate-400">
-                      <div className="space-y-2">
-                        <i className="fa-solid fa-robot text-3xl text-slate-300"></i>
-                        <p className="text-xs font-bold text-slate-500">Chưa kết nối nick Bot Zalo nào cho Kênh này.</p>
-                        <p className="text-[11px] text-slate-400">Hãy bấm "+ Kết Nối Nick Bot Zalo Mới & Quét QR" để mở ứng dụng Zalo quét mã đăng nhập thật.</p>
-                      </div>
-                    </td>
+          {/* TABLE DANH SÁCH BOT */}
+          <div className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-2xs space-y-4">
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-black text-slate-900 font-display flex items-center gap-2">
+                <i className="fa-solid fa-robot text-purple-600"></i>
+                <span>Danh Sách Nick Bot Zalo Đã Kết Nối ({tenantBots.length})</span>
+              </h4>
+            </div>
+
+            <div className="overflow-x-auto border border-slate-100 rounded-2xl">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-slate-50/80 text-slate-500 text-[11px] font-black uppercase tracking-wider border-b border-slate-100">
+                    <th className="p-3.5">Tên Bot</th>
+                    <th className="p-3.5">Nick Zalo Phụ</th>
+                    <th className="p-3.5">Zalo ID (UID/SĐT)</th>
+                    <th className="p-3.5 text-center">Trạng Thái</th>
+                    <th className="p-3.5 text-right">Thao Tác</th>
                   </tr>
-                ) : (
-                  tenantBots.map((bot) => (
-                    <tr key={bot.id} className="hover:bg-slate-50/80 transition">
-                      <td className="p-3.5 font-bold text-slate-900">{bot.botName || `Bot #${bot.id}`}</td>
-                      <td className="p-3.5 font-extrabold text-purple-700">{bot.zaloName || "Chưa xác định"}</td>
-                      <td className="p-3.5 font-mono text-slate-500">{bot.zaloId || "—"}</td>
-                      <td className="p-3.5 text-center">
-                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
-                          bot.status === "ACTIVE"
-                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                            : "bg-amber-50 text-amber-700 border border-amber-200 animate-pulse"
-                        }`}>
-                          {bot.status === "ACTIVE" ? "🟢 Đang Hoạt Động" : "⏳ Chờ Quét QR"}
-                        </span>
-                      </td>
-                      <td className="p-3.5 text-right">
-                        <button
-                          onClick={() => handleDisconnectBot(bot.id)}
-                          className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl font-bold text-xs cursor-pointer transition"
-                        >
-                          Ngắt kết nối
-                        </button>
+                </thead>
+                <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                  {tenantBots.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="p-8 text-center text-slate-400">
+                        <div className="space-y-2">
+                          <i className="fa-solid fa-robot text-3xl text-slate-300"></i>
+                          <p className="text-xs font-bold text-slate-500">Chưa kết nối nick Bot Zalo nào cho Kênh này.</p>
+                          <p className="text-[11px] text-slate-400">Hãy chọn Cách 1 (Quét QR) hoặc Cách 2 (Nhập Zalo ID) ở trên để kết nối Bot.</p>
+                        </div>
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : (
+                    tenantBots.map((bot) => (
+                      <tr key={bot.id} className="hover:bg-slate-50/80 transition">
+                        <td className="p-3.5 font-bold text-slate-900">{bot.botName || `Bot #${bot.id}`}</td>
+                        <td className="p-3.5 font-extrabold text-purple-700">{bot.zaloName || "Chưa xác định"}</td>
+                        <td className="p-3.5 font-mono text-slate-500">{bot.zaloId || "—"}</td>
+                        <td className="p-3.5 text-center">
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                            bot.status === "ACTIVE"
+                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                              : "bg-amber-50 text-amber-700 border border-amber-200 animate-pulse"
+                          }`}>
+                            {bot.status === "ACTIVE" ? "🟢 Đang Hoạt Động" : "⏳ Chờ Quét QR"}
+                          </span>
+                        </td>
+                        <td className="p-3.5 text-right">
+                          <button
+                            onClick={() => handleDisconnectBot(bot.id)}
+                            className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl font-bold text-xs cursor-pointer transition"
+                          >
+                            Ngắt kết nối
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}

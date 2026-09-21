@@ -382,10 +382,12 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
           </div>
         </div>
 
-        {/* Quick Group Switcher for Multi-tenant mode (Chỉ Super Admin mới được đổi kênh) */}
-        {!APP_CONFIG.isStandalone && user?.role === "SUPER_ADMIN" && availableTenants.length > 0 && (
+        {/* Quick Group Switcher for Multi-tenant mode */}
+        {!APP_CONFIG.isStandalone && (user?.role === "SUPER_ADMIN" || !activeTenant?.slug) && availableTenants.length > 0 && (
           <div className="flex items-center gap-2 bg-white border border-slate-200 px-3 py-1.5 rounded-2xl shadow-2xs">
-            <span className="text-xs font-bold text-slate-400">Chọn nhóm (Super Admin):</span>
+            <span className="text-xs font-bold text-slate-400">
+              {user?.role === "SUPER_ADMIN" ? "Chọn nhóm (Super Admin):" : "Chọn Kênh Trưởng Nhóm:"}
+            </span>
             <select
               value={activeTenant?.slug || ""}
               onChange={(e) => {
@@ -394,6 +396,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
               }}
               className="bg-transparent text-orange-600 font-extrabold text-xs outline-none border-0 cursor-pointer font-sans"
             >
+              <option value="">-- Chọn 1 Kênh Đối Tác --</option>
               {availableTenants.map((t) => (
                 <option key={t.id} value={t.slug}>
                   {t.name} (/{t.slug})
@@ -403,8 +406,8 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
           </div>
         )}
 
-        {/* Khóa kênh hiển thị cho Trưởng Nhóm */}
-        {!APP_CONFIG.isStandalone && user?.role === "TENANT_ADMIN" && (
+        {/* Khóa kênh hiển thị cho Trưởng Nhóm khi đã có activeTenant */}
+        {!APP_CONFIG.isStandalone && user?.role === "TENANT_ADMIN" && activeTenant?.slug && (
           <div className="flex items-center gap-2 bg-purple-50 border border-purple-200 px-3.5 py-1.5 rounded-2xl shadow-2xs">
             <i className="fa-solid fa-store text-purple-600 text-xs"></i>
             <span className="text-xs font-black text-purple-900">

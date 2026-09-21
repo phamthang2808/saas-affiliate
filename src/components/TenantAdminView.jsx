@@ -34,16 +34,16 @@ const TEMPLATE_META = {
     desc: "Tin nhắn Bot tag tên chào mừng và hướng dẫn đọc bài ghim khi có thành viên mới vào nhóm."
   },
   template_order_detail: {
-    title: "3. Mẫu tin nhắn Tra Cứu Chi Tiết Mã Đơn Hàng (Tìm Thấy Đơn)",
-    command: "/donhang [mã_đơn]",
+    title: "3. Mẫu tin nhắn Danh Sách Các Đơn Hàng Đã Mua (Khi Đã Có Đơn)",
+    command: "/donhang hoặc #donhang (khi ĐÃ CÓ đơn)",
     icon: "fa-solid fa-box text-blue-600",
-    desc: "Tin nhắn thông báo thông tin và số tiền hoa hồng của một mã đơn hàng cụ thể khi tra cứu thành công."
+    desc: "Tin nhắn Bot liệt kê danh sách mã đơn hàng, sản phẩm và hoa hồng khi thành viên gõ lệnh /donhang."
   },
   template_order_not_found: {
-    title: "4. Mẫu tin nhắn Không Tìm Thấy Thông Tin Mã Đơn Hàng",
-    command: "/donhang [mã_đơn] (khi chưa thấy đơn)",
+    title: "4. Mẫu tin nhắn Báo Chưa Có Đơn Hàng Nào (Khi Chưa Có Đơn)",
+    command: "/donhang hoặc #donhang (khi CHƯA CÓ đơn)",
     icon: "fa-solid fa-box-open text-rose-600",
-    desc: "Tin nhắn thông báo khi người dùng tra cứu một mã đơn hàng chưa được cập nhật đối soát."
+    desc: "Tin nhắn thông báo và hướng dẫn gửi link mua sắm khi thành viên gõ lệnh /donhang lúc chưa có đơn nào."
   },
   template_wallet: {
     title: "5. Mẫu tin nhắn Tổng Quan Ví Tiền & Hoa Hồng (Khi Đã Có Đơn)",
@@ -114,7 +114,7 @@ const getStandardBotTemplates = (tenant) => {
     template_link: `@{ten_zalo} mua qua link này để được hoàn hoa hồng nha 🥰\n🛍️ 1. {ten_san_pham}\n🧧 Hoa hồng dự kiến {tong_hoahong_phantram}% (~{tong_hoahong_tien})\n🔗 {link_mua_sam}\n📌 Lưu ý:\n1. Trước khi mua nên xóa giỏ hàng cũ\n2. Tránh xem Live hoặc Video Shopee trước và trong lúc mua\n3. Nên bấm 2-3 lần vào link trước khi mua\n4. Gõ /donhang hoặc /tracuu để kiểm tra đơn vào 9H hôm sau`,
     template_welcome: `Hi, chào @{ten_zalo}\n🎉 Chào mừng bạn đã tham gia nhóm {ten_nhom}!\n📌 Bạn vui lòng đọc kỹ BÀI GHIM của nhóm hoặc gõ lệnh /help để xem hướng dẫn cách gửi link mua sắm và nhận hoàn {ty_le_hoan}% hoa hồng nhé! 🥰`,
     template_order_detail: `@{ten_zalo} 📦 THÔNG TIN ĐƠN HÀNG #{ma_don_hang}:\n🛍️ Sản phẩm: {ten_san_pham}\n💰 Giá trị đơn: {gia_san_pham}đ\n🧧 Hoa hồng nhận: {tong_hoahong_tien}đ ({ty_le_hoan}%)\n📌 Trạng thái: {trang_thai_don}`,
-    template_order_not_found: `@{ten_zalo} ⚠️ Không tìm thấy thông tin cho mã đơn: {ma_don_hang}.\n📌 Lưu ý: Đơn hàng mới đặt thường được cập nhật vào kỳ đối soát sau 1 ngày. Vui lòng kiểm tra lại mã đơn hoặc nhắn /tracuu để xem toàn bộ đơn của bạn nhé!`,
+    template_order_not_found: `@{ten_zalo} 🛒 Bạn chưa có đơn hàng nào trên hệ thống!`,
     template_wallet: `@{ten_zalo} 🔍 TỔNG QUAN VÍ TIỀN HOÀN TIỀN (Kênh {ten_nhom})\n\n💳 Số dư khả dụng: {so_du_vi}đ\n\n👉 Gõ /tracuu để lấy link tra cứu cá nhân và rút tiền về thẻ ngân hàng nhé! 🥰`,
     template_wallet_no_orders: `@{ten_zalo} ⚠️ Rất tiếc! Không tìm thấy thông tin ví hoặc đơn hàng của bạn tại Kênh {ten_nhom}.\n🛒 Hãy gửi bất kỳ link sản phẩm Shopee/TikTok vào nhóm để tạo đơn hoàn tiền đầu tiên nhé! 🥰`,
     template_lookup: `@{ten_zalo} 🔍 TRA CỨU ĐƠN HÀNG & VÍ HOÀN TIỀN\n👉 Link tra cứu cá nhân của bạn (bấm là xem ngay & rút tiền):\n🌐 {link_tra_cuu}\n\n💡 TÍNH NĂNG TRANG TRA CỨU:\n📦 Xem chi tiết toàn bộ đơn đã mua & hoa hồng từng đơn.\n💳 Quản lý ví tiền: Đang chờ / Đã hoàn thành / Khả dụng.\n💸 Rút tiền hoa hồng về STK Ngân hàng 1 chạm nhanh chóng!`,

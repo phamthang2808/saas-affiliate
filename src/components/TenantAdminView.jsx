@@ -20,7 +20,12 @@ const getStandardBotTemplates = (tenant) => {
 };
 
 export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSelectTenant, user, token, onOpenLogin }) {
-  const activeTenant = currentTenant || (APP_CONFIG.isStandalone ? APP_CONFIG.tenant : null);
+  const activeTenant =
+    currentTenant ||
+    (availableTenants && user?.tenantId
+      ? availableTenants.find((t) => String(t.id) === String(user.tenantId))
+      : null) ||
+    (APP_CONFIG.isStandalone ? APP_CONFIG.tenant : null);
   const [activeTab, setActiveTab] = useState("overview"); // 'overview' | 'users' | 'payouts' | 'shopee' | 'tiktok' | 'import' | 'settings' | 'templates'
   const [stats, setStats] = useState(null);
   const [orders, setOrders] = useState([]);
@@ -85,6 +90,10 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
 
   const handleSaveSettings = async (e) => {
     if (e) e.preventDefault();
+    if (!activeTenant?.slug) {
+      alert("❌ Chưa xác định được Kênh Trưởng Nhóm! Vui lòng chọn hoặc liên hệ Admin để gán Kênh.");
+      return;
+    }
     setIsSavingSettings(true);
     setSettingsSaveMessage("");
     try {
@@ -173,6 +182,10 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
   };
 
   const handleSaveTemplates = async () => {
+    if (!activeTenant?.slug) {
+      alert("❌ Chưa xác định được Kênh Trưởng Nhóm! Vui lòng chọn hoặc liên hệ Admin để gán Kênh.");
+      return;
+    }
     setIsSavingTemplates(true);
     setTemplateSaveMessage("");
     try {
@@ -210,10 +223,17 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
   };
 
   useEffect(() => {
+    if (!currentTenant && activeTenant && onSelectTenant) {
+      onSelectTenant(activeTenant);
+    }
     fetchTenantData();
   }, [activeTenant?.slug, apiRoot]);
 
   const handleApprovePayout = async (payoutId) => {
+    if (!activeTenant?.slug) {
+      alert("❌ Chưa xác định được Kênh Trưởng Nhóm! Vui lòng chọn hoặc liên hệ Admin để gán Kênh.");
+      return;
+    }
     if (!window.confirm("Xác nhận ĐÃ CHUYỂN TIỀN thành công cho yêu cầu rút tiền này?")) return;
 
     try {
@@ -234,6 +254,10 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
   };
 
   const handleRejectPayout = async (payoutId) => {
+    if (!activeTenant?.slug) {
+      alert("❌ Chưa xác định được Kênh Trưởng Nhóm! Vui lòng chọn hoặc liên hệ Admin để gán Kênh.");
+      return;
+    }
     const note = prompt("Nhập lý do từ chối (ví dụ: Sai số tài khoản, chưa đủ số dư):", "Sai thông tin ngân hàng");
     if (note === null) return;
 
@@ -256,6 +280,10 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
   };
 
   const handleUploadExcel = async () => {
+    if (!activeTenant?.slug) {
+      alert("❌ Chưa xác định được Kênh Trưởng Nhóm! Vui lòng chọn Kênh hoặc liên hệ Super Admin để gán Kênh cho tài khoản của bạn.");
+      return;
+    }
     if (!importFile) {
       alert("Vui lòng chọn file Excel trước!");
       return;
@@ -325,6 +353,19 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
 
   return (
     <div className="space-y-6 pb-12">
+      {/* Warning banner if tenant is not selected or assigned */}
+      {!activeTenant?.slug && (
+        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold flex items-center gap-3 shadow-2xs">
+          <i className="fa-solid fa-triangle-exclamation text-xl text-amber-600 shrink-0"></i>
+          <div>
+            <p className="font-extrabold text-sm text-amber-950">Chưa xác định Kênh Quản Trị Trưởng Nhóm</p>
+            <p className="font-normal text-slate-700 text-xs mt-0.5">
+              Tài khoản của bạn chưa được gán Kênh Trưởng Nhóm cụ thể. Vui lòng chọn Kênh từ menu góc trên hoặc liên hệ Super Admin để kiểm tra phân quyền.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* ===================== 1. HEADER ===================== */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">

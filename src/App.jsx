@@ -162,12 +162,14 @@ export default function App() {
   // If user is TENANT_ADMIN, auto select their assigned tenant
   useEffect(() => {
     if (user?.role === "TENANT_ADMIN" && user?.tenantId && availableTenants.length > 0) {
-      const assigned = availableTenants.find((t) => t.id === user.tenantId);
-      if (assigned && (!currentTenant || currentTenant.id !== assigned.id)) {
+      const assigned = availableTenants.find(
+        (t) => String(t.id) === String(user.tenantId)
+      );
+      if (assigned && (!currentTenant || String(currentTenant.id) !== String(assigned.id))) {
         setCurrentTenant(assigned);
       }
     }
-  }, [user, availableTenants]);
+  }, [user, availableTenants, currentTenant]);
 
   const handleGoogleSuccess = async (googleResponse) => {
     let authData = googleResponse;
@@ -195,6 +197,16 @@ export default function App() {
     localStorage.setItem("saasToken", authData.token);
     localStorage.setItem("saasUser", JSON.stringify(authData.user));
     setIsAuthModalOpen(false);
+
+    // Auto set assigned tenant if user is TENANT_ADMIN
+    if (authData.user.role === "TENANT_ADMIN" && authData.user.tenantId && availableTenants.length > 0) {
+      const assigned = availableTenants.find(
+        (t) => String(t.id) === String(authData.user.tenantId)
+      );
+      if (assigned) {
+        setCurrentTenant(assigned);
+      }
+    }
 
     // If Super Admin, switch to super-admin view
     if (authData.user.role === "SUPER_ADMIN") {

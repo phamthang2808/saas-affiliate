@@ -160,19 +160,30 @@ export function Sidebar({
                   {user.name || user.email}
                 </p>
                 <span
-                  className={`text-[9px] font-black px-1.5 py-0.5 rounded inline-block uppercase ${
+                  className={`text-[9px] font-black px-2 py-0.5 rounded-md inline-flex items-center gap-1 uppercase ${
                     user.role === "SUPER_ADMIN"
-                      ? "bg-amber-100 text-amber-800 border border-amber-300"
+                      ? "bg-amber-100 text-amber-900 border border-amber-300"
                       : user.role === "TENANT_ADMIN"
-                      ? "bg-purple-100 text-purple-800 border border-purple-300"
+                      ? "bg-purple-100 text-purple-900 border border-purple-300"
                       : "bg-slate-200 text-slate-700"
                   }`}
                 >
-                  {user.role === "SUPER_ADMIN"
-                    ? "👑 Super Admin"
-                    : user.role === "TENANT_ADMIN"
-                    ? "👔 Trưởng Nhóm"
-                    : "🛍️ Thành Viên"}
+                  {user.role === "SUPER_ADMIN" ? (
+                    <>
+                      <i className="fa-solid fa-crown text-amber-500 text-[10px]"></i>
+                      <span>SUPER ADMIN</span>
+                    </>
+                  ) : user.role === "TENANT_ADMIN" ? (
+                    <>
+                      <i className="fa-solid fa-user-shield text-purple-600 text-[10px]"></i>
+                      <span>TRƯỞNG NHÓM</span>
+                    </>
+                  ) : (
+                    <>
+                      <i className="fa-solid fa-user text-slate-500 text-[10px]"></i>
+                      <span>THÀNH VIÊN</span>
+                    </>
+                  )}
                 </span>
               </div>
             </div>

@@ -110,6 +110,9 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
     name: "",
     adminZaloId: "",
     withdrawalRuleNote: "",
+    shopeePubId: "",
+    tiktokApiKey: "",
+    tiktokCreatorUsername: "",
   });
   const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [settingsSaveMessage, setSettingsSaveMessage] = useState("");
@@ -135,6 +138,9 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
           name: data.name || "",
           adminZaloId: data.adminZaloId || "",
           withdrawalRuleNote: data.withdrawalRuleNote || "",
+          shopeePubId: data.shopeePubId || "",
+          tiktokApiKey: data.tiktokApiKey || "",
+          tiktokCreatorUsername: data.tiktokCreatorUsername || "",
         });
       }
     } catch (e) {
@@ -635,7 +641,6 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
       <div className="flex flex-wrap items-center gap-2 pt-1 pb-1">
         {[
           { key: "overview", icon: "fa-solid fa-chart-pie", label: "Tổng quan" },
-          { key: "users", icon: "fa-solid fa-users", label: `Người dùng Web (${webUsers.length})` },
           { key: "zalo_users", icon: "fa-solid fa-comments", label: `Tài khoản Zalo (${zaloUsers.length})` },
           { key: "payouts", icon: "fa-solid fa-money-bill-transfer", label: "Rút tiền", badge: pendingPayouts.length },
           { key: "shopee", icon: "fa-solid fa-bag-shopping", label: `Đơn Shopee (${shopeeOrders.length})` },
@@ -723,48 +728,6 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                 </div>
               ))}
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* ===================== TAB 2: NGƯỜI DÙNG WEB ===================== */}
-      {activeTab === "users" && !isLoading && (
-        <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
-          <div className="p-4 sm:p-6 border-b border-slate-100 flex items-center justify-between">
-            <h3 className="text-base font-black text-slate-900 font-display">Tài khoản Quản Trị Web</h3>
-            <span className="text-xs font-bold text-slate-400">Tổng: {webUsers.length} tài khoản</span>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="bg-slate-50/80 text-slate-500 text-[11px] font-black uppercase tracking-wider border-b border-slate-100">
-                  <th className="p-3.5">Họ & Tên / ID</th>
-                  <th className="p-3.5">Email</th>
-                  <th className="p-3.5 text-center">Vai trò</th>
-                  <th className="p-3.5">Ngày tham gia</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-                {webUsers.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="p-8 text-center text-slate-400">Chưa có người dùng web nào.</td>
-                  </tr>
-                ) : (
-                  webUsers.map((u) => (
-                    <tr key={u.id} className="hover:bg-slate-50/80 transition">
-                      <td className="p-3.5 font-bold text-slate-900">{u.name || "Chưa đặt tên"}</td>
-                      <td className="p-3.5 font-mono">{u.email}</td>
-                      <td className="p-3.5 text-center">
-                        <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
-                          {u.role || "BUYER"}
-                        </span>
-                      </td>
-                      <td className="p-3.5 text-slate-400">{u.createdAt ? formatDate(u.createdAt) : "—"}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
           </div>
         </div>
       )}
@@ -1255,31 +1218,124 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                       })
                   )}
                 </tbody>
+                {filteredOrders.length > 0 && (
+                  <tfoot className="bg-slate-50/90 font-bold border-t-2 border-slate-200">
+                    <tr>
+                      <td colSpan={4} className="p-3.5 font-black text-slate-800 text-xs">
+                        📊 TỔNG CỘNG ({filteredOrders.length} đơn {activeTab === "tiktok" ? "TikTok" : "Shopee"} đang lọc)
+                      </td>
+                      <td className="p-3.5 text-right font-mono font-black text-slate-800">
+                        {formatMoney(totalRawSum)}
+                      </td>
+                      <td className="p-3.5 text-right font-mono font-black text-rose-600">
+                        {formatMoney(totalTaxSum)}
+                      </td>
+                      <td className="p-3.5 text-right font-mono font-black text-slate-800">
+                        {formatMoney(totalAfterTaxSum)}
+                      </td>
+                      <td className="p-3.5 text-right font-mono font-black text-orange-600">
+                        {formatMoney(totalUserFinalSum)}
+                      </td>
+                      <td className="p-3.5 text-right font-mono font-black text-purple-600">
+                        {formatMoney(totalAdminProfitSum)}
+                      </td>
+                    </tr>
+                  </tfoot>
+                )}
               </table>
             </div>
 
-            {/* PAGINATION */}
-            {filteredOrders.length > 50 && (
-              <div className="p-4 border-t border-slate-100 flex items-center justify-between">
-                <button
-                  disabled={adminOrderPage <= 1}
-                  onClick={() => setAdminOrderPage((p) => Math.max(1, p - 1))}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl disabled:opacity-40 cursor-pointer"
-                >
-                  Trang trước
-                </button>
-                <span className="text-xs font-bold text-slate-600">
-                  Trang {adminOrderPage} / {Math.ceil(filteredOrders.length / 50)}
-                </span>
-                <button
-                  disabled={adminOrderPage >= Math.ceil(filteredOrders.length / 50)}
-                  onClick={() => setAdminOrderPage((p) => p + 1)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl disabled:opacity-40 cursor-pointer"
-                >
-                  Trang sau
-                </button>
-              </div>
-            )}
+            {/* LỲ-STYLE RICH PAGINATION BAR */}
+            {(() => {
+              const totalPages = Math.max(1, Math.ceil(filteredOrders.length / 50));
+              const getPageNumbers = () => {
+                const delta = 2;
+                const range = [];
+                for (
+                  let i = Math.max(2, adminOrderPage - delta);
+                  i <= Math.min(totalPages - 1, adminOrderPage + delta);
+                  i++
+                ) {
+                  range.push(i);
+                }
+                if (adminOrderPage - delta > 2) range.unshift("...");
+                range.unshift(1);
+                if (adminOrderPage + delta < totalPages - 1) range.push("...");
+                if (totalPages > 1) range.push(totalPages);
+                return range;
+              };
+
+              return (
+                <div className="p-4 bg-white border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-medium">
+                  <div className="text-slate-500">
+                    Hiển thị{" "}
+                    <strong className="text-slate-800">
+                      {filteredOrders.length > 0 ? (adminOrderPage - 1) * 50 + 1 : 0} -{" "}
+                      {Math.min(adminOrderPage * 50, filteredOrders.length)}
+                    </strong>{" "}
+                    trong tổng số <strong className="text-orange-600">{filteredOrders.length}</strong> đơn (Trang {adminOrderPage}/{totalPages})
+                  </div>
+
+                  {totalPages > 1 && (
+                    <div className="flex items-center gap-1 font-bold">
+                      <button
+                        onClick={() => setAdminOrderPage(1)}
+                        disabled={adminOrderPage === 1}
+                        className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 disabled:opacity-30 cursor-pointer transition flex items-center justify-center text-xs"
+                        title="Trang đầu"
+                      >
+                        «
+                      </button>
+                      <button
+                        onClick={() => setAdminOrderPage((p) => Math.max(1, p - 1))}
+                        disabled={adminOrderPage === 1}
+                        className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 disabled:opacity-30 cursor-pointer transition flex items-center justify-center text-xs"
+                        title="Trang trước"
+                      >
+                        ‹
+                      </button>
+
+                      {getPageNumbers().map((p, i) =>
+                        p === "..." ? (
+                          <span key={`ell-${i}`} className="px-1 text-slate-400">
+                            ...
+                          </span>
+                        ) : (
+                          <button
+                            key={p}
+                            onClick={() => setAdminOrderPage(p)}
+                            className={`w-8 h-8 rounded-xl text-xs font-black transition cursor-pointer ${
+                              adminOrderPage === p
+                                ? "bg-purple-600 text-white shadow-xs"
+                                : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-100"
+                            }`}
+                          >
+                            {p}
+                          </button>
+                        )
+                      )}
+
+                      <button
+                        onClick={() => setAdminOrderPage((p) => Math.min(totalPages, p + 1))}
+                        disabled={adminOrderPage === totalPages}
+                        className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 disabled:opacity-30 cursor-pointer transition flex items-center justify-center text-xs"
+                        title="Trang sau"
+                      >
+                        ›
+                      </button>
+                      <button
+                        onClick={() => setAdminOrderPage(totalPages)}
+                        disabled={adminOrderPage === totalPages}
+                        className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 disabled:opacity-30 cursor-pointer transition flex items-center justify-center text-xs"
+                        title="Trang cuối"
+                      >
+                        »
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         </div>
       )}
@@ -1421,6 +1477,37 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                 onChange={(e) => setSettings({ ...settings, taxRate: e.target.value })}
                 className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 text-xs font-bold text-slate-800 outline-none"
               />
+            </div>
+
+            <div className="md:col-span-2 pt-3 border-t border-slate-100">
+              <h4 className="text-xs font-black uppercase text-slate-800 tracking-wider mb-3 flex items-center gap-2">
+                <i className="fa-brands fa-tiktok text-black"></i>
+                <span>Cấu hình Kết nối API TikTok Shop (RioHub)</span>
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">TikTok RioHub API Key:</label>
+                  <input
+                    type="text"
+                    value={settings.tiktokApiKey}
+                    onChange={(e) => setSettings({ ...settings, tiktokApiKey: e.target.value })}
+                    placeholder="Để trống nếu Kênh không dùng TikTok..."
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 text-xs font-mono font-bold text-slate-800 outline-none focus:border-orange-500"
+                  />
+                  <span className="text-[10px] text-slate-400 mt-1 block">Khóa API kết nối RioHub để kéo đơn TikTok Shop tự động cho Kênh này.</span>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">TikTok Creator Username:</label>
+                  <input
+                    type="text"
+                    value={settings.tiktokCreatorUsername}
+                    onChange={(e) => setSettings({ ...settings, tiktokCreatorUsername: e.target.value })}
+                    placeholder="VD: tran_huyen_affiliate..."
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 text-xs font-mono font-bold text-slate-800 outline-none focus:border-orange-500"
+                  />
+                  <span className="text-[10px] text-slate-400 mt-1 block">Tên tài khoản Creator TikTok Affiliate tương ứng.</span>
+                </div>
+              </div>
             </div>
           </div>
         </form>

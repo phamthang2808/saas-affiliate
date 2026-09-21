@@ -110,8 +110,8 @@ export function TopBar({
 
       {/* Right: Group Switcher (only in tenant-admin) + Profile / Login */}
       <div className="flex items-center gap-2.5">
-        {/* Show Group selector only in Tenant Admin area */}
-        {currentView === "tenant-admin" && availableTenants.length > 0 && (
+        {/* Show Group selector ONLY when user is SUPER_ADMIN */}
+        {currentView === "tenant-admin" && user?.role === "SUPER_ADMIN" && availableTenants.length > 0 && (
           <div className="flex items-center gap-1.5 bg-slate-100/90 px-2.5 py-1.5 rounded-xl border border-slate-200">
             <i className="fa-solid fa-users text-[11px] text-slate-400"></i>
             <span className="text-[11px] font-bold text-slate-500 hidden md:inline">Nhóm:</span>

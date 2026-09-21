@@ -998,6 +998,49 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
               ))
             )}
           </div>
+
+          {/* BOT LOGS & MONITORING GUIDE CARD */}
+          <div className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-2xs space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-base font-black text-slate-900 font-display flex items-center gap-2">
+                <i className="fa-solid fa-terminal text-teal-600"></i>
+                <span>Theo Dõi & Nhật Ký Hoạt Động Bot Zalo</span>
+              </h3>
+              <span className="text-[11px] font-bold px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                🟢 Realtime Service
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
+                <h4 className="font-black text-slate-900 flex items-center gap-2">
+                  <i className="fa-solid fa-desktop text-emerald-600"></i>
+                  <span>Cách 1: Xem Log thời gian thực trên máy tính / VPS</span>
+                </h4>
+                <p className="text-slate-600 leading-relaxed">
+                  Bấm mở tệp <strong>XEM_LOG_BOT.bat</strong> ở thư mục dự án hoặc gõ lệnh SSH trực tiếp trên VPS:
+                </p>
+                <div className="bg-slate-900 text-emerald-400 font-mono text-[11px] p-2.5 rounded-xl border border-slate-700">
+                  pm2 logs zalo-bot-saas-runner
+                </div>
+                <p className="text-[11px] text-slate-400">
+                  Mọi tin nhắn thành viên gửi link Shopee, TikTok hay các lệnh (/vitien, /tracuu) sẽ in rõ từng dòng theo tên kênh <strong>[{activeTenant?.slug || "tenant"}]</strong>.
+                </p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
+                <h4 className="font-black text-slate-900 flex items-center gap-2">
+                  <i className="fa-solid fa-bolt text-amber-500"></i>
+                  <span>Quy trình Bot tự động trả lời</span>
+                </h4>
+                <ul className="space-y-1.5 text-slate-600 list-disc list-inside">
+                  <li><strong>Bước 1:</strong> Thành viên gửi link Shopee/TikTok vào chat riêng hoặc nhóm Zalo có Bot Phụ.</li>
+                  <li><strong>Bước 2:</strong> Bot tự động bóc tách link ➔ Gắn <code>sub_id</code> đối soát của Kênh {groupDisplayName}.</li>
+                  <li><strong>Bước 3:</strong> Bot gửi lại link hoàn tiền kèm mẫu nhắn đã cài đặt của Trưởng Nhóm.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

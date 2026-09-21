@@ -3,6 +3,23 @@ import { formatMoney, formatDate } from "../utils/formatters";
 import { APP_CONFIG } from "../config/api";
 
 // Standard default bot templates helper
+const CANONICAL_TEMPLATE_KEYS = [
+  "template_link",
+  "template_welcome",
+  "template_order_detail",
+  "template_order_not_found",
+  "template_wallet",
+  "template_wallet_no_orders",
+  "template_lookup",
+  "template_save_bank_success",
+  "template_invalid_bank_syntax",
+  "template_withdraw_success",
+  "template_withdraw_zero",
+  "template_approve_payout",
+  "template_help",
+  "template_invalid_command"
+];
+
 const TEMPLATE_META = {
   template_link: {
     title: "1. Mẫu tin nhắn Trả Link Mua Sắm Hoàn Tiền",
@@ -324,8 +341,15 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
             custom = JSON.parse(data.customTemplatesJson);
           } catch (e) {}
         }
+        if (custom.template_lookup_has_orders && !custom.template_lookup) {
+          custom.template_lookup = custom.template_lookup_has_orders;
+        }
+        if (custom.template_wallet_has_orders && !custom.template_wallet) {
+          custom.template_wallet = custom.template_wallet_has_orders;
+        }
+
         const merged = { ...defs };
-        Object.keys(defs).forEach((k) => {
+        CANONICAL_TEMPLATE_KEYS.forEach((k) => {
           if (custom[k] !== undefined && custom[k] !== null && String(custom[k]).trim() !== "") {
             merged[k] = convertEnglishToVietnamesePlaceholders(custom[k]);
           }
@@ -1851,9 +1875,9 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
           </div>
 
           <div className="space-y-5">
-            {Object.keys(botTemplates).map((key) => {
+            {CANONICAL_TEMPLATE_KEYS.map((key) => {
               const meta = TEMPLATE_META[key] || { title: key, desc: "" };
-              const val = botTemplates[key] || "";
+              const val = botTemplates[key] || defaultTemplates[key] || "";
               const lineCount = (val.match(/\n/g) || []).length + 1;
               const dynamicRows = Math.max(4, Math.min(16, lineCount + 2));
 
@@ -1867,7 +1891,6 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                       <div>
                         <h4 className="text-sm font-black text-slate-900 font-display flex items-center gap-2 flex-wrap">
                           <span>{meta.title}</span>
-                          <span className="font-mono text-[10px] text-slate-400 font-normal">({key})</span>
                         </h4>
                         {meta.desc && (
                           <p className="text-[11px] text-slate-500 font-medium mt-0.5">{meta.desc}</p>

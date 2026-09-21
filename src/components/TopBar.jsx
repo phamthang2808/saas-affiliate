@@ -1,3 +1,4 @@
+import { useState } from "react";
 import logoImg from "../assets/logo.png";
 import { APP_CONFIG } from "../config/api";
 
@@ -11,6 +12,7 @@ export function TopBar({
   onToggleMobile,
   onNavigate,
 }) {
+  const [showBellPopover, setShowBellPopover] = useState(false);
   const groupName = currentTenant?.name || APP_CONFIG.tenant.name || "28AffiHub";
 
   const getHeaderInfo = () => {
@@ -132,14 +134,32 @@ export function TopBar({
           </div>
         )}
 
-        {/* Notification Bell Button */}
-        <button
-          onClick={() => alert("Thông báo: Hệ thống 28AffiHub đang hoạt động ổn định 24/7!")}
-          className="w-8 h-8 rounded-full bg-white hover:bg-slate-50 border border-slate-200/90 text-slate-500 hover:text-orange-600 flex items-center justify-center transition cursor-pointer shadow-2xs"
-          title="Thông báo hệ thống"
-        >
-          <i className="fa-regular fa-bell text-xs"></i>
-        </button>
+        {/* Notification Bell Button & Popover */}
+        <div className="relative">
+          <button
+            onClick={() => setShowBellPopover(!showBellPopover)}
+            className="w-8 h-8 rounded-full bg-white hover:bg-slate-50 border border-slate-200/90 text-slate-500 hover:text-orange-600 flex items-center justify-center transition cursor-pointer shadow-2xs relative"
+            title="Thông báo hệ thống"
+          >
+            <i className="fa-regular fa-bell text-xs"></i>
+            <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-white"></span>
+          </button>
+
+          {showBellPopover && (
+            <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-slate-100 p-4 z-50 animate-in fade-in zoom-in-95 duration-150">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-2 mb-2">
+                <span className="text-xs font-black text-slate-900 flex items-center gap-1.5">
+                  <i className="fa-solid fa-bell text-emerald-600"></i>
+                  Thông báo hệ thống
+                </span>
+                <button onClick={() => setShowBellPopover(false)} className="text-slate-400 hover:text-slate-600 text-xs">✕</button>
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                🟢 <strong>28AffiHub SaaS</strong> đang vận hành ổn định 24/7. Các tính năng tạo link và tự động đối soát Bot Zalo đang hoạt động bình thường!
+              </p>
+            </div>
+          )}
+        </div>
 
         {/* User profile / Login */}
         {user ? (

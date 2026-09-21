@@ -240,6 +240,20 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
   };
 
   const [realQrBase64, setRealQrBase64] = useState(null);
+  const [toast, setToast] = useState(null);
+  const pollTimerRef = React.useRef(null);
+
+  const showNotification = (message, type = "success") => {
+    setToast({ message, type, id: Date.now() });
+    setTimeout(() => setToast(null), 4500);
+  };
+
+  const stopQrPolling = () => {
+    if (pollTimerRef.current) {
+      clearInterval(pollTimerRef.current);
+      pollTimerRef.current = null;
+    }
+  };
 
   const fetchRealQrImage = async () => {
     if (!activeTenant?.slug) return;
@@ -248,10 +262,11 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
       if (res.ok) {
         const data = await res.json();
         if (data.status === "CONNECTED" || data.status === "ACTIVE") {
+          stopQrPolling();
           setShowQrModal(false);
           setIsGeneratingQr(false);
           setRealQrBase64(null);
-          alert("🎉 Đã quét mã QR và đăng nhập Bot Zalo thành công!");
+          showNotification("🎉 Đã quét mã QR và đăng nhập Bot Zalo thành công!", "success");
           fetchTenantBots();
           return;
         }
@@ -270,9 +285,10 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
 
   const handleGenerateQr = async () => {
     if (!activeTenant?.slug) {
-      alert("❌ Chưa xác định được Kênh Trưởng Nhóm!");
+      showNotification("❌ Chưa xác định được Kênh Trưởng Nhóm!", "error");
       return;
     }
+    stopQrPolling();
     setIsGeneratingQr(true);
     setRealQrBase64(null);
     setQrMessage("⏳ Đang kết nối máy chủ Zalo để tạo mã QR thực...");
@@ -285,19 +301,17 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
       if (res.ok) {
         setQrMessage("⏳ Đang tải mã QR từ Server Zalo...");
         fetchTenantBots();
-        // Immediately fetch once
         await fetchRealQrImage();
-        // Polling QR image every 1.5 seconds
-        const pollTimer = setInterval(async () => {
+        pollTimerRef.current = setInterval(async () => {
           await fetchRealQrImage();
         }, 1500);
-        setTimeout(() => clearInterval(pollTimer), 60000);
+        setTimeout(() => stopQrPolling(), 60000);
       } else {
-        alert("❌ " + (data.message || "Lỗi tạo phiên QR"));
+        showNotification("❌ " + (data.message || "Lỗi tạo phiên QR"), "error");
         setIsGeneratingQr(false);
       }
     } catch (err) {
-      alert("❌ Lỗi kết nối: " + err.message);
+      showNotification("❌ Lỗi kết nối: " + err.message, "error");
       setIsGeneratingQr(false);
     }
   };
@@ -305,11 +319,11 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
   const handleConnectBotManually = async (e) => {
     e.preventDefault();
     if (!activeTenant?.slug) {
-      alert("❌ Chưa xác định được Kênh Trưởng Nhóm!");
+      showNotification("❌ Chưa xác định được Kênh Trưởng Nhóm!", "error");
       return;
     }
     if (!newBotZaloId || !newBotZaloName) {
-      alert("Vui lòng nhập Zalo ID và Tên Zalo nick phụ!");
+      showNotification("Vui lòng nhập Zalo ID và Tên Zalo nick phụ!", "error");
       return;
     }
     setIsConnectingBot(true);
@@ -325,17 +339,18 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
       });
       const data = await res.json();
       if (res.ok) {
-        alert("🎉 " + data.message);
+        showNotification("🎉 " + data.message, "success");
+        stopQrPolling();
         setShowQrModal(false);
         setNewBotZaloId("");
         setNewBotZaloName("");
         setNewBotName("");
         fetchTenantBots();
       } else {
-        alert("❌ " + (data.message || "Lỗi kết nối nick bot"));
+        showNotification("❌ " + (data.message || "Lỗi kết nối nick bot"), "error");
       }
     } catch (err) {
-      alert("❌ Lỗi kết nối: " + err.message);
+      showNotification("❌ Lỗi kết nối: " + err.message, "error");
     } finally {
       setIsConnectingBot(false);
     }
@@ -344,6 +359,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
   const handleDisconnectBot = async (botId) => {
     if (!activeTenant?.slug) return;
     if (!window.confirm("Bạn có chắc chắn muốn ngắt kết nối nick Bot Zalo này khỏi Kênh?")) return;
+    stopQrPolling();
     try {
       const res = await fetch(`${apiRoot}/api/saas/admin/${activeTenant.slug}/bot/${botId}`, {
         method: "DELETE",
@@ -351,13 +367,13 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
       });
       const data = await res.json();
       if (res.ok) {
-        alert("✅ " + (data.message || "Đã ngắt kết nối nick Bot thành công!"));
+        showNotification("✅ " + (data.message || "Đã ngắt kết nối nick Bot thành công!"), "success");
         fetchTenantBots();
       } else {
-        alert("❌ " + (data.message || "Lỗi ngắt kết nối"));
+        showNotification("❌ " + (data.message || "Lỗi ngắt kết nối"), "error");
       }
     } catch (err) {
-      alert("❌ Lỗi kết nối: " + err.message);
+      showNotification("❌ Lỗi kết nối: " + err.message, "error");
     }
   };
 
@@ -389,7 +405,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
 
   const handleSaveTemplates = async () => {
     if (!activeTenant?.slug) {
-      alert("❌ Chưa xác định được Kênh Trưởng Nhóm!");
+      showNotification("❌ Chưa xác định được Kênh Trưởng Nhóm!", "error");
       return;
     }
     setIsSavingTemplates(true);
@@ -405,12 +421,13 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
       const data = await res.json();
       if (res.ok) {
         setTemplateSaveMessage("✅ Đã lưu cấu hình tin nhắn Bot thành công!");
+        showNotification("✅ Đã lưu cấu hình tin nhắn Bot thành công!", "success");
         setTimeout(() => setTemplateSaveMessage(""), 4000);
       } else {
-        alert("❌ " + (data.message || "Lỗi lưu cấu hình tin nhắn"));
+        showNotification("❌ " + (data.message || "Lỗi lưu cấu hình tin nhắn"), "error");
       }
     } catch (err) {
-      alert("❌ Lỗi kết nối máy chủ: " + err.message);
+      showNotification("❌ Lỗi kết nối máy chủ: " + err.message, "error");
     } finally {
       setIsSavingTemplates(false);
     }
@@ -437,7 +454,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
 
   const handleApprovePayout = async (payoutId) => {
     if (!activeTenant?.slug) {
-      alert("❌ Chưa xác định được Kênh Trưởng Nhóm!");
+      showNotification("❌ Chưa xác định được Kênh Trưởng Nhóm!", "error");
       return;
     }
     if (!window.confirm("Xác nhận ĐÃ CHUYỂN TIỀN thành công cho yêu cầu rút tiền này?")) return;
@@ -449,19 +466,19 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
       });
       const data = await res.json();
       if (res.ok) {
-        alert("✅ " + (data.message || "Đã duyệt rút tiền thành công!"));
+        showNotification("✅ " + (data.message || "Đã duyệt rút tiền thành công!"), "success");
         fetchTenantData();
       } else {
-        alert("❌ " + (data.message || "Lỗi duyệt rút tiền"));
+        showNotification("❌ " + (data.message || "Lỗi duyệt rút tiền"), "error");
       }
     } catch (err) {
-      alert("❌ Lỗi kết nối máy chủ: " + err.message);
+      showNotification("❌ Lỗi kết nối máy chủ: " + err.message, "error");
     }
   };
 
   const handleRejectPayout = async (payoutId) => {
     if (!activeTenant?.slug) {
-      alert("❌ Chưa xác định được Kênh Trưởng Nhóm!");
+      showNotification("❌ Chưa xác định được Kênh Trưởng Nhóm!", "error");
       return;
     }
     const note = prompt("Nhập lý do từ chối (ví dụ: Sai số tài khoản, chưa đủ số dư):", "Sai thông tin ngân hàng");
@@ -475,23 +492,23 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
       });
       const data = await res.json();
       if (res.ok) {
-        alert("✅ " + (data.message || "Đã từ chối yêu cầu rút tiền"));
+        showNotification("✅ " + (data.message || "Đã từ chối yêu cầu rút tiền"), "success");
         fetchTenantData();
       } else {
-        alert("❌ " + (data.message || "Lỗi khi từ chối"));
+        showNotification("❌ " + (data.message || "Lỗi khi từ chối"), "error");
       }
     } catch (err) {
-      alert("❌ Lỗi kết nối máy chủ: " + err.message);
+      showNotification("❌ Lỗi kết nối máy chủ: " + err.message, "error");
     }
   };
 
   const handleUploadExcel = async () => {
     if (!activeTenant?.slug) {
-      alert("❌ Chưa xác định được Kênh Trưởng Nhóm! Vui lòng chọn Kênh hoặc liên hệ Super Admin để gán Kênh cho tài khoản của bạn.");
+      showNotification("❌ Chưa xác định được Kênh Trưởng Nhóm! Vui lòng chọn Kênh hoặc liên hệ Super Admin để gán Kênh cho tài khoản của bạn.", "error");
       return;
     }
     if (!importFile) {
-      alert("Vui lòng chọn file Excel trước!");
+      showNotification("Vui lòng chọn file Excel trước!", "error");
       return;
     }
 
@@ -515,6 +532,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
           success: true,
           message: data.message || `Đã nạp thành công báo cáo đơn hàng cho ${activeTenant?.name}!`,
         });
+        showNotification(`Đã nạp thành công báo cáo đơn hàng cho ${activeTenant?.name}! 🎉`, "success");
         setImportFile(null);
         fetchTenantData();
       } else {
@@ -522,18 +540,18 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
           success: false,
           message: data.message || "Lỗi khi xử lý file Excel",
         });
-        alert("❌ " + (data.message || "Lỗi khi xử lý file Excel"));
+        showNotification("❌ " + (data.message || "Lỗi khi xử lý file Excel"), "error");
       }
     } catch (err) {
       setIsImporting(false);
-      alert("❌ Lỗi kết nối máy chủ: " + err.message);
+      showNotification("❌ Lỗi kết nối máy chủ: " + err.message, "error");
     }
   };
 
   const handleAssignOrder = async (e) => {
     if (e) e.preventDefault();
     if (!selectedOrderToAssign || !assignZaloId) {
-      alert("Vui lòng chọn tài khoản Zalo để gán đơn!");
+      showNotification("Vui lòng chọn tài khoản Zalo để gán đơn!", "error");
       return;
     }
     if (!activeTenant?.slug) return;
@@ -547,15 +565,15 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
       });
       const data = await res.json();
       if (res.ok) {
-        alert("✅ " + (data.message || "Đã gán đơn hàng cho thành viên thành công! 🎉"));
+        showNotification("✅ " + (data.message || "Đã gán đơn hàng cho thành viên thành công! 🎉"), "success");
         setSelectedOrderToAssign(null);
         setAssignZaloId("");
         fetchTenantData();
       } else {
-        alert("❌ " + (data.message || "Lỗi gán đơn hàng"));
+        showNotification("❌ " + (data.message || "Lỗi gán đơn hàng"), "error");
       }
     } catch (err) {
-      alert("❌ Lỗi máy chủ: " + err.message);
+      showNotification("❌ Lỗi máy chủ: " + err.message, "error");
     } finally {
       setIsSubmittingAssign(false);
     }
@@ -662,7 +680,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
 
   const handleExportOrdersExcel = (platform = "Shopee") => {
     if (!filteredOrders || filteredOrders.length === 0) {
-      alert("Không có dữ liệu đơn hàng phù hợp với bộ lọc để xuất!");
+      showNotification("Không có dữ liệu đơn hàng phù hợp với bộ lọc để xuất!", "info");
       return;
     }
 
@@ -718,7 +736,26 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
   };
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-6 pb-12 relative">
+      {/* Toast Notification Banner */}
+      {toast && (
+        <div className="fixed top-5 right-5 z-[9999] animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className={`px-5 py-3.5 rounded-2xl shadow-xl border flex items-center gap-3 backdrop-blur-md font-bold text-xs max-w-md ${
+            toast.type === "error"
+              ? "bg-rose-500/95 text-white border-rose-400 shadow-rose-500/20"
+              : toast.type === "info"
+              ? "bg-sky-500/95 text-white border-sky-400 shadow-sky-500/20"
+              : "bg-emerald-600/95 text-white border-emerald-400 shadow-emerald-600/20"
+          }`}>
+            <i className={`fa-solid ${toast.type === "error" ? "fa-circle-exclamation text-lg" : "fa-circle-check text-lg"}`}></i>
+            <span className="flex-1 leading-snug">{toast.message}</span>
+            <button onClick={() => setToast(null)} className="text-white/70 hover:text-white ml-2 text-sm cursor-pointer">
+              <i className="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Warning banner if tenant is not selected or assigned */}
       {!activeTenant?.slug && (
         <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold flex items-center gap-3 shadow-2xs">

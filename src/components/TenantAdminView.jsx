@@ -9,7 +9,6 @@ const CANONICAL_TEMPLATE_KEYS = [
   "template_order_detail",
   "template_order_not_found",
   "template_wallet",
-  "template_wallet_no_orders",
   "template_lookup",
   "template_save_bank_success",
   "template_invalid_bank_syntax",
@@ -43,64 +42,58 @@ const TEMPLATE_META = {
     title: "4. Mẫu tin nhắn Báo Chưa Có Đơn Hàng Nào (Khi Chưa Có Đơn)",
     command: "/donhang hoặc #donhang (khi CHƯA CÓ đơn)",
     icon: "fa-solid fa-box-open text-rose-600",
-    desc: "Tin nhắn thông báo và hướng dẫn gửi link mua sắm khi thành viên gõ lệnh /donhang lúc chưa có đơn nào."
+    desc: "Tin nhắn thông báo khi thành viên gõ lệnh /donhang lúc chưa có đơn nào."
   },
   template_wallet: {
-    title: "5. Mẫu tin nhắn Tổng Quan Ví Tiền & Hoa Hồng (Khi Đã Có Đơn)",
-    command: "/vitien hoặc #vitien (khi ĐÃ CÓ đơn)",
+    title: "5. Mẫu tin nhắn Tổng Quan Ví Tiền & Hoa Hồng (Lệnh /vitien)",
+    command: "/vitien hoặc #vitien",
     icon: "fa-solid fa-wallet text-emerald-600",
-    desc: "Tin nhắn Bot tổng hợp số dư khả dụng và hoa hồng đang chờ duyệt khi thành viên gõ lệnh /vitien."
-  },
-  template_wallet_no_orders: {
-    title: "6. Mẫu tin nhắn Báo Chưa Có Thông Tin Ví / Chưa Có Đơn Hàng",
-    command: "/vitien hoặc #vitien (khi CHƯA CÓ đơn)",
-    icon: "fa-solid fa-wallet text-amber-600",
-    desc: "Tin nhắn thông báo và nhắc nhở thành viên gửi link mua sắm đầu tiên khi gõ /vitien lúc ví trống."
+    desc: "Tin nhắn Bot tổng hợp thông tin ví tiền, tổng hoa hồng, đang chờ xử lý, đã hoàn thành và đã nhận khi gõ /vitien."
   },
   template_lookup: {
-    title: "7. Mẫu tin nhắn Tra Cứu Đơn Hàng & Ví Tiền (Link Web 1 Chạm)",
+    title: "6. Mẫu tin nhắn Tra Cứu Đơn Hàng & Ví Tiền (Link Web 1 Chạm - Lệnh /tracuu)",
     command: "/tracuu hoặc #tracuu",
     icon: "fa-solid fa-magnifying-glass text-purple-600",
     desc: "Tin nhắn Bot phản hồi kèm đường link Web tra cứu cá nhân rút gọn 1 chạm khi thành viên gõ lệnh /tracuu."
   },
   template_save_bank_success: {
-    title: "8. Mẫu tin nhắn Lưu Số Tài Khoản Thành Công",
+    title: "7. Mẫu tin nhắn Lưu Số Tài Khoản Thành Công (ĐÚNG cú pháp)",
     command: "/stk_[NGÂN_HÀNG]_[STK] (khi ĐÚNG cú pháp)",
     icon: "fa-solid fa-credit-card text-emerald-600",
     desc: "Tin nhắn phản hồi khi thành viên lưu hoặc cập nhật thành công số tài khoản ngân hàng nhận tiền."
   },
   template_invalid_bank_syntax: {
-    title: "9. Mẫu tin nhắn Báo Sai Cú Pháp Lưu Số Tài Khoản",
+    title: "8. Mẫu tin nhắn Báo Sai Cú Pháp Lưu Số Tài Khoản (SAI cú pháp)",
     command: "/stk (khi SAI cú pháp)",
     icon: "fa-solid fa-credit-card text-rose-500",
     desc: "Tin nhắn hướng dẫn lại cú pháp lưu số tài khoản ngân hàng khi người dùng gõ sai cú pháp /stk."
   },
   template_withdraw_success: {
-    title: "10. Mẫu tin nhắn Yêu Cầu Rút Tiền Thành Công",
+    title: "9. Mẫu tin nhắn Yêu Cầu Rút Tiền Thành Công",
     command: "/ruttien hoặc /rut (khi ĐỦ hạn mức)",
     icon: "fa-solid fa-paper-plane text-emerald-600",
     desc: "Tin nhắn thông báo khi thành viên lập lệnh rút tiền thành công và gửi thông tin STK chờ Trưởng Nhóm duyệt."
   },
   template_withdraw_zero: {
-    title: "11. Mẫu tin nhắn Báo Chưa Đủ Hạn Mức Rút Tiền",
+    title: "10. Mẫu tin nhắn Báo Chưa Đủ Hạn Mức Rút Tiền",
     command: "/ruttien hoặc /rut (khi CHƯA ĐỦ hạn mức)",
     icon: "fa-solid fa-wallet text-amber-600",
     desc: "Tin nhắn thông báo khi số dư khả dụng của thành viên chưa đạt hạn mức tối thiểu để lập lệnh rút."
   },
   template_approve_payout: {
-    title: "12. Mẫu tin nhắn Thông Báo Duyệt Rút Tiền Thành Công",
+    title: "11. Mẫu tin nhắn Thông Báo Duyệt Rút Tiền Thành Công",
     command: "/duyet_[MÃ_ID] (Chỉ Trưởng Nhóm)",
     icon: "fa-solid fa-circle-check text-purple-600",
     desc: "Tin nhắn thông báo trong nhóm Zalo khi Trưởng Nhóm thực hiện lệnh duyệt tiền thành công cho thành viên."
   },
   template_help: {
-    title: "13. Mẫu tin nhắn Trợ Giúp & Danh Sách Các Câu Lệnh",
+    title: "12. Mẫu tin nhắn Trợ Giúp & Danh Sách Các Câu Lệnh",
     command: "/help hoặc #help",
     icon: "fa-solid fa-circle-question text-indigo-600",
     desc: "Danh sách tổng hợp toàn bộ các câu lệnh Bot hỗ trợ để gửi cho thành viên khi họ cần trợ giúp."
   },
   template_invalid_command: {
-    title: "14. Mẫu tin nhắn Phản Hồi Khi Gõ Sai Cú Pháp Lệnh",
+    title: "13. Mẫu tin nhắn Phản Hồi Khi Gõ Sai Cú Pháp Lệnh",
     badge: "Khi người dùng gõ sai lệnh",
     icon: "fa-solid fa-triangle-exclamation text-amber-500",
     desc: "Tin nhắn nhắc nhở kèm gợi ý gõ /help khi người dùng gõ một câu lệnh không có trong hệ thống."
@@ -115,11 +108,10 @@ const getStandardBotTemplates = (tenant) => {
     template_welcome: `Hi, chào @{ten_zalo}\n🎉 Chào mừng bạn đã tham gia nhóm {ten_nhom}!\n📌 Bạn vui lòng đọc kỹ BÀI GHIM của nhóm hoặc gõ lệnh /help để xem hướng dẫn cách gửi link mua sắm và nhận hoàn {ty_le_hoan}% hoa hồng nhé! 🥰`,
     template_order_detail: `@{ten_zalo} 📦 THÔNG TIN ĐƠN HÀNG #{ma_don_hang}:\n🛍️ Sản phẩm: {ten_san_pham}\n💰 Giá trị đơn: {gia_san_pham}đ\n🧧 Hoa hồng nhận: {tong_hoahong_tien}đ ({ty_le_hoan}%)\n📌 Trạng thái: {trang_thai_don}`,
     template_order_not_found: `@{ten_zalo} 🛒 Bạn chưa có đơn hàng nào trên hệ thống!`,
-    template_wallet: `@{ten_zalo} 🔍 TỔNG QUAN VÍ TIỀN HOÀN TIỀN (Kênh {ten_nhom})\n\n💳 Số dư khả dụng: {so_du_vi}đ\n\n👉 Gõ /tracuu để lấy link tra cứu cá nhân và rút tiền về thẻ ngân hàng nhé! 🥰`,
-    template_wallet_no_orders: `@{ten_zalo} ⚠️ Rất tiếc! Không tìm thấy thông tin ví hoặc đơn hàng của bạn tại Kênh {ten_nhom}.\n🛒 Hãy gửi bất kỳ link sản phẩm Shopee/TikTok vào nhóm để tạo đơn hoàn tiền đầu tiên nhé! 🥰`,
-    template_lookup: `@{ten_zalo} 🔍 TRA CỨU ĐƠN HÀNG & VÍ HOÀN TIỀN\n👉 Link tra cứu cá nhân của bạn (bấm là xem ngay & rút tiền):\n🌐 {link_tra_cuu}\n\n💡 TÍNH NĂNG TRANG TRA CỨU:\n📦 Xem chi tiết toàn bộ đơn đã mua & hoa hồng từng đơn.\n💳 Quản lý ví tiền: Đang chờ / Đã hoàn thành / Khả dụng.\n💸 Rút tiền hoa hồng về STK Ngân hàng 1 chạm nhanh chóng!`,
-    template_save_bank_success: `@{ten_zalo} ✅ ĐÃ LƯU THÔNG TIN TÀI KHOẢN NGÂN HÀNG THÀNH CÔNG!\n🏦 Ngân hàng: {ngan_hang}\n💳 Số tài khoản: {so_tai_khoan}\n👤 Chủ tài khoản: {chu_tai_khoan}\n\n💡 Bây giờ bạn có thể gõ lệnh /ruttien để gửi yêu cầu rút tiền nhé! 🥰`,
-    template_invalid_bank_syntax: `@{ten_zalo} ⚠️ SAI CÚ PHÁP LƯU TÀI KHOẢN NGÂN HÀNG!\n👉 Cú pháp đúng: /stk_[TÊN_NGÂN_HÀNG]_[SỐ_TÀI_KHOẢN]_[TÊN_CHỦ_TK]\n📌 Ví dụ: /stk_MB_0888728256_NGUYEN VAN A (Tên viết tắt các ngân hàng: MB, VCB, TCB, ACB, VPB, TPB, CTG, BIDV...)`,
+    template_wallet: `@{ten_zalo} 💳 VÍ TIỀN CỦA BẠN\n💰 Tổng hoa hồng: {tong_hoahong_tien}đ\n⏳ Đang chờ xử lý: {hoahong_dangcho}đ\n✅ Đã hoàn thành: {hoahong_dahoanthanh}đ\n🏦 Đã nhận: {hoahong_danhan}đ\nHoa hồng từ các đơn đã hoàn thành sẽ được thanh toán vào thứ 6 của tuần kế tiếp.\nCảm ơn bạn đã đồng hành ❤️\n\nĐể xem đầy đủ các đơn hàng, vui lòng tra cứu tại: {link_tra_cuu}`,
+    template_lookup: `@{ten_zalo} 🔍 TRA CỨU ĐƠN HÀNG & VÍ HOÀN TIỀN\n👉 Link tra cứu bảo mật (đã mã hóa định danh, click là xem ngay):\n🌐 {link_tra_cuu}\n\n💡 TÍNH NĂNG TRANG TRA CỨU:\n📦 Xem danh sách đơn đã mua & chi tiết hoa hồng từng đơn.\n💳 Quản lý 3 ví tiền: Đang chờ / Đã hoàn thành / Khả dụng.\n💸 Rút tiền hoa hồng & cập nhật tài khoản Ngân hàng 1 chạm.\n📌 Lưu ý: Đơn Hoàn thành sau 3 ngày sẽ tự chuyển xuống ví Khả Dụng để rút.`,
+    template_save_bank_success: `@{ten_zalo} Bạn đã lưu thông tin thành công 🌷`,
+    template_invalid_bank_syntax: `@{ten_zalo} ⚠️ Cú pháp không hợp lệ. Vui lòng sử dụng định dạng: /stk_[Tên ngân hàng]_[Số tài khoản] (Ví dụ: /stk_MB_0987654321)`,
     template_withdraw_success: `@{ten_zalo} 🎉 YÊU CẦU RÚT TIỀN THÀNH CÔNG!\n💸 Số tiền rút: {so_tien_rut}đ\n🏦 Về tài khoản: {ngan_hang} - {so_tai_khoan} ({chu_tai_khoan})\n⏳ Trạng thái: Đã chuyển thông tin tới Trưởng Nhóm {ten_nhom} duyệt chi trả.`,
     template_withdraw_zero: `@{ten_zalo} ⚠️ Số dư khả dụng của bạn hiện là {so_du_vi}đ (chưa đủ hạn mức rút tối thiểu 10.000đ).\n💡 Bạn hãy gõ /tracuu để kiểm tra chi tiết trạng thái ví nhé!`,
     template_approve_payout: `🎉 THÔNG BÁO DUYỆT RÚT TIỀN THÀNH CÔNG!\n✅ Đã duyệt lệnh rút #{ma_giao_dich} cho thành viên @{ten_zalo}.\n💸 Số tiền: {so_tien_rut}đ\n🏦 Ngân hàng: {ngan_hang} - {so_tai_khoan}`,
@@ -310,6 +302,9 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
       .replace(/\{total_rate\}/g, "{tong_hoahong_phantram}")
       .replace(/\{commission_rate\}/g, "{tong_hoahong_phantram}")
       .replace(/\{commission_amount\}/g, "{tong_hoahong_tien}")
+      .replace(/\{pending_commission\}/g, "{hoahong_dangcho}")
+      .replace(/\{completed_commission\}/g, "{hoahong_dahoanthanh}")
+      .replace(/\{received_commission\}/g, "{hoahong_danhan}")
       .replace(/\{balance\}/g, "{so_du_vi}")
       .replace(/\{order_id\}/g, "{ma_don_hang}")
       .replace(/\{command\}/g, "{lenh_sai}");
@@ -1858,6 +1853,18 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
               <div className="p-2.5 bg-white rounded-xl border border-purple-100 flex flex-col justify-between shadow-2xs">
                 <div><code className="font-bold text-purple-700">{`{tong_hoahong_tien}`}</code>: Tiền hoa hồng (đ)</div>
                 <div className="text-[10px] text-purple-900/70 font-semibold bg-purple-50 px-2 py-1 rounded-lg mt-1.5">👉 VD: <span className="font-bold text-purple-950">36.575đ</span></div>
+              </div>
+              <div className="p-2.5 bg-white rounded-xl border border-purple-100 flex flex-col justify-between shadow-2xs">
+                <div><code className="font-bold text-purple-700">{`{hoahong_dangcho}`}</code>: Hoa hồng chờ xử lý</div>
+                <div className="text-[10px] text-purple-900/70 font-semibold bg-purple-50 px-2 py-1 rounded-lg mt-1.5">👉 VD: <span className="font-bold text-purple-950">12.000đ</span></div>
+              </div>
+              <div className="p-2.5 bg-white rounded-xl border border-purple-100 flex flex-col justify-between shadow-2xs">
+                <div><code className="font-bold text-purple-700">{`{hoahong_dahoanthanh}`}</code>: Hoa hồng đã hoàn thành</div>
+                <div className="text-[10px] text-purple-900/70 font-semibold bg-purple-50 px-2 py-1 rounded-lg mt-1.5">👉 VD: <span className="font-bold text-purple-950">50.000đ</span></div>
+              </div>
+              <div className="p-2.5 bg-white rounded-xl border border-purple-100 flex flex-col justify-between shadow-2xs">
+                <div><code className="font-bold text-purple-700">{`{hoahong_danhan}`}</code>: Hoa hồng đã nhận</div>
+                <div className="text-[10px] text-purple-900/70 font-semibold bg-purple-50 px-2 py-1 rounded-lg mt-1.5">👉 VD: <span className="font-bold text-purple-950">0đ</span></div>
               </div>
               <div className="p-2.5 bg-white rounded-xl border border-purple-100 flex flex-col justify-between shadow-2xs">
                 <div><code className="font-bold text-purple-700">{`{so_du_vi}`}</code>: Số dư ví hiện tại</div>

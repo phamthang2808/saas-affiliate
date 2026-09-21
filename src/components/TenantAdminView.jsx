@@ -33,10 +33,10 @@ const TEMPLATE_META = {
     desc: "Tin nhắn Bot tag tên chào mừng và hướng dẫn đọc bài ghim khi có thành viên mới vào nhóm."
   },
   template_order_detail: {
-    title: "3. Mẫu tin nhắn Danh Sách Các Đơn Hàng Đã Mua (Khi Đã Có Đơn)",
-    command: "/donhang hoặc #donhang (khi ĐÃ CÓ đơn)",
+    title: "3. Mẫu tin nhắn Danh Sách Các Đơn Hàng Đã Mua (Lệnh /donhang)",
+    command: "/donhang hoặc /donhang2, /donhang3...",
     icon: "fa-solid fa-box text-blue-600",
-    desc: "Tin nhắn Bot liệt kê danh sách mã đơn hàng, sản phẩm và hoa hồng khi thành viên gõ lệnh /donhang."
+    desc: "Tin nhắn Bot liệt kê danh sách mã đơn hàng, phân trang 5 đơn/trang và hướng dẫn gõ /donhang2, /donhang3 khi thành viên gõ lệnh /donhang."
   },
   template_order_not_found: {
     title: "4. Mẫu tin nhắn Báo Chưa Có Đơn Hàng Nào (Khi Chưa Có Đơn)",
@@ -106,15 +106,15 @@ const getStandardBotTemplates = (tenant) => {
   return {
     template_link: `@{ten_zalo} mua qua link này để được hoàn hoa hồng nha 🥰\n🛍️ 1. {ten_san_pham}\n🧧 Hoa hồng dự kiến {tong_hoahong_phantram}% (~{tong_hoahong_tien})\n🔗 {link_mua_sam}\n📌 Lưu ý:\n1. Trước khi mua nên xóa giỏ hàng cũ\n2. Tránh xem Live hoặc Video Shopee trước và trong lúc mua\n3. Nên bấm 2-3 lần vào link trước khi mua\n4. Gõ /donhang hoặc /tracuu để kiểm tra đơn vào 9H hôm sau`,
     template_welcome: `Hi, chào @{ten_zalo}\n🎉 Chào mừng bạn đã tham gia nhóm {ten_nhom}!\n📌 Bạn vui lòng đọc kỹ BÀI GHIM của nhóm hoặc gõ lệnh /help để xem hướng dẫn cách gửi link mua sắm và nhận hoàn {ty_le_hoan}% hoa hồng nhé! 🥰`,
-    template_order_detail: `@{ten_zalo} 📦 THÔNG TIN ĐƠN HÀNG #{ma_don_hang}:\n🛍️ Sản phẩm: {ten_san_pham}\n💰 Giá trị đơn: {gia_san_pham}đ\n🧧 Hoa hồng nhận: {tong_hoahong_tien}đ ({ty_le_hoan}%)\n📌 Trạng thái: {trang_thai_don}`,
+    template_order_detail: `@{ten_zalo} 🛒 DANH SÁCH ĐƠN HÀNG (Trang 1/3 - Tổng 11 đơn):\n\n1. Mã đơn: 2609058Y3A5UX3\n   📦 Áo Thun Nữ Cổ Tròn Sọc Dệt Kim Thêu...\n   💰 Hoa hồng: 1.773đ | Trạng thái: Hoàn thành\n\n2. Mã đơn: 260831RJR3QAA2\n   📦 Calem.Club- Quần Jeans Ống Suông Ve...\n   💰 Hoa hồng: 7.970đ | Trạng thái: Hoàn thành\n\n💡 Nhắn /donhang2 để xem trang tiếp theo.\n👉 Tra cứu & Rút tiền trên Web: {link_tra_cuu}`,
     template_order_not_found: `@{ten_zalo} 🛒 Bạn chưa có đơn hàng nào trên hệ thống!`,
-    template_wallet: `@{ten_zalo} 💳 VÍ TIỀN CỦA BẠN\n💰 Tổng hoa hồng: {tong_hoahong_tien}đ\n⏳ Đang chờ xử lý: {hoahong_dangcho}đ\n✅ Đã hoàn thành: {hoahong_dahoanthanh}đ\n🏦 Đã nhận: {hoahong_danhan}đ\nHoa hồng từ các đơn đã hoàn thành sẽ được thanh toán vào thứ 6 của tuần kế tiếp.\nCảm ơn bạn đã đồng hành ❤️\n\nĐể xem đầy đủ các đơn hàng, vui lòng tra cứu tại: {link_tra_cuu}`,
+    template_wallet: `@{ten_zalo} 💳 VÍ TIỀN CỦA BẠN\n💰 Tổng hoa hồng: {tong_hoahong_tien}đ\n⏳ Đang chờ xử lý: {hoahong_dangcho}đ\n✅ Đã hoàn thành: {hoahong_dahoanthanh}đ\n📥 Đã nhận: {hoahong_danhan}đ\nHoa hồng từ các đơn đã hoàn thành sẽ được thanh toán vào thứ 6 của tuần kế tiếp.\nCảm ơn bạn đã đồng hành ❤️\n\nĐể xem đầy đủ các đơn hàng, vui lòng tra cứu tại: {link_tra_cuu}`,
     template_lookup: `@{ten_zalo} 🔍 TRA CỨU ĐƠN HÀNG & VÍ HOÀN TIỀN\n👉 Link tra cứu bảo mật (đã mã hóa định danh, click là xem ngay):\n🌐 {link_tra_cuu}\n\n💡 TÍNH NĂNG TRANG TRA CỨU:\n📦 Xem danh sách đơn đã mua & chi tiết hoa hồng từng đơn.\n💳 Quản lý 3 ví tiền: Đang chờ / Đã hoàn thành / Khả dụng.\n💸 Rút tiền hoa hồng & cập nhật tài khoản Ngân hàng 1 chạm.\n📌 Lưu ý: Đơn Hoàn thành sau 3 ngày sẽ tự chuyển xuống ví Khả Dụng để rút.`,
     template_save_bank_success: `@{ten_zalo} Bạn đã lưu thông tin thành công 🌷`,
     template_invalid_bank_syntax: `@{ten_zalo} ⚠️ Cú pháp không hợp lệ. Vui lòng sử dụng định dạng: /stk_[Tên ngân hàng]_[Số tài khoản] (Ví dụ: /stk_MB_0987654321)`,
-    template_withdraw_success: `@{ten_zalo} 🎉 YÊU CẦU RÚT TIỀN THÀNH CÔNG!\n💸 Số tiền rút: {so_tien_rut}đ\n🏦 Về tài khoản: {ngan_hang} - {so_tai_khoan} ({chu_tai_khoan})\n⏳ Trạng thái: Đã chuyển thông tin tới Trưởng Nhóm {ten_nhom} duyệt chi trả.`,
+    template_withdraw_success: `@{ten_zalo} 🎉 ĐÃ TẠO YÊU CẦU RÚT TIỀN THÀNH CÔNG!\n\n💸 Số tiền rút: {so_tien_rut}đ\n🏦 Về tài khoản: {ngan_hang} - {so_tai_khoan} ({chu_tai_khoan})\n⏳ Trạng thái: Đang chờ Admin {ten_nhom} duyệt giao dịch.`,
     template_withdraw_zero: `@{ten_zalo} ⚠️ Số dư khả dụng của bạn hiện là {so_du_vi}đ (chưa đủ hạn mức rút tối thiểu 10.000đ).\n💡 Bạn hãy gõ /tracuu để kiểm tra chi tiết trạng thái ví nhé!`,
-    template_approve_payout: `🎉 THÔNG BÁO DUYỆT RÚT TIỀN THÀNH CÔNG!\n✅ Đã duyệt lệnh rút #{ma_giao_dich} cho thành viên @{ten_zalo}.\n💸 Số tiền: {so_tien_rut}đ\n🏦 Ngân hàng: {ngan_hang} - {so_tai_khoan}`,
+    template_approve_payout: `@{ten_zalo} Đã duyệt và hoàn thành rút tiền cho giao dịch {ma_giao_dich}! Thành viên @{ten_thanh_vien} đã nhận tiền thành công.`,
     template_help: `@{ten_zalo} 🤖 CÁC LỆNH BOT HỖ TRỢ SĂN SALE & HOÀN TIỀN:\n\n💳 /vitien hoặc #vitien — Xem ví tiền & hoa hồng hiện có\n🛒 /donhang hoặc #donhang — Xem danh sách các đơn đã đặt\n🔍 /tracuu hoặc #tracuu — Link tra cứu chi tiết bảo mật cá nhân\n🏦 /stk_[NGÂN_HÀNG]_[STK] — Lưu STK nhận tiền (VD: /stk_MB_0888728256)\n💸 /ruttien hoặc /rut — Yêu cầu rút toàn bộ hoa hồng khả dụng\n⚡ /duyet_[MÃ_ID] — Lệnh duyệt tiền (Chỉ Trưởng Nhóm)\n\n💡 Mẹo: Bạn chỉ cần gửi LINK sản phẩm Shopee/TikTok vào nhóm, bot sẽ tự động tạo link hoàn tiền ngay! 🥰`,
     template_invalid_command: `@{ten_zalo} ❓ Lệnh "{lenh_sai}" không hợp lệ.\n👉 Bạn có thể gõ /help để xem danh sách các lệnh được hỗ trợ nhé!`
   };

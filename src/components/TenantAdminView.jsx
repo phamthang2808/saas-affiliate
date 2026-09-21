@@ -26,20 +26,37 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
       ? availableTenants.find((t) => String(t.id) === String(user.tenantId))
       : null) ||
     (APP_CONFIG.isStandalone ? APP_CONFIG.tenant : null);
-  const [activeTab, setActiveTab] = useState("overview"); // 'overview' | 'users' | 'payouts' | 'shopee' | 'tiktok' | 'import' | 'settings' | 'templates'
+
+  // Tabs: 'overview' | 'users' | 'zalo_users' | 'payouts' | 'shopee' | 'tiktok' | 'templates' | 'settings'
+  const [activeTab, setActiveTab] = useState("overview");
   const [stats, setStats] = useState(null);
   const [orders, setOrders] = useState([]);
   const [payouts, setPayouts] = useState([]);
   const [zaloUsers, setZaloUsers] = useState([]);
+  const [webUsers, setWebUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  
+
+  // Filters for Orders Tab
+  const [adminOrderSearchUser, setAdminOrderSearchUser] = useState("");
+  const [adminOrderSearchId, setAdminOrderSearchId] = useState("");
+  const [adminOrderSearchProduct, setAdminOrderSearchProduct] = useState("");
+  const [adminOrderFilterStatus, setAdminOrderFilterStatus] = useState("Tất cả");
+  const [adminOrderDateFrom, setAdminOrderDateFrom] = useState("");
+  const [adminOrderDateTo, setAdminOrderDateTo] = useState("");
+  const [adminOrderPage, setAdminOrderPage] = useState(1);
+  const [showMultiIdBox, setShowMultiIdBox] = useState(false);
+
+  // Modal Gán / Liên kết đơn hàng
+  const [selectedOrderToAssign, setSelectedOrderToAssign] = useState(null);
+  const [assignZaloId, setAssignZaloId] = useState("");
+  const [isSubmittingAssign, setIsSubmittingAssign] = useState(false);
+
   // Import Excel state
   const [importFile, setImportFile] = useState(null);
   const [isImporting, setIsImporting] = useState(false);
   const [importResult, setImportResult] = useState(null);
 
-  // Bot Templates state - ALWAYS prefilled with rich standard templates
+  // Bot Templates state
   const initialTemplates = getStandardBotTemplates(activeTenant);
   const [botTemplates, setBotTemplates] = useState(initialTemplates);
   const [defaultTemplates, setDefaultTemplates] = useState(initialTemplates);
@@ -47,7 +64,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
   const [templateSaveMessage, setTemplateSaveMessage] = useState("");
   const [templateSubTab, setTemplateSubTab] = useState("all");
 
-  // Dynamic Settings state (Holding days, min withdraw, split rates)
+  // Dynamic Settings state
   const [settings, setSettings] = useState({
     holdingDays: 0,
     minWithdrawAmount: 10000,
@@ -91,7 +108,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
   const handleSaveSettings = async (e) => {
     if (e) e.preventDefault();
     if (!activeTenant?.slug) {
-      alert("❌ Chưa xác định được Kênh Trưởng Nhóm! Vui lòng chọn hoặc liên hệ Admin để gán Kênh.");
+      alert("❌ Chưa xác định được Kênh Trưởng Nhóm! Vui lòng chọn Kênh hoặc liên hệ Super Admin.");
       return;
     }
     setIsSavingSettings(true);
@@ -183,7 +200,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
 
   const handleSaveTemplates = async () => {
     if (!activeTenant?.slug) {
-      alert("❌ Chưa xác định được Kênh Trưởng Nhóm! Vui lòng chọn hoặc liên hệ Admin để gán Kênh.");
+      alert("❌ Chưa xác định được Kênh Trưởng Nhóm!");
       return;
     }
     setIsSavingTemplates(true);
@@ -231,7 +248,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
 
   const handleApprovePayout = async (payoutId) => {
     if (!activeTenant?.slug) {
-      alert("❌ Chưa xác định được Kênh Trưởng Nhóm! Vui lòng chọn hoặc liên hệ Admin để gán Kênh.");
+      alert("❌ Chưa xác định được Kênh Trưởng Nhóm!");
       return;
     }
     if (!window.confirm("Xác nhận ĐÃ CHUYỂN TIỀN thành công cho yêu cầu rút tiền này?")) return;
@@ -255,7 +272,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
 
   const handleRejectPayout = async (payoutId) => {
     if (!activeTenant?.slug) {
-      alert("❌ Chưa xác định được Kênh Trưởng Nhóm! Vui lòng chọn hoặc liên hệ Admin để gán Kênh.");
+      alert("❌ Chưa xác định được Kênh Trưởng Nhóm!");
       return;
     }
     const note = prompt("Nhập lý do từ chối (ví dụ: Sai số tài khoản, chưa đủ số dư):", "Sai thông tin ngân hàng");
@@ -312,6 +329,10 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
         setImportFile(null);
         fetchTenantData();
       } else {
+        setImportResult({
+          success: false,
+          message: data.message || "Lỗi khi xử lý file Excel",
+        });
         alert("❌ " + (data.message || "Lỗi khi xử lý file Excel"));
       }
     } catch (err) {
@@ -320,36 +341,192 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
     }
   };
 
+  const handleAssignOrder = async (e) => {
+    if (e) e.preventDefault();
+    if (!selectedOrderToAssign || !assignZaloId) {
+      alert("Vui lòng chọn tài khoản Zalo để gán đơn!");
+      return;
+    }
+    if (!activeTenant?.slug) return;
+
+    setIsSubmittingAssign(true);
+    try {
+      const res = await fetch(`${apiRoot}/api/saas/admin/${activeTenant.slug}/orders/${selectedOrderToAssign.id}/assign`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", ...authHeaders },
+        body: JSON.stringify({ zaloId: assignZaloId }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert("✅ " + (data.message || "Đã gán đơn hàng cho thành viên thành công! 🎉"));
+        setSelectedOrderToAssign(null);
+        setAssignZaloId("");
+        fetchTenantData();
+      } else {
+        alert("❌ " + (data.message || "Lỗi gán đơn hàng"));
+      }
+    } catch (err) {
+      alert("❌ Lỗi máy chủ: " + err.message);
+    } finally {
+      setIsSubmittingAssign(false);
+    }
+  };
+
   const groupDisplayName = stats?.tenant?.name || activeTenant?.name || "Nhóm Đối Tác";
   const pendingPayouts = payouts.filter((p) => p.status === "PENDING");
+  const totalPendingAmount = pendingPayouts.reduce((sum, p) => sum + Number(p.amount || 0), 0);
   const customerSplitRate = stats?.tenant?.customerSplitRate ?? activeTenant?.customerSplitRate ?? 80;
   const taxRate = stats?.tenant?.taxRate ?? activeTenant?.taxRate ?? 10;
-  const afterTaxRate = 100 - taxRate;
   const adminSplitRate = 100 - customerSplitRate;
 
-  // Filter orders
+  // Split platform orders
   const shopeeOrders = orders.filter((o) => !o.platform || o.platform.toLowerCase().includes("shopee"));
   const tiktokOrders = orders.filter((o) => o.platform && o.platform.toLowerCase().includes("tiktok"));
+  const targetOrders = activeTab === "tiktok" ? tiktokOrders : shopeeOrders;
 
-  const filteredOrders = (activeTab === "shopee" ? shopeeOrders : activeTab === "tiktok" ? tiktokOrders : orders).filter((o) => {
-    if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      (o.orderId && o.orderId.toLowerCase().includes(q)) ||
-      (o.productName && o.productName.toLowerCase().includes(q)) ||
-      (o.zaloId && o.zaloId.toLowerCase().includes(q))
-    );
+  // Filter Orders
+  const filteredOrders = targetOrders.filter((o) => {
+    if (!o) return false;
+
+    // Filter by Purchaser
+    if (adminOrderSearchUser) {
+      const qUser = adminOrderSearchUser.toLowerCase();
+      const matchZaloId = o.zaloId && o.zaloId.toLowerCase().includes(qUser);
+      const matchZaloName = o.zaloName && o.zaloName.toLowerCase().includes(qUser);
+      const matchSubId = (o.subId || o.subId1) && String(o.subId || o.subId1).toLowerCase().includes(qUser);
+      if (!matchZaloId && !matchZaloName && !matchSubId) return false;
+    }
+
+    // Filter by Order ID (supports multiple IDs)
+    if (adminOrderSearchId) {
+      const ids = adminOrderSearchId.split(/[\n,;\s]+/).map((s) => s.trim().toLowerCase()).filter(Boolean);
+      if (ids.length > 0) {
+        const orderIdLower = String(o.orderId || "").toLowerCase();
+        const matched = ids.some((id) => orderIdLower.includes(id));
+        if (!matched) return false;
+      }
+    }
+
+    // Filter by Product Name
+    if (adminOrderSearchProduct) {
+      const qProd = adminOrderSearchProduct.toLowerCase();
+      if (!o.productName || !o.productName.toLowerCase().includes(qProd)) return false;
+    }
+
+    // Filter by Status
+    if (adminOrderFilterStatus && adminOrderFilterStatus !== "Tất cả") {
+      const st = String(o.status || "").toLowerCase();
+      const targetSt = adminOrderFilterStatus.toLowerCase();
+      if (targetSt === "hoàn thành") {
+        const isCompleted = !st.includes("chưa") && (st.includes("hoàn thành") || st.includes("completed") || st.includes("success") || st.includes("thành công") || st.includes("thanh toán"));
+        if (!isCompleted) return false;
+      } else if (targetSt === "chờ kiểm duyệt") {
+        const isPending = st.includes("chờ") || st.includes("pending") || st.includes("xử lý") || st.includes("chưa");
+        if (!isPending) return false;
+      } else if (targetSt === "đã hủy") {
+        const isCancelled = st.includes("hủy") || st.includes("cancel");
+        if (!isCancelled) return false;
+      } else {
+        if (!st.includes(targetSt)) return false;
+      }
+    }
+
+    // Filter by Date From
+    if (adminOrderDateFrom) {
+      const oDateStr = o.orderDate || o.createdAt;
+      if (oDateStr) {
+        const oDate = new Date(oDateStr);
+        const fromDate = new Date(adminOrderDateFrom + "T00:00:00");
+        if (oDate < fromDate) return false;
+      }
+    }
+
+    // Filter by Date To
+    if (adminOrderDateTo) {
+      const oDateStr = o.orderDate || o.createdAt;
+      if (oDateStr) {
+        const oDate = new Date(oDateStr);
+        const toDate = new Date(adminOrderDateTo + "T23:59:59");
+        if (oDate > toDate) return false;
+      }
+    }
+
+    return true;
   });
 
-  const filteredUsers = zaloUsers.filter((u) => {
-    if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      (u.zaloId && u.zaloId.toLowerCase().includes(q)) ||
-      (u.zaloName && u.zaloName.toLowerCase().includes(q)) ||
-      (u.accountNumber && u.accountNumber.toLowerCase().includes(q))
-    );
-  });
+  // Calculate order totals
+  const totalRawSum = filteredOrders.reduce((sum, o) => sum + Math.round(Number(o.rawCommission || 0)), 0);
+  const totalTaxSum = filteredOrders.reduce((sum, o) => {
+    const raw = Math.round(Number(o.rawCommission || 0));
+    const tax = o.taxAmount !== undefined && o.taxAmount !== null ? Math.round(Number(o.taxAmount)) : Math.round(raw * (taxRate / 100));
+    return sum + tax;
+  }, 0);
+  const totalAfterTaxSum = totalRawSum - totalTaxSum;
+  const totalUserFinalSum = filteredOrders.reduce((sum, o) => {
+    const raw = Math.round(Number(o.rawCommission || 0));
+    const tax = o.taxAmount !== undefined && o.taxAmount !== null ? Math.round(Number(o.taxAmount)) : Math.round(raw * (taxRate / 100));
+    const afterTax = raw - tax;
+    const userFinal = o.finalCommission !== undefined && o.finalCommission !== null ? Math.round(Number(o.finalCommission)) : Math.round(afterTax * (customerSplitRate / 100));
+    return sum + userFinal;
+  }, 0);
+  const totalAdminProfitSum = totalAfterTaxSum - totalUserFinalSum;
+
+  const handleExportOrdersExcel = (platform = "Shopee") => {
+    if (!filteredOrders || filteredOrders.length === 0) {
+      alert("Không có dữ liệu đơn hàng phù hợp với bộ lọc để xuất!");
+      return;
+    }
+
+    const headers = [
+      "STT",
+      "Ngày đơn",
+      "Mã đơn hàng",
+      "Tên sản phẩm",
+      "Người mua (Zalo ID)",
+      "Trạng thái đơn hàng",
+      "Hoa hồng thô (VNĐ)",
+      `Thuế ${taxRate}% (VNĐ)`,
+      "Hoa hồng sau thuế (VNĐ)",
+      `Khách nhận ${customerSplitRate}% (VNĐ)`,
+      `Admin giữ ${adminSplitRate}% (VNĐ)`,
+    ];
+
+    const cleanCell = (str) => `"${(str || "").toString().replace(/"/g, '""')}"`;
+
+    const rows = filteredOrders.map((o, idx) => {
+      const rawVal = Math.round(Number(o.rawCommission || 0));
+      const taxVal = o.taxAmount !== undefined && o.taxAmount !== null ? Math.round(Number(o.taxAmount)) : Math.round(rawVal * (taxRate / 100));
+      const afterTaxVal = rawVal - taxVal;
+      const userFinalVal = o.finalCommission !== undefined && o.finalCommission !== null ? Math.round(Number(o.finalCommission)) : Math.round(afterTaxVal * (customerSplitRate / 100));
+      const adminProfitVal = afterTaxVal - userFinalVal;
+
+      const orderDateStr = o.orderDate ? new Date(o.orderDate).toLocaleDateString("vi-VN") : "";
+
+      return [
+        idx + 1,
+        cleanCell(orderDateStr),
+        cleanCell(o.orderId || ""),
+        cleanCell(o.productName || ""),
+        cleanCell(o.zaloName || o.zaloId || o.subId || "—"),
+        cleanCell(o.status || "Hoàn thành"),
+        rawVal,
+        taxVal,
+        afterTaxVal,
+        userFinalVal,
+        adminProfitVal,
+      ];
+    });
+
+    const csvContent = "\uFEFF" + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `Bao_Cao_Don_Hang_${platform}_${activeTenant?.slug || "export"}_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <div className="space-y-6 pb-12">
@@ -360,7 +537,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
           <div>
             <p className="font-extrabold text-sm text-amber-950">Chưa xác định Kênh Quản Trị Trưởng Nhóm</p>
             <p className="font-normal text-slate-700 text-xs mt-0.5">
-              Tài khoản của bạn chưa được gán Kênh Trưởng Nhóm cụ thể. Vui lòng chọn Kênh từ menu góc trên hoặc liên hệ Super Admin để kiểm tra phân quyền.
+              Tài khoản của bạn chưa được gán Kênh Trưởng Nhóm cụ thể. Vui lòng chọn Kênh từ menu bên phải hoặc liên hệ Super Admin để kiểm tra phân quyền.
             </p>
           </div>
         </div>
@@ -386,7 +563,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
         {!APP_CONFIG.isStandalone && (user?.role === "SUPER_ADMIN" || !activeTenant?.slug) && availableTenants.length > 0 && (
           <div className="flex items-center gap-2 bg-white border border-slate-200 px-3 py-1.5 rounded-2xl shadow-2xs">
             <span className="text-xs font-bold text-slate-400">
-              {user?.role === "SUPER_ADMIN" ? "Chọn nhóm (Super Admin):" : "Chọn Kênh Trưởng Nhóm:"}
+              {user?.role === "SUPER_ADMIN" ? "Nhóm (Super Admin):" : "Chọn Kênh Trưởng Nhóm:"}
             </span>
             <select
               value={activeTenant?.slug || ""}
@@ -417,350 +594,135 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
         )}
       </div>
 
-      {/* ===================== 2. APPLE-STYLE TABS ===================== */}
-
-      {/* Tabs with Multi-Row Wrapping (Flex-Wrap) - Never gets cut off */}
-      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pt-1 pb-1">
-        <button
-          onClick={() => setActiveTab("overview")}
-          className={`flex items-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
-            activeTab === "overview"
-              ? "bg-purple-600 text-white shadow-md shadow-purple-500/25 scale-[1.02]"
-              : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80"
-          }`}
-        >
-          <i className="fa-solid fa-globe text-xs"></i>
-          <span>Tổng quan</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("users")}
-          className={`flex items-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
-            activeTab === "users"
-              ? "bg-purple-600 text-white shadow-md shadow-purple-500/25 scale-[1.02]"
-              : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80"
-          }`}
-        >
-          <i className="fa-solid fa-users text-xs"></i>
-          <span>Người dùng ({zaloUsers.length})</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("payouts")}
-          className={`flex items-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
-            activeTab === "payouts"
-              ? "bg-purple-600 text-white shadow-md shadow-purple-500/25 scale-[1.02]"
-              : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80"
-          }`}
-        >
-          <i className="fa-solid fa-money-bill-transfer text-xs"></i>
-          <span>Rút tiền</span>
-          {pendingPayouts.length > 0 && (
-            <span className="bg-rose-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold ml-1 animate-bounce">
-              {pendingPayouts.length}
-            </span>
-          )}
-        </button>
-
-        <button
-          onClick={() => setActiveTab("shopee")}
-          className={`flex items-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
-            activeTab === "shopee"
-              ? "bg-purple-600 text-white shadow-md shadow-purple-500/25 scale-[1.02]"
-              : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80"
-          }`}
-        >
-          <i className="fa-solid fa-bag-shopping text-xs text-orange-500"></i>
-          <span>Đơn Shopee ({shopeeOrders.length})</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("tiktok")}
-          className={`flex items-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
-            activeTab === "tiktok"
-              ? "bg-purple-600 text-white shadow-md shadow-purple-500/25 scale-[1.02]"
-              : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80"
-          }`}
-        >
-          <i className="fa-brands fa-tiktok text-xs text-slate-800"></i>
-          <span>Đơn TikTok ({tiktokOrders.length})</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("import")}
-          className={`flex items-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
-            activeTab === "import"
-              ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md shadow-orange-500/25 scale-[1.02]"
-              : "bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-200"
-          }`}
-        >
-          <i className="fa-solid fa-cloud-arrow-up text-xs"></i>
-          <span>Nạp Excel</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("settings")}
-          className={`flex items-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
-            activeTab === "settings"
-              ? "bg-purple-600 text-white shadow-md shadow-purple-500/25 scale-[1.02]"
-              : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80"
-          }`}
-        >
-          <i className="fa-solid fa-sliders text-xs"></i>
-          <span>Điều kiện Rút & Chia</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("templates")}
-          className={`flex items-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
-            activeTab === "templates"
-              ? "bg-purple-600 text-white shadow-md shadow-purple-500/25 scale-[1.02]"
-              : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80"
-          }`}
-        >
-          <i className="fa-solid fa-comment-dots text-xs"></i>
-          <span>Cấu hình Bot Zalo</span>
-        </button>
+      {/* ===================== 2. LỲ-STYLE TAB BAR ===================== */}
+      <div className="flex flex-wrap items-center gap-2 pt-1 pb-1">
+        {[
+          { key: "overview", icon: "fa-solid fa-chart-pie", label: "Tổng quan" },
+          { key: "users", icon: "fa-solid fa-users", label: `Người dùng Web (${webUsers.length})` },
+          { key: "zalo_users", icon: "fa-solid fa-comments", label: `Tài khoản Zalo (${zaloUsers.length})` },
+          { key: "payouts", icon: "fa-solid fa-money-bill-transfer", label: "Rút tiền", badge: pendingPayouts.length },
+          { key: "shopee", icon: "fa-solid fa-bag-shopping", label: `Đơn Shopee (${shopeeOrders.length})` },
+          { key: "tiktok", icon: "fa-brands fa-tiktok", label: `Đơn TikTok (${tiktokOrders.length})` },
+          { key: "templates", icon: "fa-solid fa-robot", label: "Cấu hình Bot Zalo" },
+          { key: "settings", icon: "fa-solid fa-sliders", label: "Điều kiện Rút & Chia" },
+        ].map((tab) => {
+          const isActive = activeTab === tab.key;
+          return (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap border ${
+                isActive
+                  ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white border-transparent shadow-md shadow-orange-500/20 scale-[1.02]"
+                  : "bg-white text-slate-700 hover:bg-slate-50 border-slate-200/80 shadow-2xs"
+              }`}
+            >
+              <i className={tab.icon}></i>
+              <span>{tab.label}</span>
+              {tab.badge > 0 && (
+                <span className="bg-rose-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold ml-1 animate-bounce">
+                  {tab.badge}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
-      {/* ===================== TAB CONTENT: TỔNG QUAN ===================== */}
-      {activeTab === "overview" && (
+      {isLoading && (
+        <div className="flex items-center justify-center py-12">
+          <div className="w-8 h-8 border-4 border-orange-200 border-t-orange-600 rounded-full animate-spin"></div>
+          <span className="ml-3 text-sm font-bold text-slate-500">Đang tải dữ liệu Kênh {groupDisplayName}...</span>
+        </div>
+      )}
+
+      {/* ===================== TAB 1: TỔNG QUAN (STATS) ===================== */}
+      {activeTab === "overview" && !isLoading && (
         <div className="space-y-6">
-          {/* SECTION 1: HOẠT ĐỘNG CHUNG */}
-          <div className="space-y-3">
-            <h2 className="text-xs font-black text-slate-400 uppercase tracking-wider font-display">
-              HOẠT ĐỘNG CHUNG
-            </h2>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-              {/* Card 1: Tổng Thành Viên */}
-              <div className="bg-white rounded-2xl border border-slate-200/80 p-4 md:p-5 shadow-2xs">
-                <div className="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center text-sm font-bold mb-2 md:mb-3">
-                  <i className="fa-solid fa-users"></i>
+          {/* HOẠT ĐỘNG CHUNG */}
+          <div>
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2 font-display">
+              <i className="fa-solid fa-chart-line text-purple-600"></i>
+              <span>Hoạt động chung</span>
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[
+                { label: "Tổng thành viên Zalo", value: zaloUsers.length, icon: "fa-users", color: "purple" },
+                { label: "Tổng đơn hàng", value: orders.length, icon: "fa-boxes-stacked", color: "rose" },
+                { label: "Yêu cầu rút chờ duyệt", value: pendingPayouts.length + " lệnh", icon: "fa-clock", color: "amber" },
+                { label: "Tiền rút chờ duyệt", value: formatMoney(totalPendingAmount), icon: "fa-money-bill-wave", color: "emerald" },
+              ].map((card, i) => (
+                <div key={i} className="bg-white rounded-3xl border border-slate-200/80 p-5 shadow-2xs space-y-2">
+                  <div className="w-10 h-10 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-700 text-lg shadow-inner">
+                    <i className={`fa-solid ${card.icon}`}></i>
+                  </div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-wide">{card.label}</p>
+                  <p className="text-xl font-black text-slate-900 font-display">{card.value}</p>
                 </div>
-                <div className="text-[10px] md:text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">
-                  TỔNG THÀNH VIÊN
-                </div>
-                <div className="text-xl md:text-3xl font-black text-slate-900 mt-1 font-display">
-                  {stats?.totalUsers || zaloUsers.length || 0}
-                </div>
-              </div>
-
-              {/* Card 2: Tổng Đơn Hàng */}
-              <div className="bg-white rounded-2xl border border-slate-200/80 p-4 md:p-5 shadow-2xs">
-                <div className="w-8 h-8 rounded-xl bg-rose-50 text-rose-500 flex items-center justify-center text-sm font-bold mb-2 md:mb-3">
-                  <i className="fa-solid fa-box"></i>
-                </div>
-                <div className="text-[10px] md:text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">
-                  TỔNG ĐƠN HÀNG
-                </div>
-                <div className="text-xl md:text-3xl font-black text-slate-900 mt-1 font-display">
-                  {stats?.totalOrders || orders.length || 0}
-                </div>
-              </div>
-
-              {/* Card 3: Yêu Cầu Rút Chờ Duyệt */}
-              <div className="bg-white rounded-2xl border border-slate-200/80 p-4 md:p-5 shadow-2xs">
-                <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center text-sm font-bold mb-2 md:mb-3">
-                  <i className="fa-solid fa-clock"></i>
-                </div>
-                <div className="text-[10px] md:text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">
-                  YÊU CẦU RÚT CHỜ DUYỆT
-                </div>
-                <div className="text-xl md:text-3xl font-black text-slate-900 mt-1 font-display">
-                  {pendingPayouts.length} <span className="text-xs md:text-sm font-bold text-slate-500">lệnh</span>
-                </div>
-              </div>
-
-              {/* Card 4: Tiền Rút Chờ Duyệt */}
-              <div className="bg-white rounded-2xl border border-slate-200/80 p-4 md:p-5 shadow-2xs">
-                <div className="w-8 h-8 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center text-sm font-bold mb-2 md:mb-3">
-                  <i className="fa-solid fa-money-bill"></i>
-                </div>
-                <div className="text-[10px] md:text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">
-                  TIỀN RÚT CHỜ DUYỆT
-                </div>
-                <div className="text-lg md:text-2xl font-black text-slate-900 mt-1 font-display truncate">
-                  {formatMoney(stats?.totalPendingAmount || 0)}
-                </div>
-              </div>
+              ))}
             </div>
           </div>
 
-          {/* SECTION 2: TÀI CHÍNH (SAU ĐỐI SOÁT HOÀN THÀNH) */}
-          <div className="space-y-3">
-            <h2 className="text-xs font-black text-slate-400 uppercase tracking-wider font-display">
-              TÀI CHÍNH (SAU ĐỐI SOÁT HOÀN THÀNH)
-            </h2>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
-              {/* Card 1: 1. Hoa Hồng Thô */}
-              <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs space-y-2">
-                <div className="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center text-xs font-bold">
-                  <i className="fa-solid fa-money-bill-wave"></i>
+          {/* TÀI CHÍNH SHOPEE (SAU ĐỐI SOÁT HOÀN THÀNH) */}
+          <div>
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2 font-display">
+              <i className="fa-solid fa-coins text-amber-500"></i>
+              <span>Tài chính Shopee & TikTok (Sau đối soát hoàn thành)</span>
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              {[
+                { label: "1. Hoa hồng thô (Sàn trả)", value: formatMoney(stats?.totalRawCommission || totalRawSum), icon: "fa-file-invoice-dollar" },
+                { label: `2. Thuế thu nhập (${taxRate}%)`, value: formatMoney(stats?.totalTaxAmount || totalTaxSum), icon: "fa-percent" },
+                { label: `3. Hoa hồng sau thuế (${100 - taxRate}%)`, value: formatMoney(stats?.totalAfterTaxCommission || totalAfterTaxSum), icon: "fa-scale-balanced" },
+                { label: `4. Thành viên nhận (${customerSplitRate}%)`, value: formatMoney(stats?.totalUserCommission || totalUserFinalSum), icon: "fa-user-tag" },
+                { label: `5. Admin giữ lại (${adminSplitRate}%)`, value: formatMoney(stats?.totalAdminProfit || totalAdminProfitSum), icon: "fa-briefcase" },
+              ].map((card, i) => (
+                <div key={i} className="bg-white rounded-3xl border border-slate-200/80 p-4 shadow-2xs space-y-1.5">
+                  <div className="w-8 h-8 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center text-xs shadow-inner">
+                    <i className={`fa-solid ${card.icon}`}></i>
+                  </div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide leading-tight">{card.label}</p>
+                  <p className="text-base font-black text-slate-900 font-mono mt-1">{card.value}</p>
                 </div>
-                <div className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider leading-tight">
-                  1. HOA HỒNG THÔ (SÀN TRẢ)
-                </div>
-                <div className="text-base md:text-lg font-black text-slate-900 font-display truncate">
-                  {formatMoney(stats?.totalRawCommission || 0)}
-                </div>
-              </div>
-
-              {/* Card 2: 2. Thuế Thu Nhập (10%) */}
-              <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs space-y-2">
-                <div className="w-7 h-7 rounded-lg bg-rose-50 text-rose-500 flex items-center justify-center text-xs font-black">
-                  %
-                </div>
-                <div className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider leading-tight">
-                  2. THUẾ THU NHẬP ({taxRate}%)
-                </div>
-                <div className="text-base md:text-lg font-black text-rose-600 font-display truncate">
-                  {formatMoney(stats?.totalTaxAmount || 0)}
-                </div>
-              </div>
-
-              {/* Card 3: 3. Hoa Hồng Sau Thuế (90%) */}
-              <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs space-y-2">
-                <div className="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-500 flex items-center justify-center text-xs font-black">
-                  <i className="fa-solid fa-scale-balanced"></i>
-                </div>
-                <div className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider leading-tight">
-                  3. HOA HỒNG SAU THUẾ ({afterTaxRate}%)
-                </div>
-                <div className="text-base md:text-lg font-black text-indigo-600 font-display truncate">
-                  {formatMoney(stats?.totalAfterTaxCommission || 0)}
-                </div>
-              </div>
-
-              {/* Card 4: 4. Thành Viên Nhận (80%) */}
-              <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs space-y-2">
-                <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-500 flex items-center justify-center text-xs font-black">
-                  <i className="fa-solid fa-user-check"></i>
-                </div>
-                <div className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider leading-tight">
-                  4. THÀNH VIÊN NHẬN ({customerSplitRate}%)
-                </div>
-                <div className="text-base md:text-lg font-black text-emerald-600 font-display truncate">
-                  {formatMoney(stats?.totalCustomerCommission || 0)}
-                </div>
-              </div>
-
-              {/* Card 5: 5. Admin Giữ Lại (20%) */}
-              <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs space-y-2">
-                <div className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-xs font-black">
-                  <i className="fa-solid fa-briefcase"></i>
-                </div>
-                <div className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider leading-tight">
-                  5. ADMIN GIỮ LẠI ({adminSplitRate}%)
-                </div>
-                <div className="text-base md:text-lg font-black text-amber-600 font-display truncate">
-                  {formatMoney(stats?.totalAdminProfit || 0)}
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         </div>
       )}
 
-      {/* ===================== TAB CONTENT: NGƯỜI DÙNG ===================== */}
-      {activeTab === "users" && (
+      {/* ===================== TAB 2: NGƯỜI DÙNG WEB ===================== */}
+      {activeTab === "users" && !isLoading && (
         <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
-          <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-            <div>
-              <h3 className="text-sm font-black text-slate-900">Danh Sách Thành Viên ({zaloUsers.length})</h3>
-              <p className="text-[11px] text-slate-500">Người mua hàng liên kết Zalo ID với nhóm {groupDisplayName}</p>
-            </div>
-            <input
-              type="text"
-              placeholder="Tìm theo Zalo ID, Tên, STK..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:border-purple-500 w-full sm:w-64"
-            />
+          <div className="p-4 sm:p-6 border-b border-slate-100 flex items-center justify-between">
+            <h3 className="text-base font-black text-slate-900 font-display">Tài khoản Quản Trị Web</h3>
+            <span className="text-xs font-bold text-slate-400">Tổng: {webUsers.length} tài khoản</span>
           </div>
-
-          {/* Mobile Card View (sm:hidden) */}
-          <div className="block sm:hidden divide-y divide-slate-100">
-            {filteredUsers.length === 0 ? (
-              <div className="p-8 text-center text-slate-400 text-xs">
-                Chưa có thành viên nào trong danh sách.
-              </div>
-            ) : (
-              filteredUsers.map((u) => (
-                <div key={u.id} className="p-4 space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono font-black text-slate-900 text-xs bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200">
-                      ID: {u.zaloId}
-                    </span>
-                    <span className="text-xs font-bold text-slate-700">{u.zaloName || "—"}</span>
-                  </div>
-
-                  <div className="text-xs bg-slate-50 p-2.5 rounded-xl border border-slate-100 space-y-1">
-                    <div className="text-slate-500 text-[11px]">Thông tin ngân hàng:</div>
-                    {u.bankName ? (
-                      <div className="font-bold text-slate-900">
-                        {u.bankName} - {u.accountNumber} <span className="font-normal text-slate-600">({u.accountName})</span>
-                      </div>
-                    ) : (
-                      <div className="text-slate-400 italic text-[11px]">Chưa liên kết tài khoản ngân hàng</div>
-                    )}
-                  </div>
-
-                  <div className="flex items-center justify-between text-xs pt-1">
-                    <div>
-                      <span className="text-[10px] text-slate-400 uppercase font-bold block">Số dư tích lũy</span>
-                      <span className="font-black text-emerald-600 text-sm font-display">{formatMoney(u.balance || 0)}</span>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-[10px] text-slate-400 uppercase font-bold block">Đã rút</span>
-                      <span className="font-bold text-slate-600 text-xs font-display">{formatMoney(u.totalWithdrawn || 0)}</span>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-
-          {/* Desktop Table View (hidden sm:block) */}
-          <div className="hidden sm:block overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="bg-slate-50/80 text-slate-500 font-extrabold border-b border-slate-200/80 text-[11px] uppercase tracking-wider">
-                  <th className="p-3.5">Zalo ID</th>
-                  <th className="p-3.5">Tên hiển thị</th>
-                  <th className="p-3.5">Ngân hàng & STK</th>
-                  <th className="p-3.5 text-right">Số dư tích lũy</th>
-                  <th className="p-3.5 text-right">Đã rút</th>
+                <tr className="bg-slate-50/80 text-slate-500 text-[11px] font-black uppercase tracking-wider border-b border-slate-100">
+                  <th className="p-3.5">Họ & Tên / ID</th>
+                  <th className="p-3.5">Email</th>
+                  <th className="p-3.5 text-center">Vai trò</th>
+                  <th className="p-3.5">Ngày tham gia</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-                {filteredUsers.length === 0 ? (
+                {webUsers.length === 0 ? (
                   <tr>
-                    <td colSpan="5" className="p-8 text-center text-slate-400 text-xs">
-                      Chưa có thành viên nào trong danh sách.
-                    </td>
+                    <td colSpan={4} className="p-8 text-center text-slate-400">Chưa có người dùng web nào.</td>
                   </tr>
                 ) : (
-                  filteredUsers.map((u) => (
-                    <tr key={u.id} className="hover:bg-slate-50/60">
-                      <td className="p-3.5 font-mono font-bold text-slate-900">{u.zaloId}</td>
-                      <td className="p-3.5 font-bold">{u.zaloName || "—"}</td>
-                      <td className="p-3.5">
-                        {u.bankName ? (
-                          <span>
-                            <strong className="text-slate-900">{u.bankName}</strong> - {u.accountNumber} ({u.accountName})
-                          </span>
-                        ) : (
-                          <span className="text-slate-400 italic">Chưa liên kết</span>
-                        )}
+                  webUsers.map((u) => (
+                    <tr key={u.id} className="hover:bg-slate-50/80 transition">
+                      <td className="p-3.5 font-bold text-slate-900">{u.name || "Chưa đặt tên"}</td>
+                      <td className="p-3.5 font-mono">{u.email}</td>
+                      <td className="p-3.5 text-center">
+                        <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                          {u.role || "BUYER"}
+                        </span>
                       </td>
-                      <td className="p-3.5 text-right font-black text-emerald-600 font-display">
-                        {formatMoney(u.balance || 0)}
-                      </td>
-                      <td className="p-3.5 text-right font-bold text-slate-500 font-display">
-                        {formatMoney(u.totalWithdrawn || 0)}
-                      </td>
+                      <td className="p-3.5 text-slate-400">{u.createdAt ? formatDate(u.createdAt) : "—"}</td>
                     </tr>
                   ))
                 )}
@@ -770,109 +732,63 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
         </div>
       )}
 
-      {/* ===================== TAB CONTENT: RÚT TIỀN ===================== */}
-      {activeTab === "payouts" && (
+      {/* ===================== TAB 3: TÀI KHOẢN ZALO ===================== */}
+      {activeTab === "zalo_users" && !isLoading && (
         <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
-          <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-black text-slate-900">Yêu Cầu Rút Tiền ({payouts.length})</h3>
-              <p className="text-[11px] text-slate-500">Duyệt chuyển khoản hoa hồng cho thành viên</p>
-            </div>
+          <div className="p-4 sm:p-6 border-b border-slate-100 flex items-center justify-between">
+            <h3 className="text-base font-black text-slate-900 font-display">Tài khoản Thành Viên Zalo Bot</h3>
+            <span className="text-xs font-bold text-slate-400">Tổng: {zaloUsers.length} thành viên</span>
           </div>
-
-          {/* Mobile Card View (sm:hidden) */}
-          <div className="block sm:hidden divide-y divide-slate-100">
-            {payouts.length === 0 ? (
-              <div className="p-8 text-center text-slate-400 text-xs">
-                Không có yêu cầu rút tiền nào.
-              </div>
-            ) : (
-              payouts.map((p) => {
-                const isPending = p.status === "PENDING";
-                return (
-                  <div key={p.id} className="p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono font-black text-slate-900 text-xs bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200">
-                          #{p.id}
-                        </span>
-                        <span className="text-[11px] text-slate-400">{formatDate(p.createdAt)}</span>
-                      </div>
-                      <div>
-                        {isPending ? (
-                          <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-amber-50 text-amber-700 border border-amber-200">
-                            Chờ duyệt
-                          </span>
-                        ) : p.status === "COMPLETED" ? (
-                          <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            Đã chuyển
-                          </span>
-                        ) : (
-                          <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-rose-50 text-rose-700 border border-rose-200">
-                            Từ chối
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 space-y-1.5 text-xs">
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-400 text-[11px]">Thành viên (Zalo ID):</span>
-                        <span className="font-mono font-bold text-slate-900">{p.zaloId}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-400 text-[11px]">Ngân hàng:</span>
-                        <span className="font-bold text-slate-900">{p.bankName}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-400 text-[11px]">Số tài khoản:</span>
-                        <span className="font-mono font-bold text-slate-900">{p.accountNumber}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-400 text-[11px]">Chủ tài khoản:</span>
-                        <span className="font-bold text-slate-700">{p.accountName}</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-1">
-                      <div>
-                        <span className="text-[10px] text-slate-400 uppercase font-bold block">Số tiền rút</span>
-                        <span className="font-black text-rose-600 text-base font-display">{formatMoney(p.amount || 0)}</span>
-                      </div>
-
-                      {isPending && (
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleRejectPayout(p.id)}
-                            className="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl text-xs font-bold border border-rose-200 transition cursor-pointer"
-                          >
-                            Từ chối
-                          </button>
-                          <button
-                            onClick={() => handleApprovePayout(p.id)}
-                            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black shadow-md shadow-emerald-500/20 transition cursor-pointer flex items-center gap-1.5"
-                          >
-                            <i className="fa-solid fa-check text-xs"></i>
-                            <span>Duyệt Rút</span>
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-
-          {/* Desktop Table View (hidden sm:block) */}
-          <div className="hidden sm:block overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="bg-slate-50/80 text-slate-500 font-extrabold border-b border-slate-200/80 text-[11px] uppercase tracking-wider">
-                  <th className="p-3.5">Mã / Ngày tạo</th>
-                  <th className="p-3.5">Zalo ID</th>
-                  <th className="p-3.5">Ngân hàng nhận</th>
+                <tr className="bg-slate-50/80 text-slate-500 text-[11px] font-black uppercase tracking-wider border-b border-slate-100">
+                  <th className="p-3.5">Tên Zalo / ID</th>
+                  <th className="p-3.5">STK Ngân Hàng</th>
+                  <th className="p-3.5 text-right">Tổng đơn</th>
+                  <th className="p-3.5 text-right">Số dư khả dụng</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                {zaloUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="p-8 text-center text-slate-400">Chưa có thành viên Zalo nào phát sinh đơn tại Kênh này.</td>
+                  </tr>
+                ) : (
+                  zaloUsers.map((u) => (
+                    <tr key={u.id} className="hover:bg-slate-50/80 transition">
+                      <td className="p-3.5">
+                        <p className="font-bold text-slate-900">{u.zaloName || "Khách Zalo"}</p>
+                        <p className="text-[10px] text-slate-400 font-mono">Zalo ID: {u.zaloId}</p>
+                      </td>
+                      <td className="p-3.5 font-mono">
+                        {u.accountNumber ? `${u.bankName || "NH"} - ${u.accountNumber} (${u.accountName || ""})` : "— Chưa lưu STK"}
+                      </td>
+                      <td className="p-3.5 text-right font-bold text-slate-800">{u.totalOrdersCount || 0} đơn</td>
+                      <td className="p-3.5 text-right font-mono font-bold text-emerald-600">{formatMoney(u.availableBalance || 0)}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ===================== TAB 4: RÚT TIỀN (PAYOUTS) ===================== */}
+      {activeTab === "payouts" && !isLoading && (
+        <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
+          <div className="p-4 sm:p-6 border-b border-slate-100 flex items-center justify-between">
+            <h3 className="text-base font-black text-slate-900 font-display">Yêu Cầu Rút Tiền</h3>
+            <span className="text-xs font-bold text-slate-400">Chờ duyệt: {pendingPayouts.length} lệnh</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="bg-slate-50/80 text-slate-500 text-[11px] font-black uppercase tracking-wider border-b border-slate-100">
+                  <th className="p-3.5">Thành viên</th>
                   <th className="p-3.5 text-right">Số tiền rút</th>
+                  <th className="p-3.5">Thông tin Chuyển Khoản STK</th>
                   <th className="p-3.5 text-center">Trạng thái</th>
                   <th className="p-3.5 text-right">Thao tác</th>
                 </tr>
@@ -880,173 +796,50 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
               <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
                 {payouts.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className="p-8 text-center text-slate-400 text-xs">
-                      Không có yêu cầu rút tiền nào.
-                    </td>
+                    <td colSpan={5} className="p-8 text-center text-slate-400">Chưa có yêu cầu rút tiền nào.</td>
                   </tr>
                 ) : (
-                  payouts.map((p) => {
-                    const isPending = p.status === "PENDING";
-                    return (
-                      <tr key={p.id} className="hover:bg-slate-50/60">
-                        <td className="p-3.5">
-                          <div className="font-mono font-bold text-slate-900">#{p.id}</div>
-                          <div className="text-[10px] text-slate-400">{formatDate(p.createdAt)}</div>
-                        </td>
-                        <td className="p-3.5 font-mono font-bold">{p.zaloId}</td>
-                        <td className="p-3.5">
-                          <strong className="text-slate-900">{p.bankName}</strong>
-                          <div className="text-[11px] text-slate-500 font-mono">
-                            {p.accountNumber} ({p.accountName})
-                          </div>
-                        </td>
-                        <td className="p-3.5 text-right font-black text-slate-900 font-display text-sm">
-                          {formatMoney(p.amount || 0)}
-                        </td>
-                        <td className="p-3.5 text-center">
-                          {isPending ? (
-                            <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-amber-50 text-amber-700 border border-amber-200">
-                              Chờ duyệt
-                            </span>
-                          ) : p.status === "COMPLETED" ? (
-                            <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200">
-                              Đã chuyển
-                            </span>
-                          ) : (
-                            <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-rose-50 text-rose-700 border border-rose-200">
-                              Từ chối
-                            </span>
-                          )}
-                        </td>
-                        <td className="p-3.5 text-right">
-                          {isPending ? (
-                            <div className="flex items-center justify-end gap-1.5">
-                              <button
-                                onClick={() => handleApprovePayout(p.id)}
-                                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
-                              >
-                                Duyệt
-                              </button>
-                              <button
-                                onClick={() => handleRejectPayout(p.id)}
-                                className="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl text-xs font-bold border border-rose-200 transition cursor-pointer"
-                              >
-                                Từ chối
-                              </button>
-                            </div>
-                          ) : (
-                            <span className="text-[11px] text-slate-400 italic">Đã xong</span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* ===================== TAB CONTENT: ĐƠN SHOPEE & TIKTOK ===================== */}
-      {(activeTab === "shopee" || activeTab === "tiktok") && (
-        <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
-          <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-            <div>
-              <h3 className="text-sm font-black text-slate-900">
-                {activeTab === "shopee" ? "Đơn Hàng Shopee" : "Đơn Hàng TikTok Shop"} ({filteredOrders.length})
-              </h3>
-              <p className="text-[11px] text-slate-500">Danh sách đơn hàng đối soát của nhóm {groupDisplayName}</p>
-            </div>
-            <input
-              type="text"
-              placeholder="Tìm theo Mã đơn, Sản phẩm, Zalo ID..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:border-purple-500 w-full sm:w-64"
-            />
-          </div>
-
-          {/* Mobile Card View (sm:hidden) */}
-          <div className="block sm:hidden divide-y divide-slate-100">
-            {filteredOrders.length === 0 ? (
-              <div className="p-8 text-center text-slate-400 text-xs">
-                Không tìm thấy đơn hàng nào.
-              </div>
-            ) : (
-              filteredOrders.map((o) => (
-                <div key={o.id} className="p-4 space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono font-black text-slate-900 text-xs bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200">
-                      #{o.orderId}
-                    </span>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      {o.status || "Hoàn thành"}
-                    </span>
-                  </div>
-
-                  <div className="text-xs font-bold text-slate-800 line-clamp-2">
-                    {o.productName || "Sản phẩm Shopee / TikTok Shop"}
-                  </div>
-
-                  <div className="flex items-center justify-between text-xs bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                    <span className="text-slate-400 text-[11px]">Zalo ID:</span>
-                    <span className="font-mono font-bold text-slate-900">{o.zaloId || "—"}</span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 text-xs pt-1">
-                    <div className="bg-slate-50/80 p-2 rounded-xl border border-slate-100">
-                      <span className="text-[10px] text-slate-400 uppercase font-bold block">Hoa hồng thô</span>
-                      <span className="font-mono font-bold text-slate-700">{formatMoney(o.rawCommission || 0)}</span>
-                    </div>
-                    <div className="bg-emerald-50/60 p-2 rounded-xl border border-emerald-100 text-right">
-                      <span className="text-[10px] text-emerald-600 uppercase font-black block">Khách nhận ({customerSplitRate}%)</span>
-                      <span className="font-black text-emerald-700 font-display">{formatMoney(o.finalCommission || 0)}</span>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-
-          {/* Desktop Table View (hidden sm:block) */}
-          <div className="hidden sm:block overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="bg-slate-50/80 text-slate-500 font-extrabold border-b border-slate-200/80 text-[11px] uppercase tracking-wider">
-                  <th className="p-3.5">Mã đơn</th>
-                  <th className="p-3.5">Sản phẩm</th>
-                  <th className="p-3.5">Zalo ID</th>
-                  <th className="p-3.5 text-right">Hoa hồng thô</th>
-                  <th className="p-3.5 text-right">Khách nhận ({customerSplitRate}%)</th>
-                  <th className="p-3.5 text-center">Trạng thái</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-                {filteredOrders.length === 0 ? (
-                  <tr>
-                    <td colSpan="6" className="p-8 text-center text-slate-400 text-xs">
-                      Không tìm thấy đơn hàng nào.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredOrders.map((o) => (
-                    <tr key={o.id} className="hover:bg-slate-50/60">
-                      <td className="p-3.5 font-mono font-bold text-slate-900">{o.orderId}</td>
-                      <td className="p-3.5 max-w-xs truncate" title={o.productName}>
-                        {o.productName || "Sản phẩm Shopee / TikTok"}
+                  payouts.map((p) => (
+                    <tr key={p.id} className="hover:bg-slate-50/80 transition">
+                      <td className="p-3.5">
+                        <p className="font-bold text-slate-900">{p.zaloName || p.zaloId}</p>
+                        <p className="text-[10px] text-slate-400 font-mono">{formatDate(p.createdAt)}</p>
                       </td>
-                      <td className="p-3.5 font-mono">{o.zaloId || "—"}</td>
-                      <td className="p-3.5 text-right font-mono font-bold text-slate-600">
-                        {formatMoney(o.rawCommission || 0)}
+                      <td className="p-3.5 text-right font-mono font-black text-rose-600 text-sm">
+                        {formatMoney(p.amount)}
                       </td>
-                      <td className="p-3.5 text-right font-black text-emerald-600 font-display">
-                        {formatMoney(o.finalCommission || 0)}
+                      <td className="p-3.5 font-mono">
+                        <p className="font-bold text-slate-900">{p.bankName} — {p.accountNumber}</p>
+                        <p className="text-[11px] text-slate-500">{p.accountName}</p>
                       </td>
                       <td className="p-3.5 text-center">
-                        <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                          {o.status || "Hoàn thành"}
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                          p.status === "COMPLETED"
+                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                            : p.status === "REJECTED"
+                            ? "bg-rose-50 text-rose-700 border border-rose-200"
+                            : "bg-amber-50 text-amber-700 border border-amber-200 animate-pulse"
+                        }`}>
+                          {p.status === "COMPLETED" ? "Đã duyệt" : p.status === "REJECTED" ? "Từ chối" : "Chờ duyệt"}
                         </span>
+                      </td>
+                      <td className="p-3.5 text-right space-x-2">
+                        {p.status === "PENDING" && (
+                          <>
+                            <button
+                              onClick={() => handleApprovePayout(p.id)}
+                              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-xs cursor-pointer shadow-xs"
+                            >
+                              Duyệt Đã CK
+                            </button>
+                            <button
+                              onClick={() => handleRejectPayout(p.id)}
+                              className="px-3 py-1.5 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-xl font-bold text-xs cursor-pointer"
+                            >
+                              Từ chối
+                            </button>
+                          </>
+                        )}
                       </td>
                     </tr>
                   ))
@@ -1057,928 +850,549 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
         </div>
       )}
 
-      {/* ===================== TAB CONTENT: NẠP EXCEL ===================== */}
-      {activeTab === "import" && (
-        <div className="bg-white rounded-3xl border border-slate-200/80 p-6 md:p-8 shadow-2xs space-y-6">
-          <div>
-            <h3 className="text-base md:text-lg font-black text-slate-900 font-display flex items-center gap-2">
-              <i className="fa-solid fa-cloud-arrow-up text-orange-500"></i>
-              <span>Nhập Báo Cáo Đối Soát Đơn Hàng Cho {groupDisplayName}</span>
-            </h3>
-            <p className="text-xs text-slate-500 mt-1">
-              Dữ liệu đơn sau khi nạp sẽ được lưu độc lập vào kho riêng biệt của nhóm này.
-            </p>
-          </div>
-
-          {/* Styled Dropzone */}
-          <div className="border-2 border-dashed border-orange-200/90 bg-orange-50/40 rounded-3xl p-8 md:p-12 text-center space-y-4">
-            <div className="w-16 h-16 rounded-2xl bg-white text-orange-500 flex items-center justify-center text-3xl shadow-xs border border-orange-200 mx-auto">
-              <i className="fa-solid fa-file-csv"></i>
+      {/* ===================== TAB 5 & 6: ĐƠN SHOPEE & TIKTOK ===================== */}
+      {(activeTab === "shopee" || activeTab === "tiktok") && !isLoading && (
+        <div className="space-y-6">
+          {/* EMBEDDED IMPORT BOX FOR SHOPEE/TIKTOK */}
+          <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-6 shadow-2xs space-y-4">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <h3 className="text-sm font-black text-slate-900 font-display flex items-center gap-2">
+                <i className="fa-solid fa-file-import text-orange-500"></i>
+                <span>IMPORT BÁO CÁO ĐỐI SOÁT {activeTab === "tiktok" ? "TIKTOK SHOP" : "SHOPEE"} (CSV/EXCEL)</span>
+              </h3>
             </div>
 
-            <div className="space-y-1">
-              <p className="text-sm font-extrabold text-slate-900">
-                Chọn file Excel (.xlsx / .xls) hoặc CSV từ Shopee & TikTok
-              </p>
-              <p className="text-xs text-slate-500">
-                Hệ thống tự nhận diện cột: Mã đơn, Tên sản phẩm, Hoa hồng, Trạng thái
-              </p>
-            </div>
-
-            <div className="flex flex-col items-center justify-center gap-3 pt-2">
-              <label className="px-6 py-3 bg-white hover:bg-slate-50 text-slate-700 font-black text-xs rounded-2xl border border-slate-300 shadow-2xs cursor-pointer inline-flex items-center gap-2 transition hover:border-orange-400">
-                <i className="fa-solid fa-folder-open text-orange-500"></i>
-                <span>{importFile ? importFile.name : "Chọn file từ máy tính"}</span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="border-2 border-dashed border-orange-200 bg-orange-50/40 hover:bg-orange-50/70 rounded-2xl p-4 transition cursor-pointer flex flex-col items-center justify-center relative overflow-hidden min-h-[110px]">
                 <input
                   type="file"
-                  accept=".xlsx,.xls,.csv"
-                  className="hidden"
-                  onChange={(e) => setImportFile(e.target.files[0])}
+                  accept=".csv,.xlsx,.xls"
+                  onChange={(e) => {
+                    setImportFile(e.target.files[0]);
+                    setImportResult(null);
+                  }}
+                  className="absolute inset-0 opacity-0 cursor-pointer"
                 />
-              </label>
 
-              {importFile && (
+                {importFile ? (
+                  <div className="flex flex-col items-center text-center space-y-1">
+                    <div className="w-9 h-9 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center text-base shadow-xs">
+                      <i className="fa-solid fa-file-excel"></i>
+                    </div>
+                    <span className="text-xs font-black text-slate-800 truncate max-w-[220px]">{importFile.name}</span>
+                    <span className="text-[10px] text-slate-400 font-medium">{(importFile.size / 1024).toFixed(1)} KB — Bấm để đổi file</span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center text-center space-y-1">
+                    <div className="w-9 h-9 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center text-base shadow-xs">
+                      <i className="fa-solid fa-cloud-arrow-up"></i>
+                    </div>
+                    <span className="text-xs font-black text-slate-800">Chọn hoặc kéo thả file báo cáo</span>
+                    <span className="text-[10px] text-slate-400 font-medium">Hỗ trợ .csv, .xlsx, .xls từ Shopee & TikTok</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-col justify-center space-y-3">
+                <p className="text-xs text-slate-500 leading-relaxed font-medium">
+                  Hệ thống sẽ tự động quét cột <strong>Mã đơn hàng</strong> và <strong>Sub ID / Mã phụ</strong> chứa thông tin định danh thành viên để liên kết chính xác hoa hồng cho Kênh {groupDisplayName}.
+                </p>
+
                 <button
                   onClick={handleUploadExcel}
-                  disabled={isImporting}
-                  className="px-8 py-3 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black text-xs rounded-2xl shadow-md shadow-orange-500/25 transition cursor-pointer flex items-center gap-2"
+                  disabled={isImporting || !importFile}
+                  className={`w-full py-3 px-4 rounded-2xl text-xs font-black transition flex items-center justify-center gap-2 shadow-md cursor-pointer ${
+                    isImporting || !importFile
+                      ? "bg-slate-200 text-slate-400 cursor-not-allowed shadow-none"
+                      : "bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-orange-500/20"
+                  }`}
                 >
                   {isImporting ? (
                     <>
-                      <i className="fa-solid fa-spinner fa-spin"></i> Đang xử lý file...
+                      <i className="fa-solid fa-spinner fa-spin"></i> Đang nạp dữ liệu đơn hàng...
                     </>
                   ) : (
                     <>
-                      <i className="fa-solid fa-upload"></i> Nạp Báo Cáo Ngay
+                      <i className="fa-solid fa-upload"></i> Bắt đầu Import File
                     </>
                   )}
                 </button>
-              )}
-            </div>
-          </div>
-
-          {importResult && (
-            <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center gap-2.5">
-              <i className="fa-solid fa-circle-check text-lg text-emerald-600 shrink-0"></i>
-              <span>{importResult.message}</span>
-            </div>
-          )}
-
-          {/* Info cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1">
-              <h4 className="text-xs font-black text-slate-900 flex items-center gap-1.5">
-                <i className="fa-solid fa-calculator text-orange-500"></i> Thuật toán chia hoa hồng tự động:
-              </h4>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Hoa hồng sau thuế = Hoa hồng gốc × (100% - {taxRate}%)
-                <br />
-                Khách nhận = Hoa hồng sau thuế × {customerSplitRate}%
-                <br />
-                Trưởng nhóm giữ = Hoa hồng sau thuế × {adminSplitRate}%
-              </p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1">
-              <h4 className="text-xs font-black text-slate-900 flex items-center gap-1.5">
-                <i className="fa-solid fa-shield-halved text-emerald-600"></i> Bảo mật và phân quyền:
-              </h4>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Đơn hàng và ví tiền của nhóm {groupDisplayName} được lưu trữ độc lập trên cơ sở dữ liệu saas_db, bảo mật 100% không lo bị rò rỉ hay nghẽn hệ thống.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ===================== TAB CONTENT: CẤU HÌNH TIN NHẮN BOT ===================== */}
-      {activeTab === "templates" && (
-        <div className="space-y-6">
-          {/* Header Card */}
-          <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-2xs space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-2xl bg-purple-100 text-purple-600 flex items-center justify-center text-lg font-bold">
-                  <i className="fa-solid fa-robot"></i>
-                </div>
-                <div>
-                  <h2 className="text-base font-black text-slate-900 font-display">
-                    Tùy Chỉnh Câu Trả Lời Của Zalo Bot
-                  </h2>
-                  <p className="text-xs text-slate-500 font-medium">
-                    Tự do cá nhân hóa câu từ, lời chào, tag @ thành viên và các phản hồi lỗi theo phong cách nhóm
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleResetAllTemplates}
-                  className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition cursor-pointer flex items-center gap-1.5"
-                >
-                  <i className="fa-solid fa-rotate-left text-[11px]"></i>
-                  <span>Khôi phục tất cả về mặc định</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSaveTemplates}
-                  disabled={isSavingTemplates}
-                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-black shadow-md shadow-purple-500/25 transition cursor-pointer flex items-center gap-2 disabled:opacity-50"
-                >
-                  {isSavingTemplates ? (
-                    <i className="fa-solid fa-circle-notch fa-spin"></i>
-                  ) : (
-                    <i className="fa-solid fa-floppy-disk"></i>
-                  )}
-                  <span>Lưu Cấu Hình</span>
-                </button>
               </div>
             </div>
 
-            {templateSaveMessage && (
-              <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center gap-2">
-                <i className="fa-solid fa-circle-check text-emerald-600 text-sm"></i>
-                <span>{templateSaveMessage}</span>
-              </div>
-            )}
-
-            {/* Placeholder Cheatsheet */}
-            <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-2.5">
-              <h3 className="text-xs font-black uppercase text-slate-700 tracking-wider flex items-center gap-1.5">
-                <i className="fa-solid fa-code text-purple-600"></i> Bảng Từ Khóa Động (Placeholder):
-              </h3>
-              <p className="text-[11px] text-slate-500 font-medium">
-                Bạn có thể chèn các từ khóa sau vào câu chữ. Khi Bot gửi tin nhắn, hệ thống sẽ tự động thay thế bằng dữ liệu thật của khách hàng:
-              </p>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                <div className="p-2 bg-white rounded-xl border border-slate-200/80 font-mono">
-                  <span className="font-black text-purple-600">{"@{user}"}</span>
-                  <p className="text-[10px] text-slate-500 font-sans font-medium mt-0.5">Tag tên Zalo rung chuông</p>
-                </div>
-                <div className="p-2 bg-white rounded-xl border border-slate-200/80 font-mono">
-                  <span className="font-black text-orange-600">{"{link}"}</span>
-                  <p className="text-[10px] text-slate-500 font-sans font-medium mt-0.5">Link tra cứu rút gọn</p>
-                </div>
-                <div className="p-2 bg-white rounded-xl border border-slate-200/80 font-mono">
-                  <span className="font-black text-emerald-600">{"{split_rate}"}</span>
-                  <p className="text-[10px] text-slate-500 font-sans font-medium mt-0.5">Tỷ lệ hoàn ({customerSplitRate}%)</p>
-                </div>
-                <div className="p-2 bg-white rounded-xl border border-slate-200/80 font-mono">
-                  <span className="font-black text-blue-600">{"{group_name}"}</span>
-                  <p className="text-[10px] text-slate-500 font-sans font-medium mt-0.5">Tên nhóm ({groupDisplayName})</p>
-                </div>
-                <div className="p-2 bg-white rounded-xl border border-slate-200/80 font-mono">
-                  <span className="font-black text-indigo-600">{"{affiliate_link}"}</span>
-                  <p className="text-[10px] text-slate-500 font-sans font-medium mt-0.5">Link mua hàng đã chuyển đổi</p>
-                </div>
-                <div className="p-2 bg-white rounded-xl border border-slate-200/80 font-mono">
-                  <span className="font-black text-amber-600">{"{order_id}"}</span>
-                  <p className="text-[10px] text-slate-500 font-sans font-medium mt-0.5">Mã đơn hàng</p>
-                </div>
-                <div className="p-2 bg-white rounded-xl border border-slate-200/80 font-mono">
-                  <span className="font-black text-rose-600">{"{balance}"}</span>
-                  <p className="text-[10px] text-slate-500 font-sans font-medium mt-0.5">Số dư khả dụng</p>
-                </div>
-                <div className="p-2 bg-white rounded-xl border border-slate-200/80 font-mono">
-                  <span className="font-black text-slate-700">{"{command}"}</span>
-                  <p className="text-[10px] text-slate-500 font-sans font-medium mt-0.5">Lệnh khách nhập sai</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Subtabs Filter */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1">
-            <button
-              onClick={() => setTemplateSubTab("all")}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
-                templateSubTab === "all" ? "bg-slate-900 text-white" : "bg-white text-slate-600 border border-slate-200"
-              }`}
-            >
-              Tất cả (9 mẫu)
-            </button>
-            <button
-              onClick={() => setTemplateSubTab("main")}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
-                templateSubTab === "main" ? "bg-purple-600 text-white" : "bg-white text-slate-600 border border-slate-200"
-              }`}
-            >
-              Lệnh Chính (/tracuu, trả link, chào mừng)
-            </button>
-            <button
-              onClick={() => setTemplateSubTab("errors")}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
-                templateSubTab === "errors" ? "bg-rose-600 text-white" : "bg-white text-slate-600 border border-slate-200"
-              }`}
-            >
-              Phủ Định & Báo Lỗi (Không có đơn, sai lệnh)
-            </button>
-          </div>
-
-          {/* Templates Grid */}
-          <div className="space-y-4">
-            {/* 1. Mẫu Trả Link */}
-            {(templateSubTab === "all" || templateSubTab === "main") && (
-              <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-2xs space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center text-xs font-bold">
-                      <i className="fa-solid fa-link"></i>
-                    </div>
-                    <div>
-                      <h4 className="font-extrabold text-slate-900 text-sm">
-                        1. Mẫu tin nhắn Trả Link Mua Hàng Hoàn Tiền
-                      </h4>
-                      <p className="text-[11px] text-slate-400 font-medium">
-                        Phát ra khi khách gửi link sản phẩm Shopee / TikTok vào nhóm
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleResetTemplate("template_link")}
-                    className="text-slate-400 hover:text-purple-600 text-xs font-bold flex items-center gap-1 cursor-pointer"
-                  >
-                    <i className="fa-solid fa-rotate-left text-[10px]"></i> Mặc định
-                  </button>
-                </div>
-                <textarea
-                  rows={4}
-                  value={botTemplates.template_link || defaultTemplates.template_link || ""}
-                  onChange={(e) => setBotTemplates({ ...botTemplates, template_link: e.target.value })}
-                  placeholder={defaultTemplates.template_link || ""}
-                  className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-800 focus:bg-white focus:border-purple-500 outline-hidden font-mono leading-relaxed"
-                />
-              </div>
-            )}
-
-            {/* 2. Mẫu Tra Cứu (Có Đơn) */}
-            {(templateSubTab === "all" || templateSubTab === "main") && (
-              <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-2xs space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs font-bold">
-                      <i className="fa-solid fa-magnifying-glass"></i>
-                    </div>
-                    <div>
-                      <h4 className="font-extrabold text-slate-900 text-sm">
-                        2. Mẫu tin nhắn Tra Cứu Khi ĐÃ CÓ ĐƠN HÀNG (/tracuu)
-                      </h4>
-                      <p className="text-[11px] text-slate-400 font-medium">
-                        Gửi kèm đường link tra cứu rút gọn Mẫu 3 cho khách đã có tích lũy
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleResetTemplate("template_lookup_has_orders")}
-                    className="text-slate-400 hover:text-purple-600 text-xs font-bold flex items-center gap-1 cursor-pointer"
-                  >
-                    <i className="fa-solid fa-rotate-left text-[10px]"></i> Mặc định
-                  </button>
-                </div>
-                <textarea
-                  rows={6}
-                  value={botTemplates.template_lookup_has_orders || defaultTemplates.template_lookup_has_orders || ""}
-                  onChange={(e) => setBotTemplates({ ...botTemplates, template_lookup_has_orders: e.target.value })}
-                  placeholder={defaultTemplates.template_lookup_has_orders || ""}
-                  className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-800 focus:bg-white focus:border-purple-500 outline-hidden font-mono leading-relaxed"
-                />
-              </div>
-            )}
-
-            {/* 3. Mẫu Tra Cứu (Chưa Có Đơn) */}
-            {(templateSubTab === "all" || templateSubTab === "main" || templateSubTab === "errors") && (
-              <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-2xs space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center text-xs font-bold">
-                      <i className="fa-solid fa-circle-question"></i>
-                    </div>
-                    <div>
-                      <h4 className="font-extrabold text-slate-900 text-sm">
-                        3. Mẫu tin nhắn Tra Cứu Khi CHƯA CÓ ĐƠN HÀNG
-                      </h4>
-                      <p className="text-[11px] text-slate-400 font-medium">
-                        Phản hồi khi khách mới gõ /tracuu nhưng chưa phát sinh đơn nào qua link nhóm
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleResetTemplate("template_lookup_no_orders")}
-                    className="text-slate-400 hover:text-purple-600 text-xs font-bold flex items-center gap-1 cursor-pointer"
-                  >
-                    <i className="fa-solid fa-rotate-left text-[10px]"></i> Mặc định
-                  </button>
-                </div>
-                <textarea
-                  rows={5}
-                  value={botTemplates.template_lookup_no_orders || defaultTemplates.template_lookup_no_orders || ""}
-                  onChange={(e) => setBotTemplates({ ...botTemplates, template_lookup_no_orders: e.target.value })}
-                  placeholder={defaultTemplates.template_lookup_no_orders || ""}
-                  className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-800 focus:bg-white focus:border-purple-500 outline-hidden font-mono leading-relaxed"
-                />
-              </div>
-            )}
-
-            {/* 4. Mẫu Chào Mừng Thành Viên Mới */}
-            {(templateSubTab === "all" || templateSubTab === "main") && (
-              <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-2xs space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-xl bg-pink-100 text-pink-600 flex items-center justify-center text-xs font-bold">
-                      <i className="fa-solid fa-hand-peace"></i>
-                    </div>
-                    <div>
-                      <h4 className="font-extrabold text-slate-900 text-sm">
-                        4. Mẫu tin nhắn Chào Mừng Thành Viên Mới
-                      </h4>
-                      <p className="text-[11px] text-slate-400 font-medium">
-                        Tự động tag tên và gửi vào nhóm khi có người mới tham gia
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleResetTemplate("template_welcome")}
-                    className="text-slate-400 hover:text-purple-600 text-xs font-bold flex items-center gap-1 cursor-pointer"
-                  >
-                    <i className="fa-solid fa-rotate-left text-[10px]"></i> Mặc định
-                  </button>
-                </div>
-                <textarea
-                  rows={4}
-                  value={botTemplates.template_welcome || defaultTemplates.template_welcome || ""}
-                  onChange={(e) => setBotTemplates({ ...botTemplates, template_welcome: e.target.value })}
-                  placeholder={defaultTemplates.template_welcome || ""}
-                  className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-800 focus:bg-white focus:border-purple-500 outline-hidden font-mono leading-relaxed"
-                />
-              </div>
-            )}
-
-            {/* 5. Mẫu Hướng Dẫn Trợ Giúp */}
-            {(templateSubTab === "all" || templateSubTab === "main") && (
-              <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-2xs space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">
-                      <i className="fa-solid fa-circle-info"></i>
-                    </div>
-                    <div>
-                      <h4 className="font-extrabold text-slate-900 text-sm">
-                        5. Mẫu tin nhắn Trợ Giúp / Danh Sách Lệnh (/help)
-                      </h4>
-                      <p className="text-[11px] text-slate-400 font-medium">
-                        Bảng hướng dẫn cú pháp lệnh hiển thị khi gõ /help hoặc /hd
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleResetTemplate("template_help")}
-                    className="text-slate-400 hover:text-purple-600 text-xs font-bold flex items-center gap-1 cursor-pointer"
-                  >
-                    <i className="fa-solid fa-rotate-left text-[10px]"></i> Mặc định
-                  </button>
-                </div>
-                <textarea
-                  rows={6}
-                  value={botTemplates.template_help || defaultTemplates.template_help || ""}
-                  onChange={(e) => setBotTemplates({ ...botTemplates, template_help: e.target.value })}
-                  placeholder={defaultTemplates.template_help || ""}
-                  className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-800 focus:bg-white focus:border-purple-500 outline-hidden font-mono leading-relaxed"
-                />
-              </div>
-            )}
-
-            {/* 6. Mẫu Báo Lỗi: Mã đơn không tồn tại */}
-            {(templateSubTab === "all" || templateSubTab === "errors") && (
-              <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-2xs space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center text-xs font-bold">
-                      <i className="fa-solid fa-triangle-exclamation"></i>
-                    </div>
-                    <div>
-                      <h4 className="font-extrabold text-slate-900 text-sm">
-                        6. Mẫu Báo Lỗi: Không Tìm Thấy Mã Đơn Hàng
-                      </h4>
-                      <p className="text-[11px] text-slate-400 font-medium">
-                        Phản hồi khi khách nhập một mã đơn không tồn tại trong báo cáo đối soát
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleResetTemplate("template_order_not_found")}
-                    className="text-slate-400 hover:text-purple-600 text-xs font-bold flex items-center gap-1 cursor-pointer"
-                  >
-                    <i className="fa-solid fa-rotate-left text-[10px]"></i> Mặc định
-                  </button>
-                </div>
-                <textarea
-                  rows={4}
-                  value={botTemplates.template_order_not_found || defaultTemplates.template_order_not_found || ""}
-                  onChange={(e) => setBotTemplates({ ...botTemplates, template_order_not_found: e.target.value })}
-                  placeholder={defaultTemplates.template_order_not_found || ""}
-                  className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-800 focus:bg-white focus:border-purple-500 outline-hidden font-mono leading-relaxed"
-                />
-              </div>
-            )}
-
-            {/* 7. Mẫu Báo Lỗi: Lệnh không hợp lệ */}
-            {(templateSubTab === "all" || templateSubTab === "errors") && (
-              <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-2xs space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center text-xs font-bold">
-                      <i className="fa-solid fa-circle-xmark"></i>
-                    </div>
-                    <div>
-                      <h4 className="font-extrabold text-slate-900 text-sm">
-                        7. Mẫu Báo Lỗi: Nhập Lệnh Không Hợp Lệ
-                      </h4>
-                      <p className="text-[11px] text-slate-400 font-medium">
-                        Phản hồi khi khách gõ các lệnh không tồn tại (VD: /abc, /xyz...)
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleResetTemplate("template_invalid_command")}
-                    className="text-slate-400 hover:text-purple-600 text-xs font-bold flex items-center gap-1 cursor-pointer"
-                  >
-                    <i className="fa-solid fa-rotate-left text-[10px]"></i> Mặc định
-                  </button>
-                </div>
-                <textarea
-                  rows={3}
-                  value={botTemplates.template_invalid_command || defaultTemplates.template_invalid_command || ""}
-                  onChange={(e) => setBotTemplates({ ...botTemplates, template_invalid_command: e.target.value })}
-                  placeholder={defaultTemplates.template_invalid_command || ""}
-                  className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-800 focus:bg-white focus:border-purple-500 outline-hidden font-mono leading-relaxed"
-                />
-              </div>
-            )}
-
-            {/* 8. Mẫu Báo Lỗi: Sai cú pháp lưu Ngân Hàng */}
-            {(templateSubTab === "all" || templateSubTab === "errors") && (
-              <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-2xs space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center text-xs font-bold">
-                      <i className="fa-solid fa-building-columns"></i>
-                    </div>
-                    <div>
-                      <h4 className="font-extrabold text-slate-900 text-sm">
-                        8. Mẫu Báo Lỗi: Sai Cú Pháp Lưu Ngân Hàng (/stk)
-                      </h4>
-                      <p className="text-[11px] text-slate-400 font-medium">
-                        Nhắc nhở cú pháp đúng khi khách gõ thiếu tên ngân hàng hoặc STK
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleResetTemplate("template_invalid_bank_syntax")}
-                    className="text-slate-400 hover:text-purple-600 text-xs font-bold flex items-center gap-1 cursor-pointer"
-                  >
-                    <i className="fa-solid fa-rotate-left text-[10px]"></i> Mặc định
-                  </button>
-                </div>
-                <textarea
-                  rows={4}
-                  value={botTemplates.template_invalid_bank_syntax || defaultTemplates.template_invalid_bank_syntax || ""}
-                  onChange={(e) => setBotTemplates({ ...botTemplates, template_invalid_bank_syntax: e.target.value })}
-                  placeholder={defaultTemplates.template_invalid_bank_syntax || ""}
-                  className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-800 focus:bg-white focus:border-purple-500 outline-hidden font-mono leading-relaxed"
-                />
-              </div>
-            )}
-
-            {/* 9. Mẫu Báo Lỗi: Ví 0đ hoặc chưa đủ hạn mức rút */}
-            {(templateSubTab === "all" || templateSubTab === "errors") && (
-              <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-2xs space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center text-xs font-bold">
-                      <i className="fa-solid fa-wallet"></i>
-                    </div>
-                    <div>
-                      <h4 className="font-extrabold text-slate-900 text-sm">
-                        9. Mẫu Báo Lỗi: Số Dư Bằng 0đ / Chưa Đủ Min Rút (/ruttien)
-                      </h4>
-                      <p className="text-[11px] text-slate-400 font-medium">
-                        Phản hồi khi khách yêu cầu rút tiền nhưng ví khả dụng chưa đủ hạn mức
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleResetTemplate("template_withdraw_zero")}
-                    className="text-slate-400 hover:text-purple-600 text-xs font-bold flex items-center gap-1 cursor-pointer"
-                  >
-                    <i className="fa-solid fa-rotate-left text-[10px]"></i> Mặc định
-                  </button>
-                </div>
-                <textarea
-                  rows={3}
-                  value={botTemplates.template_withdraw_zero || defaultTemplates.template_withdraw_zero || ""}
-                  onChange={(e) => setBotTemplates({ ...botTemplates, template_withdraw_zero: e.target.value })}
-                  placeholder={defaultTemplates.template_withdraw_zero || ""}
-                  className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-800 focus:bg-white focus:border-purple-500 outline-hidden font-mono leading-relaxed"
-                />
+            {importResult && (
+              <div className={`p-3.5 rounded-2xl text-xs font-bold flex items-center gap-2.5 ${importResult.success ? "bg-emerald-50 text-emerald-800 border border-emerald-200" : "bg-rose-50 text-rose-800 border border-rose-200"}`}>
+                <i className={`fa-solid ${importResult.success ? "fa-circle-check text-emerald-600" : "fa-circle-exclamation text-rose-600"} text-base shrink-0`}></i>
+                <span>{importResult.message}</span>
               </div>
             )}
           </div>
 
-          {/* Bottom Save bar */}
-          <div className="flex items-center justify-end gap-3 pt-2">
-            <button
-              type="button"
-              onClick={handleResetAllTemplates}
-              className="px-5 py-3 rounded-2xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-bold cursor-pointer transition"
-            >
-              Khôi phục tất cả về mặc định
-            </button>
-            <button
-              type="button"
-              onClick={handleSaveTemplates}
-              disabled={isSavingTemplates}
-              className="px-8 py-3 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-black shadow-md shadow-purple-500/25 transition cursor-pointer flex items-center gap-2 disabled:opacity-50"
-            >
-              {isSavingTemplates ? (
-                <i className="fa-solid fa-spinner fa-spin"></i>
-              ) : (
-                <i className="fa-solid fa-floppy-disk"></i>
-              )}
-              <span>Lưu Cấu Hình Tin Nhắn</span>
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ===================== TAB CONTENT: CÀI ĐẶT ĐIỀU KIỆN RÚT & TỶ LỆ ===================== */}
-      {activeTab === "settings" && (
-        <form onSubmit={handleSaveSettings} className="space-y-6">
-          {/* Header Banner */}
-          <div className="bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-md relative overflow-hidden">
-            <div className="absolute right-0 top-0 translate-x-8 -translate-y-8 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
-            <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          {/* LỲ-STYLE SEARCH & FILTER BAR */}
+          <div className="bg-white rounded-3xl border border-slate-200/80 p-5 shadow-2xs space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 items-end">
               <div>
-                <span className="px-3 py-1 rounded-full bg-purple-500/20 text-purple-200 text-[10px] font-black uppercase tracking-wider border border-purple-400/30">
-                  Dành riêng cho Trưởng Nhóm
-                </span>
-                <h2 className="text-xl sm:text-2xl font-black font-display mt-2 tracking-tight">
-                  Cài Đặt Điều Kiện Rút Tiền & Tỷ Lệ Chia
-                </h2>
-                <p className="text-xs text-slate-300 font-medium mt-1 max-w-2xl">
-                  Bạn có toàn quyền tùy chỉnh số ngày giữ tiền sau khi hoàn thành đơn (cho rút liền hoặc chờ 3 ngày, 7 ngày...), hạn mức rút tối thiểu và tỷ lệ chia % hoa hồng cho các thành viên trong nhóm.
-                </p>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">
+                  Người mua
+                </label>
+                <input
+                  type="text"
+                  value={adminOrderSearchUser}
+                  onChange={(e) => setAdminOrderSearchUser(e.target.value)}
+                  placeholder="Tên / Email / Sub ID..."
+                  className="w-full h-10 bg-slate-50 border border-slate-200 rounded-2xl px-3.5 text-xs font-bold text-slate-800 outline-none focus:border-orange-500 transition"
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                    Mã đơn hàng
+                  </label>
+                  {adminOrderSearchId.trim() && (
+                    <span className="text-[9px] font-bold text-orange-600 bg-orange-50 px-1.5 py-0.2 rounded border border-orange-100">
+                      {adminOrderSearchId.split(/[\n,;\s]+/).filter(Boolean).length} mã
+                    </span>
+                  )}
+                </div>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={adminOrderSearchId}
+                    onChange={(e) => setAdminOrderSearchId(e.target.value)}
+                    placeholder="Nhập hoặc dán mã đơn..."
+                    className="w-full h-10 bg-slate-50 border border-slate-200 rounded-2xl pl-3.5 pr-9 text-xs font-bold text-slate-800 outline-none focus:border-orange-500 transition font-mono truncate"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowMultiIdBox(!showMultiIdBox)}
+                    className="absolute right-2.5 top-2.5 text-slate-400 hover:text-orange-500 text-xs transition cursor-pointer"
+                    title="Mở khung dán danh sách nhiều mã đơn"
+                  >
+                    <i className="fa-solid fa-paste"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">
+                  Tên sản phẩm
+                </label>
+                <input
+                  type="text"
+                  value={adminOrderSearchProduct}
+                  onChange={(e) => setAdminOrderSearchProduct(e.target.value)}
+                  placeholder="Tên SP..."
+                  className="w-full h-10 bg-slate-50 border border-slate-200 rounded-2xl px-3.5 text-xs font-bold text-slate-800 outline-none focus:border-orange-500 transition"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">
+                  Trạng thái
+                </label>
+                <select
+                  value={adminOrderFilterStatus}
+                  onChange={(e) => {
+                    setAdminOrderFilterStatus(e.target.value);
+                    setAdminOrderPage(1);
+                  }}
+                  className="w-full h-10 bg-slate-50 border border-slate-200 rounded-2xl px-3.5 text-xs font-bold text-slate-800 outline-none focus:border-orange-500 transition cursor-pointer"
+                >
+                  <option value="Tất cả">Tất cả trạng thái</option>
+                  <option value="Hoàn thành">Hoàn thành</option>
+                  <option value="Chờ kiểm duyệt">Chờ kiểm duyệt</option>
+                  <option value="Đã hủy">Đã hủy</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Expandable Multi-ID Textarea */}
+            {(showMultiIdBox || (adminOrderSearchId && adminOrderSearchId.includes("\n"))) && (
+              <div className="p-3.5 bg-orange-50/60 border border-orange-200 rounded-2xl space-y-2 animate-fade-in">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-orange-800 flex items-center gap-1.5 text-[11px]">
+                    <i className="fa-solid fa-list-check"></i> Dán danh sách nhiều mã đơn (mỗi dòng 1 mã, copy từ Excel)
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setAdminOrderSearchId("")}
+                    className="text-[10px] text-rose-500 font-bold hover:underline cursor-pointer"
+                  >
+                    Xóa tất cả mã
+                  </button>
+                </div>
+                <textarea
+                  rows={3}
+                  value={adminOrderSearchId}
+                  onChange={(e) => setAdminOrderSearchId(e.target.value)}
+                  placeholder={`Dán danh sách mã từ Excel:\n2608139NMQT2PF\n240814A1B2C3...`}
+                  className="w-full bg-white border border-orange-200 rounded-xl p-2.5 text-xs font-mono font-bold text-slate-800 outline-none focus:border-orange-500 transition"
+                />
+              </div>
+            )}
+
+            {/* Date range & Reset filter */}
+            <div className="flex items-center justify-between flex-wrap gap-3 pt-2 border-t border-slate-100">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black text-slate-400 uppercase">Từ:</span>
+                <input
+                  type="date"
+                  value={adminOrderDateFrom}
+                  onChange={(e) => setAdminOrderDateFrom(e.target.value)}
+                  className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 text-xs font-bold text-slate-700 outline-none"
+                />
+                <span className="text-[10px] font-black text-slate-400 uppercase">Đến:</span>
+                <input
+                  type="date"
+                  value={adminOrderDateTo}
+                  onChange={(e) => setAdminOrderDateTo(e.target.value)}
+                  className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 text-xs font-bold text-slate-700 outline-none"
+                />
               </div>
 
               <button
-                type="submit"
-                disabled={isSavingSettings}
-                className="px-6 py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white text-xs font-black shadow-lg shadow-emerald-500/25 transition cursor-pointer flex items-center justify-center gap-2 whitespace-nowrap active:scale-[0.98] disabled:opacity-50 shrink-0"
+                onClick={() => {
+                  setAdminOrderSearchUser("");
+                  setAdminOrderSearchId("");
+                  setAdminOrderSearchProduct("");
+                  setAdminOrderFilterStatus("Tất cả");
+                  setAdminOrderDateFrom("");
+                  setAdminOrderDateTo("");
+                }}
+                className="text-xs text-rose-500 font-bold hover:underline cursor-pointer"
               >
-                {isSavingSettings ? (
-                  <i className="fa-solid fa-spinner fa-spin"></i>
-                ) : (
-                  <i className="fa-solid fa-floppy-disk"></i>
-                )}
-                <span>Lưu Cài Đặt Ngay</span>
+                Xóa bộ lọc
               </button>
             </div>
           </div>
 
-          {settingsSaveMessage && (
-            <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center gap-2 animate-fade-in shadow-2xs">
-              <i className="fa-solid fa-circle-check text-emerald-600 text-base"></i>
-              <span>{settingsSaveMessage}</span>
+          {/* RESULTS CONTROL HEADER */}
+          <div className="flex items-center justify-between flex-wrap gap-2 px-1">
+            <p className="text-xs text-slate-500 font-medium">
+              Hiển thị{" "}
+              <span className="font-bold text-slate-800">
+                {filteredOrders.length > 0 ? (adminOrderPage - 1) * 50 + 1 : 0} - {Math.min(adminOrderPage * 50, filteredOrders.length)}
+              </span>{" "}
+              / Kết quả {activeTab === "tiktok" ? "TikTok" : "Shopee"}: <strong className="text-orange-600">{filteredOrders.length} đơn</strong>
+            </p>
+
+            <button
+              onClick={() => handleExportOrdersExcel(activeTab === "tiktok" ? "TikTok" : "Shopee")}
+              className="px-4 py-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-2xl text-xs font-black transition flex items-center gap-2 shadow-md shadow-orange-500/20 cursor-pointer"
+            >
+              <i className="fa-solid fa-file-excel text-sm"></i> Xuất Excel {activeTab === "tiktok" ? "TikTok" : "Shopee"} ({filteredOrders.length})
+            </button>
+          </div>
+
+          {/* TABLE OF ORDERS */}
+          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-slate-50/80 text-slate-500 text-[11px] font-black uppercase tracking-wider border-b border-slate-100">
+                    <th className="p-3.5">Ngày đơn</th>
+                    <th className="p-3.5">Sản phẩm / Mã đơn</th>
+                    <th className="p-3.5">Người mua</th>
+                    <th className="p-3.5">Trạng thái</th>
+                    <th className="p-3.5 text-right">Thô (Shopee)</th>
+                    <th className="p-3.5 text-right">Thuế ({taxRate}%)</th>
+                    <th className="p-3.5 text-right">Sau thuế</th>
+                    <th className="p-3.5 text-right text-orange-600">Khách ({customerSplitRate}%)</th>
+                    <th className="p-3.5 text-right text-purple-600">Admin ({adminSplitRate}%)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                  {filteredOrders.length === 0 ? (
+                    <tr>
+                      <td colSpan={9} className="p-12 text-center text-slate-400 font-bold">
+                        <i className="fa-solid fa-folder-open text-2xl text-slate-300 mb-2 block"></i>
+                        Không tìm thấy đơn hàng nào khớp với bộ lọc
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredOrders
+                      .slice((adminOrderPage - 1) * 50, adminOrderPage * 50)
+                      .map((o) => {
+                        const rawVal = Math.round(Number(o.rawCommission || 0));
+                        const taxVal = o.taxAmount !== undefined && o.taxAmount !== null ? Math.round(Number(o.taxAmount)) : Math.round(rawVal * (taxRate / 100));
+                        const afterTaxVal = rawVal - taxVal;
+                        const userFinalVal = o.finalCommission !== undefined && o.finalCommission !== null ? Math.round(Number(o.finalCommission)) : Math.round(afterTaxVal * (customerSplitRate / 100));
+                        const adminProfitVal = afterTaxVal - userFinalVal;
+
+                        return (
+                          <tr key={o.id} className="hover:bg-slate-50/80 transition">
+                            <td className="p-3.5 text-slate-400 whitespace-nowrap">
+                              {o.orderDate ? new Date(o.orderDate).toLocaleDateString("vi-VN") : "—"}
+                            </td>
+                            <td className="p-3.5 max-w-[220px]">
+                              <p className="font-bold text-slate-900 truncate" title={o.productName}>
+                                {o.productName}
+                              </p>
+                              <span className="text-[10px] text-slate-400 font-mono">ID: {o.orderId}</span>
+                            </td>
+                            <td className="p-3.5">
+                              <div className="flex items-center justify-between gap-1.5">
+                                <span className="font-bold text-slate-800">
+                                  {o.zaloName || o.zaloId || o.subId || "Khách ẩn"}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedOrderToAssign(o);
+                                    setAssignZaloId(o.zaloId || "");
+                                  }}
+                                  className="text-[10px] font-bold text-purple-600 hover:bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200 cursor-pointer"
+                                  title="Gán đơn này cho thành viên Zalo"
+                                >
+                                  Sửa gán
+                                </button>
+                              </div>
+                            </td>
+                            <td className="p-3.5">
+                              <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                {o.status || "Hoàn thành"}
+                              </span>
+                            </td>
+                            <td className="p-3.5 text-right font-mono font-bold text-slate-700">{formatMoney(rawVal)}</td>
+                            <td className="p-3.5 text-right font-mono text-rose-500">{formatMoney(taxVal)}</td>
+                            <td className="p-3.5 text-right font-mono text-slate-800">{formatMoney(afterTaxVal)}</td>
+                            <td className="p-3.5 text-right font-mono font-black text-orange-600">{formatMoney(userFinalVal)}</td>
+                            <td className="p-3.5 text-right font-mono font-black text-purple-600">{formatMoney(adminProfitVal)}</td>
+                          </tr>
+                        );
+                      })
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* PAGINATION */}
+            {filteredOrders.length > 50 && (
+              <div className="p-4 border-t border-slate-100 flex items-center justify-between">
+                <button
+                  disabled={adminOrderPage <= 1}
+                  onClick={() => setAdminOrderPage((p) => Math.max(1, p - 1))}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl disabled:opacity-40 cursor-pointer"
+                >
+                  Trang trước
+                </button>
+                <span className="text-xs font-bold text-slate-600">
+                  Trang {adminOrderPage} / {Math.ceil(filteredOrders.length / 50)}
+                </span>
+                <button
+                  disabled={adminOrderPage >= Math.ceil(filteredOrders.length / 50)}
+                  onClick={() => setAdminOrderPage((p) => p + 1)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl disabled:opacity-40 cursor-pointer"
+                >
+                  Trang sau
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ===================== TAB 7: CẤU HÌNH BOT ZALO ===================== */}
+      {activeTab === "templates" && !isLoading && (
+        <div className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-2xs space-y-6">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <h3 className="text-base font-black text-slate-900 font-display flex items-center gap-2">
+                <i className="fa-solid fa-robot text-purple-600"></i>
+                <span>Cấu Hình Câu Trả Lời Của Zalo Bot</span>
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Tự do cá nhân hóa câu từ, lời chào, tag @thành viên và các phản hồi lỗi cho Kênh {groupDisplayName}
+              </p>
+            </div>
+            <button
+              onClick={handleSaveTemplates}
+              disabled={isSavingTemplates}
+              className="px-6 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-2xl font-black text-xs shadow-md shadow-purple-500/20 cursor-pointer"
+            >
+              {isSavingTemplates ? "Đang lưu..." : "Lưu Cấu Hình"}
+            </button>
+          </div>
+
+          {templateSaveMessage && (
+            <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-bold">
+              {templateSaveMessage}
             </div>
           )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* THẺ 1: ĐIỀU KIỆN SỐ NGÀY GIỮ TIỀN (HOLDING DAYS) */}
-            <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-2xs space-y-5">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-purple-100 text-purple-600 flex items-center justify-center text-base font-bold shadow-2xs">
-                  <i className="fa-solid fa-hourglass-half"></i>
-                </div>
-                <div>
-                  <h3 className="text-sm font-black text-slate-900">
-                    1. Số Ngày Giữ Tiền Sau Khi Đơn Hoàn Thành
-                  </h3>
-                  <p className="text-[11px] text-slate-500">
-                    Quyết định thời điểm chuyển hoa hồng từ "Đã hoàn thành" sang "Số dư được rút".
-                  </p>
-                </div>
-              </div>
-
-              {/* Quick Preset Buttons */}
-              <div className="space-y-2">
-                <label className="block text-xs font-extrabold text-slate-700">
-                  Chọn chính sách giữ tiền nhanh:
-                </label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setSettings({ ...settings, holdingDays: 0 })}
-                    className={`p-3 rounded-2xl text-xs font-bold border transition flex flex-col items-center justify-center gap-1 cursor-pointer ${
-                      Number(settings.holdingDays) === 0
-                        ? "bg-purple-50 border-purple-500 text-purple-700 shadow-2xs ring-2 ring-purple-500/20"
-                        : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
-                    }`}
-                  >
-                    <span className="text-base">⚡</span>
-                    <span className="font-black">Rút Liền</span>
-                    <span className="text-[10px] text-slate-500 font-normal">(0 ngày)</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setSettings({ ...settings, holdingDays: 3 })}
-                    className={`p-3 rounded-2xl text-xs font-bold border transition flex flex-col items-center justify-center gap-1 cursor-pointer ${
-                      Number(settings.holdingDays) === 3
-                        ? "bg-purple-50 border-purple-500 text-purple-700 shadow-2xs ring-2 ring-purple-500/20"
-                        : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
-                    }`}
-                  >
-                    <span className="text-base">⏳</span>
-                    <span className="font-black">3 Ngày</span>
-                    <span className="text-[10px] text-emerald-600 font-bold">(Shopee chuẩn)</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setSettings({ ...settings, holdingDays: 7 })}
-                    className={`p-3 rounded-2xl text-xs font-bold border transition flex flex-col items-center justify-center gap-1 cursor-pointer ${
-                      Number(settings.holdingDays) === 7
-                        ? "bg-purple-50 border-purple-500 text-purple-700 shadow-2xs ring-2 ring-purple-500/20"
-                        : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
-                    }`}
-                  >
-                    <span className="text-base">🗓️</span>
-                    <span className="font-black">7 Ngày</span>
-                    <span className="text-[10px] text-slate-500 font-normal">(1 tuần)</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setSettings({ ...settings, holdingDays: 14 })}
-                    className={`p-3 rounded-2xl text-xs font-bold border transition flex flex-col items-center justify-center gap-1 cursor-pointer ${
-                      Number(settings.holdingDays) === 14
-                        ? "bg-purple-50 border-purple-500 text-purple-700 shadow-2xs ring-2 ring-purple-500/20"
-                        : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
-                    }`}
-                  >
-                    <span className="text-base">📅</span>
-                    <span className="font-black">14 Ngày</span>
-                    <span className="text-[10px] text-slate-500 font-normal">(2 tuần)</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Custom number input */}
-              <div className="space-y-1.5 pt-1">
-                <label className="block text-xs font-extrabold text-slate-700">
-                  Hoặc nhập số ngày giữ tùy chỉnh:
-                </label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    min="0"
-                    max="90"
-                    value={settings.holdingDays}
-                    onChange={(e) => setSettings({ ...settings, holdingDays: Number(e.target.value) })}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 outline-none focus:bg-white focus:border-purple-500 shadow-2xs"
-                  />
-                  <span className="absolute right-4 top-2.5 text-xs font-bold text-slate-400">
-                    ngày
-                  </span>
-                </div>
-              </div>
-
-              {/* Explanatory Live Box */}
-              <div className="p-4 rounded-2xl bg-purple-50/70 border border-purple-200/80 text-xs text-purple-950 space-y-1.5">
-                <div className="font-black flex items-center gap-1.5 text-purple-800">
-                  <i className="fa-solid fa-circle-info"></i>
-                  <span>Quy tắc hiển thị trên trang tra cứu cá nhân:</span>
-                </div>
-                <p className="text-[11px] leading-relaxed text-purple-900">
-                  {Number(settings.holdingDays) === 0 ? (
-                    <>
-                      ⚡ <strong>Chế độ Rút Liền (0 ngày):</strong> Thành viên có thể rút toàn bộ hoa hồng ngay khi đơn hàng chuyển sang trạng thái <strong>Hoàn thành</strong>.
-                    </>
-                  ) : (
-                    <>
-                      ⏳ <strong>Chế độ Giữ {settings.holdingDays} ngày:</strong> Khi đơn hoàn thành, hoa hồng sẽ hiển thị ở mục <em>Đã hoàn thành</em>. Sau đúng <strong>{settings.holdingDays} ngày</strong> (hết thời gian khiếu nại/đổi trả của Shopee/TikTok), tiền sẽ tự động chuyển sang <strong>Số dư khả dụng</strong> để thành viên đặt lệnh rút.
-                    </>
-                  )}
-                </p>
-              </div>
-            </div>
-
-            {/* THẺ 2: HẠN MỨC RÚT TIỀN TỐI THIỂU */}
-            <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-2xs space-y-5">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-base font-bold shadow-2xs">
-                  <i className="fa-solid fa-money-bill-transfer"></i>
-                </div>
-                <div>
-                  <h3 className="text-sm font-black text-slate-900">
-                    2. Hạn Mức Rút Tiền Tối Thiểu (Min Payout)
-                  </h3>
-                  <p className="text-[11px] text-slate-500">
-                    Số tiền tối thiểu thành viên cần tích lũy trong ví khả dụng để tạo lệnh rút về ngân hàng.
-                  </p>
-                </div>
-              </div>
-
-              {/* Quick Min Preset Buttons */}
-              <div className="space-y-2">
-                <label className="block text-xs font-extrabold text-slate-700">
-                  Chọn mức rút tối thiểu phổ biến:
-                </label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {[10000, 20000, 50000, 100000].map((amt) => (
-                    <button
-                      key={amt}
-                      type="button"
-                      onClick={() => setSettings({ ...settings, minWithdrawAmount: amt })}
-                      className={`p-3 rounded-2xl text-xs font-black border transition flex items-center justify-center cursor-pointer ${
-                        Number(settings.minWithdrawAmount) === amt
-                          ? "bg-emerald-50 border-emerald-500 text-emerald-700 shadow-2xs ring-2 ring-emerald-500/20"
-                          : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
-                      }`}
-                    >
-                      {formatMoney(amt)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Custom Min input */}
-              <div className="space-y-1.5 pt-1">
-                <label className="block text-xs font-extrabold text-slate-700">
-                  Hoặc nhập số tiền rút tối thiểu tùy ý (VNĐ):
-                </label>
-                <input
-                  type="number"
-                  step="1000"
-                  min="1000"
-                  value={settings.minWithdrawAmount}
-                  onChange={(e) => setSettings({ ...settings, minWithdrawAmount: Number(e.target.value) })}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 outline-none focus:bg-white focus:border-emerald-500 shadow-2xs"
-                />
-              </div>
-
-              {/* Ghi chú điều kiện rút */}
-              <div className="space-y-1.5 pt-1">
-                <label className="block text-xs font-extrabold text-slate-700">
-                  Ghi chú điều kiện rút hiển thị cho người mua (Tùy chọn):
-                </label>
-                <input
-                  type="text"
-                  value={settings.withdrawalRuleNote || ""}
-                  onChange={(e) => setSettings({ ...settings, withdrawalRuleNote: e.target.value })}
-                  placeholder={`VD: Rút tiền duyệt tự động vào 20h hàng ngày...`}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-900 outline-none focus:bg-white focus:border-emerald-500 shadow-2xs"
-                />
-              </div>
-            </div>
-
-            {/* THẺ 3: TỶ LỆ CHIA HOA HỒNG & THUẾ */}
-            <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-2xs space-y-5">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center text-base font-bold shadow-2xs">
-                  <i className="fa-solid fa-chart-pie"></i>
-                </div>
-                <div>
-                  <h3 className="text-sm font-black text-slate-900">
-                    3. Tỷ Lệ Chia Hoa Hồng Cho Thành Viên (%)
-                  </h3>
-                  <p className="text-[11px] text-slate-500">
-                    Quy định tỷ lệ phần trăm tiền hoàn trả lại cho người mua sau khi trừ thuế.
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-extrabold text-slate-700">
-                    Khách hàng nhận (% sau thuế):
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      step="0.5"
-                      min="1"
-                      max="100"
-                      value={settings.customerSplitRate}
-                      onChange={(e) => setSettings({ ...settings, customerSplitRate: Number(e.target.value) })}
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 outline-none focus:bg-white focus:border-indigo-500 shadow-2xs"
-                    />
-                    <span className="absolute right-4 top-2.5 text-xs font-black text-slate-400">%</span>
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-extrabold text-slate-700">
-                    Thuế VAT / TNCN sàn trừ (%):
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      step="0.5"
-                      min="0"
-                      max="30"
-                      value={settings.taxRate}
-                      onChange={(e) => setSettings({ ...settings, taxRate: Number(e.target.value) })}
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 outline-none focus:bg-white focus:border-indigo-500 shadow-2xs"
-                    />
-                    <span className="absolute right-4 top-2.5 text-xs font-black text-slate-400">%</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Profit preview card */}
-              <div className="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-200/80 flex items-center justify-between text-xs font-bold text-indigo-950">
-                <div className="flex items-center gap-2">
-                  <i className="fa-solid fa-calculator text-indigo-600"></i>
-                  <span>Lợi nhuận Admin (Trưởng nhóm) thực giữ lại:</span>
-                </div>
-                <span className="text-base font-black text-indigo-600 font-display">
-                  {Math.max(0, 100 - Number(settings.taxRate) - Number(settings.customerSplitRate))}%
-                </span>
-              </div>
-            </div>
-
-            {/* THẺ 4: THÔNG TIN NHẬN DIỆN NHÓM & ADMIN */}
-            <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-2xs space-y-5">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-orange-100 text-orange-600 flex items-center justify-center text-base font-bold shadow-2xs">
-                  <i className="fa-solid fa-id-badge"></i>
-                </div>
-                <div>
-                  <h3 className="text-sm font-black text-slate-900">
-                    4. Thông Tin Nhận Diện Nhóm & Zalo Admin
-                  </h3>
-                  <p className="text-[11px] text-slate-500">
-                    Tên hiển thị thương hiệu của bạn trên trang tra cứu và bot tin nhắn.
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-extrabold text-slate-700">
-                    Tên nhóm / Thương hiệu đối soát:
-                  </label>
-                  <input
-                    type="text"
-                    value={settings.name || ""}
-                    onChange={(e) => setSettings({ ...settings, name: e.target.value })}
-                    placeholder={`VD: Lê Cường Affiliate, Trần Huyền Cashback...`}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 outline-none focus:bg-white focus:border-orange-500 shadow-2xs"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-extrabold text-slate-700">
-                    Zalo ID Admin nhận thông báo lệnh rút:
-                  </label>
-                  <input
-                    type="text"
-                    value={settings.adminZaloId || ""}
-                    onChange={(e) => setSettings({ ...settings, adminZaloId: e.target.value })}
-                    placeholder={`VD: 0888728256 hoặc ID Zalo...`}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-mono font-bold text-slate-900 outline-none focus:bg-white focus:border-orange-500 shadow-2xs"
-                  />
-                </div>
-              </div>
+          {/* Placeholders Help Card */}
+          <div className="p-4 bg-purple-50/60 border border-purple-200 rounded-2xl space-y-2">
+            <h4 className="text-xs font-black text-purple-900 flex items-center gap-1.5">
+              <i className="fa-solid fa-code text-purple-600"></i> BẢNG TỪ KHÓA ĐỘNG (PLACEHOLDER):
+            </h4>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
+              <div className="p-2 bg-white rounded-xl border border-purple-100"><code className="font-bold text-purple-700">@{`{user}`}</code>: Tag tên Zalo</div>
+              <div className="p-2 bg-white rounded-xl border border-purple-100"><code className="font-bold text-purple-700">{`{link}`}</code>: Link tra cứu</div>
+              <div className="p-2 bg-white rounded-xl border border-purple-100"><code className="font-bold text-purple-700">{`{split_rate}`}</code>: Tỷ lệ hoàn ({customerSplitRate}%)</div>
+              <div className="p-2 bg-white rounded-xl border border-purple-100"><code className="font-bold text-purple-700">{`{group_name}`}</code>: Tên nhóm</div>
+              <div className="p-2 bg-white rounded-xl border border-purple-100"><code className="font-bold text-purple-700">{`{affiliate_link}`}</code>: Link mua sắm</div>
+              <div className="p-2 bg-white rounded-xl border border-purple-100"><code className="font-bold text-purple-700">{`{order_id}`}</code>: Mã đơn</div>
+              <div className="p-2 bg-white rounded-xl border border-purple-100"><code className="font-bold text-purple-700">{`{balance}`}</code>: Số dư ví</div>
+              <div className="p-2 bg-white rounded-xl border border-purple-100"><code className="font-bold text-purple-700">{`{command}`}</code>: Lệnh gõ sai</div>
             </div>
           </div>
 
-          {/* Bottom Save Bar */}
-          <div className="flex items-center justify-end gap-3 pt-2">
+          <div className="space-y-4">
+            {Object.keys(botTemplates).map((key) => (
+              <div key={key} className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-black text-slate-800 font-mono">{key}</label>
+                  <button
+                    onClick={() => handleResetTemplate(key)}
+                    className="text-[10px] font-bold text-slate-400 hover:text-orange-600"
+                  >
+                    Khôi phục mặc định
+                  </button>
+                </div>
+                <textarea
+                  rows={3}
+                  value={botTemplates[key] || ""}
+                  onChange={(e) => setBotTemplates({ ...botTemplates, [key]: e.target.value })}
+                  className="w-full bg-white border border-slate-200 rounded-xl p-3 text-xs font-medium text-slate-800 outline-none focus:border-purple-500 transition"
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ===================== TAB 8: ĐIỀU KIỆN RÚT & CHIA ===================== */}
+      {activeTab === "settings" && !isLoading && (
+        <form onSubmit={handleSaveSettings} className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-2xs space-y-6">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <h3 className="text-base font-black text-slate-900 font-display flex items-center gap-2">
+                <i className="fa-solid fa-sliders text-orange-500"></i>
+                <span>Cấu Hình Tỷ Lệ Chia & Hạn Mức Rút Tiền</span>
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Thiết lập tỷ lệ hoa hồng chia cho khách, tỷ lệ thuế và quy định rút tiền của Kênh {groupDisplayName}
+              </p>
+            </div>
             <button
               type="submit"
               disabled={isSavingSettings}
-              className="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-black shadow-lg shadow-purple-500/25 transition cursor-pointer flex items-center gap-2 disabled:opacity-50 active:scale-[0.98]"
+              className="px-6 py-2.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-2xl font-black text-xs shadow-md shadow-orange-500/20 cursor-pointer"
             >
-              {isSavingSettings ? (
-                <i className="fa-solid fa-spinner fa-spin"></i>
-              ) : (
-                <i className="fa-solid fa-floppy-disk"></i>
-              )}
-              <span>Lưu Toàn Bộ Cài Đặt Hệ Thống</span>
+              {isSavingSettings ? "Đang lưu..." : "Lưu Cấu Hình"}
             </button>
           </div>
+
+          {settingsSaveMessage && (
+            <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-bold">
+              {settingsSaveMessage}
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <label className="block text-xs font-black text-slate-700 mb-1.5">Tên Nhóm / Thương Hiệu Kênh:</label>
+              <input
+                type="text"
+                value={settings.name}
+                onChange={(e) => setSettings({ ...settings, name: e.target.value })}
+                className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 text-xs font-bold text-slate-800 outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-black text-slate-700 mb-1.5">Hạn mức rút tối thiểu (VNĐ):</label>
+              <input
+                type="number"
+                value={settings.minWithdrawAmount}
+                onChange={(e) => setSettings({ ...settings, minWithdrawAmount: e.target.value })}
+                className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 text-xs font-bold text-slate-800 outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-black text-slate-700 mb-1.5">Tỷ lệ chia cho khách mua (%):</label>
+              <input
+                type="number"
+                value={settings.customerSplitRate}
+                onChange={(e) => setSettings({ ...settings, customerSplitRate: e.target.value })}
+                className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 text-xs font-bold text-slate-800 outline-none"
+              />
+              <span className="text-[11px] text-slate-400 mt-1 block">Trưởng nhóm giữ lại: {100 - (Number(settings.customerSplitRate) || 80)}% hoa hồng sau thuế</span>
+            </div>
+
+            <div>
+              <label className="block text-xs font-black text-slate-700 mb-1.5">Tỷ lệ trừ thuế TNCN (%):</label>
+              <input
+                type="number"
+                value={settings.taxRate}
+                onChange={(e) => setSettings({ ...settings, taxRate: e.target.value })}
+                className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 text-xs font-bold text-slate-800 outline-none"
+              />
+            </div>
+          </div>
         </form>
+      )}
+
+      {/* MODAL GÁN ĐƠN HÀNG */}
+      {selectedOrderToAssign && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-xl border border-slate-100 animate-scale-up">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-base font-black text-slate-900">Gán Đơn Hàng Cho Thành Viên Zalo</h3>
+              <button onClick={() => setSelectedOrderToAssign(null)} className="text-slate-400 hover:text-slate-600">
+                <i className="fa-solid fa-xmark text-lg"></i>
+              </button>
+            </div>
+
+            <div className="space-y-2 text-xs">
+              <p><span className="text-slate-400">Mã đơn:</span> <strong className="font-mono">{selectedOrderToAssign.orderId}</strong></p>
+              <p><span className="text-slate-400">Sản phẩm:</span> <strong>{selectedOrderToAssign.productName}</strong></p>
+            </div>
+
+            <form onSubmit={handleAssignOrder} className="space-y-4">
+              <div>
+                <label className="block text-xs font-black text-slate-700 mb-1">Chọn hoặc nhập Zalo ID thành viên:</label>
+                <input
+                  type="text"
+                  value={assignZaloId}
+                  onChange={(e) => setAssignZaloId(e.target.value)}
+                  placeholder="Nhập Zalo ID..."
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs font-bold outline-none mb-2"
+                />
+                <select
+                  onChange={(e) => setAssignZaloId(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs font-bold text-slate-800 outline-none cursor-pointer"
+                >
+                  <option value="">-- Hoặc chọn từ danh sách Zalo User --</option>
+                  {zaloUsers.map((u) => (
+                    <option key={u.id} value={u.zaloId}>
+                      {u.zaloName || "Khách Zalo"} (Zalo ID: {u.zaloId})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setSelectedOrderToAssign(null)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl cursor-pointer"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingAssign}
+                  className="px-5 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-black rounded-xl shadow-md cursor-pointer"
+                >
+                  {isSubmittingAssign ? "Đang gán..." : "Xác nhận gán đơn"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

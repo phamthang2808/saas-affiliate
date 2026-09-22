@@ -886,7 +886,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
   };
 
   return (
-    <div className="space-y-6 pb-12 relative">
+    <div className="space-y-6 pb-12 relative w-full max-w-full min-w-0 overflow-x-hidden">
       {/* Toast Notification Banner */}
       {toast && (
         <div className="fixed top-5 right-5 z-[9999] animate-in fade-in slide-in-from-top-4 duration-300">
@@ -1608,20 +1608,31 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
           </div>
 
           {/* TABLE OF ORDERS (BẢNG HÀNG NGANG ĐỒNG BỘ TRÊN ĐIỆN THOẠI VÀ LAPTOP) */}
-          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[850px] text-left border-collapse text-xs">
+          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden w-full max-w-full">
+            {/* Hướng dẫn vuốt ngang trên điện thoại */}
+            <div className="sm:hidden bg-gradient-to-r from-orange-50 to-amber-50 border-b border-orange-200/80 text-orange-900 text-xs font-bold p-2.5 px-3.5 flex items-center justify-between shadow-2xs">
+              <span className="flex items-center gap-1.5">
+                <i className="fa-solid fa-arrows-left-right text-orange-500 text-xs animate-pulse"></i>
+                👈 Vuốt sang ngang để xem đủ 9 cột đối soát ➔
+              </span>
+              <span className="text-[10px] bg-orange-200/80 text-orange-900 px-2 py-0.5 rounded-full font-black">
+                Hàng ngang
+              </span>
+            </div>
+
+            <div className="overflow-x-auto w-full max-w-full scrollbar-thin">
+              <table className="w-full min-w-[780px] sm:min-w-[900px] text-left border-collapse text-xs sm:text-xs">
                 <thead>
-                  <tr className="bg-slate-50/80 text-slate-500 text-[11px] font-black uppercase tracking-wider border-b border-slate-100">
-                    <th className="p-3.5 whitespace-nowrap">Ngày đơn</th>
-                    <th className="p-3.5">Sản phẩm / Mã đơn</th>
-                    <th className="p-3.5 whitespace-nowrap">Người mua</th>
-                    <th className="p-3.5 whitespace-nowrap">Trạng thái</th>
-                    <th className="p-3.5 text-right whitespace-nowrap">Thô (Shopee)</th>
-                    <th className="p-3.5 text-right whitespace-nowrap">Thuế ({taxRate}%)</th>
-                    <th className="p-3.5 text-right whitespace-nowrap">Sau thuế</th>
-                    <th className="p-3.5 text-right text-orange-600 whitespace-nowrap">Khách ({customerSplitRate}%)</th>
-                    <th className="p-3.5 text-right text-purple-600 whitespace-nowrap">Admin ({adminSplitRate}%)</th>
+                  <tr className="bg-slate-100/90 text-slate-600 text-xs font-black uppercase tracking-wider border-b border-slate-200">
+                    <th className="p-3.5 sm:p-4 whitespace-nowrap">Ngày đơn</th>
+                    <th className="p-3.5 sm:p-4">Sản phẩm / Mã đơn</th>
+                    <th className="p-3.5 sm:p-4 whitespace-nowrap">Người mua</th>
+                    <th className="p-3.5 sm:p-4 whitespace-nowrap">Trạng thái</th>
+                    <th className="p-3.5 sm:p-4 text-right whitespace-nowrap">Thô (Shopee)</th>
+                    <th className="p-3.5 sm:p-4 text-right whitespace-nowrap">Thuế ({taxRate}%)</th>
+                    <th className="p-3.5 sm:p-4 text-right whitespace-nowrap">Sau thuế</th>
+                    <th className="p-3.5 sm:p-4 text-right text-orange-600 whitespace-nowrap">Khách ({customerSplitRate}%)</th>
+                    <th className="p-3.5 sm:p-4 text-right text-purple-600 whitespace-nowrap">Admin ({adminSplitRate}%)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
@@ -1702,23 +1713,25 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
 
                         return (
                           <tr key={o.id} className="hover:bg-slate-50/80 transition">
-                            <td className="p-3.5 text-slate-400 whitespace-nowrap">
+                            <td className="p-3.5 sm:p-4 text-slate-600 font-bold whitespace-nowrap text-xs sm:text-xs">
                               {o.orderDate ? new Date(o.orderDate).toLocaleDateString("vi-VN") : "—"}
                             </td>
-                            <td className="p-3.5 max-w-[220px]">
-                              <p className="font-bold text-slate-900 truncate" title={o.productName}>
+                            <td className="p-3.5 sm:p-4 min-w-[180px] max-w-[260px]">
+                              <p className="font-bold text-slate-900 text-xs sm:text-xs leading-snug truncate" title={o.productName}>
                                 {o.productName}
                               </p>
-                              <span className="text-[10px] text-slate-400 font-mono">ID: {o.orderId}</span>
+                              <span className="inline-block mt-0.5 text-[10px] sm:text-[11px] text-slate-500 font-mono font-bold bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                                ID: {o.orderId}
+                              </span>
                             </td>
-                            <td className="p-3.5 whitespace-nowrap">
+                            <td className="p-3.5 sm:p-4 whitespace-nowrap text-xs sm:text-xs">
                               <div className="flex items-center justify-between gap-1.5">
                                 <span
                                   className={`font-bold ${
                                     buyer.isZaloName
                                       ? "text-slate-900"
                                       : buyer.isAssigned
-                                      ? "text-slate-600 font-mono text-[11px]"
+                                      ? "text-slate-700 font-mono text-xs"
                                       : "text-slate-400 italic"
                                   }`}
                                   title={buyer.name}
@@ -1731,16 +1744,16 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                                     setSelectedOrderToAssign(o);
                                     setAssignZaloId(o.zaloId || buyer.zaloId || "");
                                   }}
-                                  className="text-[10px] font-bold text-purple-600 hover:bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200 cursor-pointer shrink-0 ml-1"
+                                  className="text-xs font-bold text-purple-700 hover:bg-purple-100 bg-purple-50 px-2.5 py-1 rounded-xl border border-purple-200 cursor-pointer shrink-0 ml-1.5 shadow-2xs"
                                   title="Gán đơn này cho thành viên Zalo"
                                 >
                                   Sửa gán
                                 </button>
                               </div>
                             </td>
-                            <td className="p-3.5 whitespace-nowrap">
+                            <td className="p-3.5 sm:p-4 whitespace-nowrap">
                               <span
-                                className={`px-2.5 py-1 rounded-full text-[10px] font-bold whitespace-nowrap inline-block ${
+                                className={`px-3 py-1 rounded-full text-xs font-extrabold whitespace-nowrap inline-block ${
                                   (o.status || "").includes("Hủy") || (o.status || "").includes("hủy") || (o.status || "").includes("CANCEL")
                                     ? "bg-rose-50 text-rose-700 border border-rose-200"
                                     : (o.status || "").includes("Chờ") || (o.status || "").includes("chờ") || (o.status || "").includes("PENDING")
@@ -1751,35 +1764,35 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                                 {o.status || "Hoàn thành"}
                               </span>
                             </td>
-                            <td className="p-3.5 text-right font-mono font-bold text-slate-700 whitespace-nowrap">{formatMoney(rawVal)}</td>
-                            <td className="p-3.5 text-right font-mono text-rose-500 whitespace-nowrap">{formatMoney(taxVal)}</td>
-                            <td className="p-3.5 text-right font-mono text-slate-800 whitespace-nowrap">{formatMoney(afterTaxVal)}</td>
-                            <td className="p-3.5 text-right font-mono font-black text-orange-600 whitespace-nowrap">{formatMoney(userFinalVal)}</td>
-                            <td className="p-3.5 text-right font-mono font-black text-purple-600 whitespace-nowrap">{formatMoney(adminProfitVal)}</td>
+                            <td className="p-3.5 sm:p-4 text-right font-mono font-bold text-slate-700 text-xs sm:text-xs whitespace-nowrap">{formatMoney(rawVal)}</td>
+                            <td className="p-3.5 sm:p-4 text-right font-mono font-bold text-rose-500 text-xs sm:text-xs whitespace-nowrap">{formatMoney(taxVal)}</td>
+                            <td className="p-3.5 sm:p-4 text-right font-mono font-bold text-slate-800 text-xs sm:text-xs whitespace-nowrap">{formatMoney(afterTaxVal)}</td>
+                            <td className="p-3.5 sm:p-4 text-right font-mono font-black text-orange-600 text-xs sm:text-xs whitespace-nowrap">{formatMoney(userFinalVal)}</td>
+                            <td className="p-3.5 sm:p-4 text-right font-mono font-black text-purple-600 text-xs sm:text-xs whitespace-nowrap">{formatMoney(adminProfitVal)}</td>
                           </tr>
                         );
                       })
                   )}
                 </tbody>
                 {filteredOrders.length > 0 && (
-                  <tfoot className="bg-slate-50/90 font-bold border-t-2 border-slate-200">
+                  <tfoot className="bg-slate-100/90 font-bold border-t-2 border-slate-200 text-xs sm:text-xs">
                     <tr>
-                      <td colSpan={4} className="p-3.5 font-black text-slate-800 text-xs whitespace-nowrap">
+                      <td colSpan={4} className="p-3.5 sm:p-4 font-black text-slate-800 whitespace-nowrap">
                         📊 TỔNG CỘNG ({filteredOrders.length} đơn {activeTab === "tiktok" ? "TikTok" : "Shopee"} đang lọc)
                       </td>
-                      <td className="p-3.5 text-right font-mono font-black text-slate-800 whitespace-nowrap">
+                      <td className="p-3.5 sm:p-4 text-right font-mono font-black text-slate-800 whitespace-nowrap">
                         {formatMoney(totalRawSum)}
                       </td>
-                      <td className="p-3.5 text-right font-mono font-black text-rose-600 whitespace-nowrap">
+                      <td className="p-3.5 sm:p-4 text-right font-mono font-black text-rose-600 whitespace-nowrap">
                         {formatMoney(totalTaxSum)}
                       </td>
-                      <td className="p-3.5 text-right font-mono font-black text-slate-800 whitespace-nowrap">
+                      <td className="p-3.5 sm:p-4 text-right font-mono font-black text-slate-800 whitespace-nowrap">
                         {formatMoney(totalAfterTaxSum)}
                       </td>
-                      <td className="p-3.5 text-right font-mono font-black text-orange-600 whitespace-nowrap">
+                      <td className="p-3.5 sm:p-4 text-right font-mono font-black text-orange-600 whitespace-nowrap">
                         {formatMoney(totalUserFinalSum)}
                       </td>
-                      <td className="p-3.5 text-right font-mono font-black text-purple-600 whitespace-nowrap">
+                      <td className="p-3.5 sm:p-4 text-right font-mono font-black text-purple-600 whitespace-nowrap">
                         {formatMoney(totalAdminProfitSum)}
                       </td>
                     </tr>

@@ -247,7 +247,7 @@ export default function App() {
       />
 
       {/* Main Content Body */}
-      <div className="flex-1 lg:ml-64 flex flex-col min-h-screen">
+      <div className="flex-1 lg:ml-64 flex flex-col min-h-screen min-w-0 max-w-full overflow-x-hidden">
         {/* Dynamic TopBar */}
         <TopBar
           currentView={currentView}
@@ -261,7 +261,7 @@ export default function App() {
         />
 
         {/* View Router */}
-        <main className="flex-1 p-3 sm:p-4 md:p-8 max-w-6xl w-full mx-auto">
+        <main className="flex-1 p-3 sm:p-4 md:p-8 max-w-6xl w-full mx-auto min-w-0">
           {/* 1. Trang chủ & Giới thiệu */}
           {currentView === "gioi-thieu" && (
             <LandingIntroView

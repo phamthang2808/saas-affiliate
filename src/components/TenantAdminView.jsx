@@ -1760,10 +1760,10 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                                 ID: {o.orderId}
                               </span>
                             </td>
-                            <td className="p-3.5 sm:p-4 whitespace-nowrap text-xs sm:text-xs">
-                              <div className="flex items-center justify-between gap-1.5">
+                            <td className="p-3.5 sm:p-4 min-w-[160px] whitespace-nowrap text-xs sm:text-xs">
+                              <div className="flex flex-col items-start gap-1">
                                 <span
-                                  className={`font-bold ${
+                                  className={`font-bold leading-snug ${
                                     buyer.isZaloName
                                       ? "text-slate-900"
                                       : buyer.isAssigned
@@ -1780,25 +1780,33 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                                     setSelectedOrderToAssign(o);
                                     setAssignZaloId(o.zaloId || buyer.zaloId || "");
                                   }}
-                                  className="text-xs font-bold text-purple-700 hover:bg-purple-100 bg-purple-50 px-2.5 py-1 rounded-xl border border-purple-200 cursor-pointer shrink-0 ml-1.5 shadow-2xs"
-                                  title="Gán đơn này cho thành viên Zalo"
+                                  className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-2.5 py-0.5 rounded-lg border border-slate-200 cursor-pointer transition shadow-2xs"
+                                  title="Đổi / Gán đơn này cho thành viên Zalo"
                                 >
-                                  Sửa gán
+                                  <i className="fa-solid fa-link text-[10px] text-slate-400"></i> Đổi người nhận
                                 </button>
                               </div>
                             </td>
                             <td className="p-3.5 sm:p-4 whitespace-nowrap">
-                              <span
-                                className={`px-3 py-1 rounded-full text-xs font-extrabold whitespace-nowrap inline-block ${
-                                  (o.status || "").includes("Hủy") || (o.status || "").includes("hủy") || (o.status || "").includes("CANCEL")
-                                    ? "bg-rose-50 text-rose-700 border border-rose-200"
-                                    : (o.status || "").includes("Chờ") || (o.status || "").includes("chờ") || (o.status || "").includes("PENDING")
-                                    ? "bg-amber-50 text-amber-700 border border-amber-200"
-                                    : "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                                }`}
-                              >
-                                {o.status || "Hoàn thành"}
-                              </span>
+                              {(() => {
+                                const rawSt = String(o.status || "").trim().toLowerCase();
+                                let badgeLabel = "Hoàn thành (Đã chốt)";
+                                let badgeClass = "bg-emerald-50 text-emerald-700 border border-emerald-200";
+
+                                if (rawSt === "3" || rawSt === "300" || rawSt.includes("hủy") || rawSt.includes("cancel") || rawSt.includes("refund")) {
+                                  badgeLabel = "Đã hủy";
+                                  badgeClass = "bg-rose-50 text-rose-700 border border-rose-200";
+                                } else if (rawSt === "2" || rawSt === "200" || rawSt.includes("chờ") || rawSt.includes("pending") || rawSt.includes("xử lý") || rawSt.includes("unpaid") || rawSt.includes("vận chuyển")) {
+                                  badgeLabel = "Chờ xử lý";
+                                  badgeClass = "bg-amber-50 text-amber-700 border border-amber-200";
+                                }
+
+                                return (
+                                  <span className={`px-3 py-1 rounded-full text-xs font-extrabold whitespace-nowrap inline-block ${badgeClass}`}>
+                                    {badgeLabel}
+                                  </span>
+                                );
+                              })()}
                             </td>
                             <td className="p-3.5 sm:p-4 text-right font-mono font-bold text-slate-700 text-xs sm:text-xs whitespace-nowrap">{formatMoney(rawVal)}</td>
                             <td className="p-3.5 sm:p-4 text-right font-mono font-bold text-rose-500 text-xs sm:text-xs whitespace-nowrap">{formatMoney(taxVal)}</td>

@@ -979,25 +979,25 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
               <i className="fa-solid fa-gears text-purple-600"></i> NHÓM 1: THIẾT LẬP KÊNH (THỰC HIỆN THEO THỨ TỰ BƯỚC 1 ➔ BƯỚC 3)
             </span>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-stretch gap-2">
             {[
-              { key: "settings", icon: "fa-solid fa-sliders", label: "Bước 1. Điều Kiện Rút & Chia" },
-              { key: "templates", icon: "fa-solid fa-robot", label: "Bước 2. Mẫu Tin Nhắn Bot" },
-              { key: "zalo_bot", icon: "fa-solid fa-qrcode", label: `Bước 3. Kết Nối Bot Zalo (${tenantBots.length})` },
+              { key: "settings", icon: "fa-solid fa-sliders", label: "Bước 1. Điều Kiện Rút & Chia", colSpan: "col-span-1" },
+              { key: "templates", icon: "fa-solid fa-robot", label: "Bước 2. Mẫu Tin Nhắn Bot", colSpan: "col-span-1" },
+              { key: "zalo_bot", icon: "fa-solid fa-qrcode", label: `Bước 3. Kết Nối Bot Zalo (${tenantBots.length})`, colSpan: "col-span-2 sm:col-span-1" },
             ].map((tab) => {
               const isActive = activeTab === tab.key;
               return (
                 <button
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap border ${
+                  className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer border ${tab.colSpan} ${
                     isActive
                       ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-transparent shadow-md shadow-purple-500/20 scale-[1.02]"
                       : "bg-slate-50 text-slate-700 hover:bg-purple-50 hover:text-purple-900 border-slate-200/80 shadow-2xs"
                   }`}
                 >
                   <i className={tab.icon}></i>
-                  <span>{tab.label}</span>
+                  <span className="truncate">{tab.label}</span>
                 </button>
               );
             })}
@@ -1011,29 +1011,29 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
               <i className="fa-solid fa-chart-bar text-orange-600"></i> NHÓM 2: QUẢN LÝ DỮ LIỆU & ĐỐI SOÁT ĐƠN HÀNG
             </span>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-stretch gap-2">
             {[
-              { key: "overview", icon: "fa-solid fa-chart-pie", label: "Tổng quan" },
-              { key: "shopee", icon: "fa-solid fa-bag-shopping", label: `Đơn Shopee (${shopeeOrders.length})` },
-              { key: "tiktok", icon: "fa-brands fa-tiktok", label: `Đơn TikTok (${tiktokOrders.length})` },
-              { key: "payouts", icon: "fa-solid fa-money-bill-transfer", label: "Lệnh Rút tiền", badge: pendingPayouts.length },
-              { key: "zalo_users", icon: "fa-solid fa-comments", label: `Thành viên Zalo (${zaloUsers.length})` },
+              { key: "overview", icon: "fa-solid fa-chart-pie", label: "Tổng quan", colSpan: "col-span-1" },
+              { key: "shopee", icon: "fa-solid fa-bag-shopping", label: `Đơn Shopee (${shopeeOrders.length})`, colSpan: "col-span-1" },
+              { key: "tiktok", icon: "fa-brands fa-tiktok", label: `Đơn TikTok (${tiktokOrders.length})`, colSpan: "col-span-1" },
+              { key: "payouts", icon: "fa-solid fa-money-bill-transfer", label: "Lệnh Rút tiền", badge: pendingPayouts.length, colSpan: "col-span-1" },
+              { key: "zalo_users", icon: "fa-solid fa-comments", label: `Thành viên Zalo (${zaloUsers.length})`, colSpan: "col-span-2 sm:col-span-1" },
             ].map((tab) => {
               const isActive = activeTab === tab.key;
               return (
                 <button
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap border ${
+                  className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer border ${tab.colSpan} ${
                     isActive
                       ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white border-transparent shadow-md shadow-orange-500/20 scale-[1.02]"
                       : "bg-slate-50 text-slate-700 hover:bg-orange-50 hover:text-orange-900 border-slate-200/80 shadow-2xs"
                   }`}
                 >
                   <i className={tab.icon}></i>
-                  <span>{tab.label}</span>
+                  <span className="truncate">{tab.label}</span>
                   {tab.badge > 0 && (
-                    <span className="bg-rose-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold ml-1 animate-bounce">
+                    <span className="bg-rose-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold ml-1 animate-bounce shrink-0">
                       {tab.badge}
                     </span>
                   )}
@@ -1197,7 +1197,36 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
             <h3 className="text-base font-black text-slate-900 font-display">Tài khoản Thành Viên Zalo Bot</h3>
             <span className="text-xs font-bold text-slate-400">Tổng: {zaloUsers.length} thành viên</span>
           </div>
-          <div className="overflow-x-auto">
+
+          {/* MOBILE CARD VIEW */}
+          <div className="block md:hidden divide-y divide-slate-100">
+            {zaloUsers.length === 0 ? (
+              <div className="p-8 text-center text-slate-400 font-bold">Chưa có thành viên Zalo nào phát sinh đơn tại Kênh này.</div>
+            ) : (
+              zaloUsers.map((u) => (
+                <div key={u.id} className="p-4 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      <p className="font-bold text-slate-900 text-xs">{u.zaloName || "Khách Zalo"}</p>
+                      <p className="text-[10px] text-slate-400 font-mono">Zalo ID: {u.zaloId}</p>
+                    </div>
+                    <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-[10px] font-black font-mono">
+                      {formatMoney(u.availableBalance || 0)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px] bg-slate-50 p-2.5 rounded-xl border border-slate-100 font-medium">
+                    <span className="text-slate-600 font-mono truncate max-w-[200px]">
+                      {u.accountNumber ? `${u.bankName || "NH"} - ${u.accountNumber} (${u.accountName || ""})` : "— Chưa lưu STK"}
+                    </span>
+                    <span className="font-bold text-slate-800 shrink-0">{u.totalOrdersCount || 0} đơn</span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* DESKTOP TABLE VIEW */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-slate-50/80 text-slate-500 text-[11px] font-black uppercase tracking-wider border-b border-slate-100">
@@ -1240,7 +1269,68 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
             <h3 className="text-base font-black text-slate-900 font-display">Yêu Cầu Rút Tiền</h3>
             <span className="text-xs font-bold text-slate-400">Chờ duyệt: {pendingPayouts.length} lệnh</span>
           </div>
-          <div className="overflow-x-auto">
+
+          {/* MOBILE CARD VIEW */}
+          <div className="block md:hidden divide-y divide-slate-100">
+            {payouts.length === 0 ? (
+              <div className="p-8 text-center text-slate-400 font-bold">Chưa có yêu cầu rút tiền nào.</div>
+            ) : (
+              payouts.map((p) => (
+                <div key={p.id} className="p-4 space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2.5 py-0.5 bg-purple-100 text-purple-900 font-mono font-black rounded-lg text-xs border border-purple-200">
+                        #{p.id}
+                      </span>
+                      <span className="text-[10px] text-purple-600 font-mono font-bold">/duyet_{p.id}</span>
+                    </div>
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                      p.status === "COMPLETED"
+                        ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                        : p.status === "REJECTED"
+                        ? "bg-rose-50 text-rose-700 border border-rose-200"
+                        : "bg-amber-50 text-amber-700 border border-amber-200 animate-pulse"
+                    }`}>
+                      {p.status === "COMPLETED" ? "Đã duyệt" : p.status === "REJECTED" ? "Từ chối" : "Chờ duyệt"}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      <p className="font-bold text-slate-900 text-xs">{p.zaloName || p.zaloId}</p>
+                      <p className="text-[10px] text-slate-400 font-mono">{formatDate(p.createdAt)}</p>
+                    </div>
+                    <p className="font-mono font-black text-rose-600 text-sm">{formatMoney(p.amount)}</p>
+                  </div>
+
+                  <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 font-mono text-[11px] space-y-0.5">
+                    <p className="font-bold text-slate-900">{p.bankName} — {p.accountNumber}</p>
+                    <p className="text-slate-500 text-[10px]">{p.accountName}</p>
+                  </div>
+
+                  {p.status === "PENDING" && (
+                    <div className="flex items-center gap-2 pt-1">
+                      <button
+                        onClick={() => handleApprovePayout(p.id)}
+                        className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-xs cursor-pointer shadow-xs text-center"
+                      >
+                        Duyệt Đã CK
+                      </button>
+                      <button
+                        onClick={() => handleRejectPayout(p.id)}
+                        className="flex-1 py-2 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-xl font-bold text-xs cursor-pointer text-center"
+                      >
+                        Từ chối
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* DESKTOP TABLE VIEW */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-slate-50/80 text-slate-500 text-[11px] font-black uppercase tracking-wider border-b border-slate-100">
@@ -1607,7 +1697,200 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
 
           {/* TABLE OF ORDERS */}
           <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
-            <div className="overflow-x-auto">
+            {/* MOBILE CARD VIEW (HIỂN THỊ TRÊN ĐIỆN THOẠI) */}
+            <div className="block md:hidden p-4 space-y-3">
+              {filteredOrders.length === 0 ? (
+                <div className="bg-slate-50 rounded-2xl p-8 text-center text-slate-400 font-bold border border-slate-200/80">
+                  <i className="fa-solid fa-folder-open text-2xl text-slate-300 mb-2 block"></i>
+                  Không tìm thấy đơn hàng nào khớp với bộ lọc
+                </div>
+              ) : (
+                filteredOrders
+                  .slice((adminOrderPage - 1) * 50, adminOrderPage * 50)
+                  .map((o) => {
+                    const rawVal = Math.round(Number(o.rawCommission || 0));
+                    const taxVal = o.taxAmount !== undefined && o.taxAmount !== null ? Math.round(Number(o.taxAmount)) : Math.round(rawVal * (taxRate / 100));
+                    const afterTaxVal = rawVal - taxVal;
+                    const userFinalVal = o.finalCommission !== undefined && o.finalCommission !== null ? Math.round(Number(o.finalCommission)) : Math.round(afterTaxVal * (customerSplitRate / 100));
+                    const adminProfitVal = afterTaxVal - userFinalVal;
+
+                    const getOrderBuyerInfo = (orderObj) => {
+                      if (!orderObj) return { name: "Khách ẩn", isAssigned: false, isZaloName: false };
+                      const rawSubId = String(orderObj.subId || orderObj.sub_id || orderObj.subId1 || "").trim();
+                      const targetZaloId = String(orderObj.zaloId || "").trim();
+                      let cleanSub = rawSubId;
+                      if (cleanSub) {
+                        cleanSub = cleanSub.replace(/^(phamnga|ly|tranhuyen|lecuong|mailan|th)[_-]/i, "");
+                      }
+                      const lookupKey = targetZaloId || cleanSub || rawSubId;
+
+                      if (lookupKey && Array.isArray(zaloUsers) && zaloUsers.length > 0) {
+                        const zUser = zaloUsers.find((z) => {
+                          if (!z) return false;
+                          const zZaloId = String(z.zaloId || z.zalo_id || "").trim();
+                          const zId = String(z.id || "").trim();
+                          return (
+                            zZaloId === lookupKey ||
+                            zZaloId === targetZaloId ||
+                            zZaloId === cleanSub ||
+                            zZaloId === rawSubId ||
+                            zId === lookupKey ||
+                            (zZaloId.length >= 8 && lookupKey.length >= 8 && (zZaloId.startsWith(lookupKey) || lookupKey.startsWith(zZaloId)))
+                          );
+                        });
+                        if (zUser) {
+                          const zName = (zUser.zaloName || zUser.zalo_name || zUser.name || "").trim();
+                          const zAccName = (zUser.accountName || "").trim();
+                          const resolvedName = zName || zAccName;
+                          if (resolvedName && !resolvedName.toLowerCase().startsWith("zalo id") && !resolvedName.toLowerCase().startsWith("sub id")) {
+                            return { name: resolvedName, isAssigned: true, isZaloName: true, zaloId: zUser.zaloId || lookupKey };
+                          }
+                        }
+                      }
+
+                      if (orderObj.zaloName && !orderObj.zaloName.toLowerCase().startsWith("zalo id") && !orderObj.zaloName.toLowerCase().startsWith("sub id")) {
+                        return { name: orderObj.zaloName, isAssigned: true, isZaloName: true, zaloId: targetZaloId || cleanSub };
+                      }
+
+                      if (orderObj.user) {
+                        const uZaloName = (orderObj.user.zaloName || "").trim();
+                        const uName = (orderObj.user.name || "").trim();
+                        const uEmail = (orderObj.user.email || "").trim();
+                        const displayName = uZaloName || (uName && !uName.startsWith("Khách Zalo ") ? uName : null) || uEmail;
+                        if (displayName) {
+                          return { name: displayName, isAssigned: true, isZaloName: true, zaloId: orderObj.user.zaloId || targetZaloId };
+                        }
+                      }
+
+                      const finalId = cleanSub || targetZaloId || rawSubId;
+                      if (finalId) {
+                        return { name: `Sub ID: ${finalId}`, isAssigned: true, isZaloName: false, zaloId: finalId };
+                      }
+
+                      return { name: "Khách ẩn", isAssigned: false, isZaloName: false };
+                    };
+
+                    const buyer = getOrderBuyerInfo(o);
+
+                    return (
+                      <div key={o.id} className="bg-slate-50/50 rounded-2xl border border-slate-200/80 p-3.5 space-y-3">
+                        {/* Header: Platform icon, Date & Status */}
+                        <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-100">
+                          <div className="flex items-center gap-2">
+                            <span className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] text-white font-bold ${activeTab === 'tiktok' ? 'bg-black' : 'bg-orange-500'}`}>
+                              <i className={activeTab === 'tiktok' ? 'fa-brands fa-tiktok' : 'fa-solid fa-bag-shopping'}></i>
+                            </span>
+                            <span className="text-[11px] font-bold text-slate-500">
+                              {o.orderDate ? new Date(o.orderDate).toLocaleDateString("vi-VN") : "—"}
+                            </span>
+                          </div>
+                          <span
+                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap ${
+                              (o.status || "").includes("Hủy") || (o.status || "").includes("hủy") || (o.status || "").includes("CANCEL")
+                                ? "bg-rose-50 text-rose-700 border border-rose-200"
+                                : (o.status || "").includes("Chờ") || (o.status || "").includes("chờ") || (o.status || "").includes("PENDING")
+                                ? "bg-amber-50 text-amber-700 border border-amber-200"
+                                : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                            }`}
+                          >
+                            {o.status || "Hoàn thành"}
+                          </span>
+                        </div>
+
+                        {/* Product Title & ID */}
+                        <div>
+                          <p className="font-bold text-slate-900 text-xs leading-snug line-clamp-2" title={o.productName}>
+                            {o.productName}
+                          </p>
+                          <p className="text-[10px] text-slate-400 font-mono mt-0.5">ID: {o.orderId}</p>
+                        </div>
+
+                        {/* Buyer Info & Assign Button */}
+                        <div className="bg-white rounded-xl p-2 flex items-center justify-between gap-2 border border-slate-100">
+                          <div className="min-w-0 flex items-center gap-2">
+                            <div className="w-5 h-5 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-[9px] shrink-0 font-bold">
+                              <i className="fa-solid fa-user"></i>
+                            </div>
+                            <div className="truncate">
+                              <span className="text-[9px] text-slate-400 font-bold uppercase block leading-none">Người mua</span>
+                              <span className={`text-xs font-bold truncate block ${buyer.isZaloName ? "text-slate-900" : buyer.isAssigned ? "text-slate-600 font-mono" : "text-slate-400 italic"}`}>
+                                {buyer.name}
+                              </span>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedOrderToAssign(o);
+                              setAssignZaloId(o.zaloId || buyer.zaloId || "");
+                            }}
+                            className="text-[10px] font-bold text-purple-600 hover:bg-purple-50 bg-slate-50 px-2 py-1 rounded-lg border border-purple-200 cursor-pointer shrink-0"
+                          >
+                            Sửa gán
+                          </button>
+                        </div>
+
+                        {/* Financial breakdown */}
+                        <div className="grid grid-cols-3 gap-1 text-[10px]">
+                          <div className="bg-white p-1.5 rounded-lg border border-slate-100 text-center">
+                            <span className="block text-slate-400 font-bold text-[9px]">Thô</span>
+                            <span className="font-mono font-bold text-slate-700">{formatMoney(rawVal)}</span>
+                          </div>
+                          <div className="bg-white p-1.5 rounded-lg border border-slate-100 text-center">
+                            <span className="block text-slate-400 font-bold text-[9px]">Thuế ({taxRate}%)</span>
+                            <span className="font-mono font-bold text-rose-500">{formatMoney(taxVal)}</span>
+                          </div>
+                          <div className="bg-white p-1.5 rounded-lg border border-slate-100 text-center">
+                            <span className="block text-slate-400 font-bold text-[9px]">Sau thuế</span>
+                            <span className="font-mono font-bold text-slate-800">{formatMoney(afterTaxVal)}</span>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-1.5 pt-0.5">
+                          <div className="bg-orange-50 p-2 rounded-xl border border-orange-200/80 flex items-center justify-between">
+                            <span className="text-[10px] font-black text-orange-900">Khách ({customerSplitRate}%)</span>
+                            <span className="font-mono font-black text-orange-600 text-xs">{formatMoney(userFinalVal)}</span>
+                          </div>
+                          <div className="bg-purple-50 p-2 rounded-xl border border-purple-200/80 flex items-center justify-between">
+                            <span className="text-[10px] font-black text-purple-900">Admin ({adminSplitRate}%)</span>
+                            <span className="font-mono font-black text-purple-600 text-xs">{formatMoney(adminProfitVal)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+              )}
+
+              {/* Mobile Total Summary Card */}
+              {filteredOrders.length > 0 && (
+                <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-2xl p-3.5 space-y-2">
+                  <span className="text-xs font-black uppercase text-orange-400 block pb-1 border-b border-slate-700">
+                    📊 TỔNG CỘNG ({filteredOrders.length} đơn)
+                  </span>
+                  <div className="grid grid-cols-2 gap-1.5 text-xs font-mono">
+                    <div className="bg-slate-800 p-2 rounded-lg border border-slate-700">
+                      <span className="text-[9px] text-slate-400 font-sans block">Tổng thô</span>
+                      <span className="font-bold">{formatMoney(totalRawSum)}</span>
+                    </div>
+                    <div className="bg-slate-800 p-2 rounded-lg border border-slate-700">
+                      <span className="text-[9px] text-slate-400 font-sans block">Tổng thuế</span>
+                      <span className="font-bold text-rose-400">{formatMoney(totalTaxSum)}</span>
+                    </div>
+                    <div className="bg-slate-800 p-2 rounded-lg border border-slate-700">
+                      <span className="text-[9px] text-orange-300 font-sans block">Khách ({customerSplitRate}%)</span>
+                      <span className="font-black text-orange-400">{formatMoney(totalUserFinalSum)}</span>
+                    </div>
+                    <div className="bg-slate-800 p-2 rounded-lg border border-slate-700">
+                      <span className="text-[9px] text-purple-300 font-sans block">Admin ({adminSplitRate}%)</span>
+                      <span className="font-black text-purple-400">{formatMoney(totalAdminProfitSum)}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* DESKTOP TABLE VIEW (ẨN TRÊN ĐIỆN THOẠI) */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="bg-slate-50/80 text-slate-500 text-[11px] font-black uppercase tracking-wider border-b border-slate-100">

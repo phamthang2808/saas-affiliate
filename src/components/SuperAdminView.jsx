@@ -358,10 +358,10 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin }) {
       </div>
 
       {/* ===================== SUB TABS NAVIGATION ===================== */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-slate-200/80 pb-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 border-b border-slate-200/80 pb-3">
         <button
           onClick={() => setAdminSubTab("tenants")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer ${
+          className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer ${
             adminSubTab === "tenants"
               ? "bg-slate-900 text-white shadow-md shadow-slate-900/20"
               : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
@@ -376,7 +376,7 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin }) {
             setAdminSubTab("users");
             fetchUsers();
           }}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer ${
+          className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer ${
             adminSubTab === "users"
               ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-500/20"
               : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"

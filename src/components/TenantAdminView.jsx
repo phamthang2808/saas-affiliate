@@ -60,10 +60,10 @@ const TEMPLATE_META = {
     desc: "Tin nhắn thông báo khi thành viên gõ lệnh /donhang lúc chưa có đơn nào."
   },
   template_wallet: {
-    title: "7. Mẫu tin nhắn Tổng Quan Ví Tiền & Hoa Hồng (Lệnh /vitien)",
+    title: "7. Mẫu tin nhắn Thông Tin Ví Hoàn Tiền (Lệnh /vitien)",
     command: "/vitien hoặc #vitien",
     icon: "fa-solid fa-wallet text-emerald-600",
-    desc: "Tin nhắn Bot tổng hợp thông tin ví tiền, tổng hoa hồng, đang chờ xử lý, đã hoàn thành và đã nhận khi gõ /vitien."
+    desc: "Tin nhắn Bot hiển thị thông tin Ví khả dụng, Đơn đã hoàn thành (chưa đủ ngày), Đơn chờ đối soát và Đã rút thành công."
   },
   template_lookup: {
     title: "8. Mẫu tin nhắn Tra Cứu Đơn Hàng & Ví Tiền (Link Web 1 Chạm - Lệnh /tracuu)",
@@ -125,7 +125,7 @@ const getStandardBotTemplates = (tenant) => {
     template_welcome: `Hi, chào @{ten_zalo}\n🎉 Chào mừng bạn đã tham gia nhóm {ten_nhom}!\n📌 Bạn vui lòng đọc kỹ BÀI GHIM của nhóm hoặc gõ lệnh /help để xem hướng dẫn cách gửi link mua sắm và nhận hoàn {ty_le_hoan}% hoa hồng nhé! 🥰`,
     template_order_detail: `@{ten_zalo} 🛒 DANH SÁCH ĐƠN HÀNG (Tự động hiển thị đơn hàng thực tế của thành viên, phân trang 5 đơn/trang kèm gợi ý /donhang2, /donhang3...):\n👉 Tra cứu & Rút tiền trên Web: {link_tra_cuu}`,
     template_order_not_found: `@{ten_zalo} 🛒 Bạn chưa có đơn hàng nào trên hệ thống!`,
-    template_wallet: `@{ten_zalo} 💳 VÍ TIỀN CỦA BẠN\n💰 Tổng hoa hồng: {tong_hoahong_tien}đ\n⏳ Đang chờ xử lý: {hoahong_dangcho}đ\n✅ Đã hoàn thành: {hoahong_dahoanthanh}đ\n📥 Đã nhận: {hoahong_danhan}đ\nHoa hồng từ các đơn đã hoàn thành sẽ được thanh toán vào thứ 6 của tuần kế tiếp.\nCảm ơn bạn đã đồng hành ❤️\n\nĐể xem đầy đủ các đơn hàng, vui lòng tra cứu tại: {link_tra_cuu}`,
+    template_wallet: `@{ten_zalo} 💳 THÔNG TIN VÍ HOÀN TIỀN {brand_name}:\n\n💰 Ví Khả Dụng (có thể rút): {so_du_vi}đ\n🟢 Đã hoàn thành (chưa đủ {so_ngay_giu} ngày): {hoahong_cho_du_ngay}đ\n⌛ Đơn chờ đối soát: {hoahong_cho}đ\n💸 Đã rút thành công: {hoahong_danhan}đ\n\n👉 Tra cứu chi tiết & Rút tiền 1 chạm tại:\n🌐 {link_tra_cuu}`,
     template_lookup: `@{ten_zalo} 🔍 TRA CỨU ĐƠN HÀNG & VÍ HOÀN TIỀN\n👉 Link tra cứu bảo mật (đã mã hóa định danh, click là xem ngay):\n🌐 {link_tra_cuu}\n\n💡 TÍNH NĂNG TRANG TRA CỨU:\n📦 Xem danh sách đơn đã mua & chi tiết hoa hồng từng đơn.\n💳 Quản lý 3 ví tiền: Đang chờ / Đã hoàn thành / Khả dụng.\n💸 Rút tiền hoa hồng & cập nhật tài khoản Ngân hàng 1 chạm.\n📌 Lưu ý: Đơn Hoàn thành sau 3 ngày sẽ tự chuyển xuống ví Khả Dụng để rút.`,
     template_save_bank_success: `@{ten_zalo} Bạn đã lưu thông tin thành công 🌷`,
     template_invalid_bank_syntax: `@{ten_zalo} ⚠️ Cú pháp không hợp lệ. Vui lòng sử dụng định dạng: /stk_[Tên ngân hàng]_[Số tài khoản] (Ví dụ: /stk_MB_0987654321)`,
@@ -2492,6 +2492,18 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                 className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 text-xs font-bold text-slate-800 outline-none"
               />
               <span className="text-[11px] text-slate-400 mt-1 block">Trưởng nhóm giữ lại: {100 - (Number(settings.customerSplitRate) || 80)}% hoa hồng sau thuế</span>
+            </div>
+
+            <div>
+              <label className="block text-xs font-black text-slate-700 mb-1.5">Số ngày giữ đơn sau hoàn thành (ngày):</label>
+              <input
+                type="number"
+                min="0"
+                value={settings.holdingDays}
+                onChange={(e) => setSettings({ ...settings, holdingDays: e.target.value })}
+                className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 text-xs font-bold text-slate-800 outline-none"
+              />
+              <span className="text-[11px] text-slate-400 mt-1 block">Sau số ngày này đơn hoàn thành mới chuyển sang Ví Khả Dụng để rút (mặc định 3 ngày Shopee).</span>
             </div>
 
             <div>

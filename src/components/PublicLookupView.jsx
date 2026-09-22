@@ -444,12 +444,17 @@ export function PublicLookupView({
     if (holdingDays <= 0) {
       eligibleCompletedCommission += finalComm;
     } else {
-      const dateStr = o.orderDate || o.createdAt;
-      const oDate = dateStr ? new Date(dateStr) : null;
-      if (oDate && oDate <= thresholdTime) {
+      const isTiktok = (o.platform || "").toUpperCase().includes("TIKTOK");
+      if (isTiktok) {
         eligibleCompletedCommission += finalComm;
       } else {
-        holdingCompletedCommission += finalComm;
+        const dateStr = o.orderDate || o.createdAt;
+        const oDate = dateStr ? new Date(dateStr) : null;
+        if (oDate && oDate <= thresholdTime) {
+          eligibleCompletedCommission += finalComm;
+        } else {
+          holdingCompletedCommission += finalComm;
+        }
       }
     }
   });
@@ -463,9 +468,7 @@ export function PublicLookupView({
     : pendingPayoutsList.reduce((sum, p) => sum + Number(p.amount || 0), 0);
 
   // Số dư khả dụng = Tổng hoa hồng đủ điều kiện rút - Đã rút - Đang chờ duyệt
-  const availableBalance = lookupData?.availableBalance !== undefined
-    ? Number(lookupData.availableBalance)
-    : Math.max(0, eligibleCompletedCommission - totalWithdrawn - pendingPayoutAmount);
+  const availableBalance = Math.max(0, eligibleCompletedCommission - totalWithdrawn - pendingPayoutAmount);
 
   // Lọc danh sách đơn hàng
   const filteredOrders = orders.filter((o) => {

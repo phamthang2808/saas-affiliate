@@ -338,7 +338,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
       });
       if (res.ok) {
         const data = await res.json();
-        const rawDefs = data.defaultTemplates && Object.keys(data.defaultTemplates).length > 0 ? data.defaultTemplates : standard;
+        const rawDefs = { ...standard, ...(data.defaultTemplates || {}) };
         const defs = {};
         Object.keys(rawDefs).forEach((k) => {
           defs[k] = convertEnglishToVietnamesePlaceholders(rawDefs[k]);

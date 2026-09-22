@@ -15,7 +15,41 @@ import { API_URL_ROOT, APP_CONFIG } from "./config/api";
 
 export default function App() {
   // Views: 'gioi-thieu' | 'tra-cuu' | 'huong-dan' | 'bao-gia' | 'tenant-admin' | 'super-admin'
-  const [currentView, setCurrentView] = useState("gioi-thieu");
+  const [currentView, setCurrentView] = useState(() => {
+    // 1. Kiểm tra URL hash (VD: #tenant-admin hoặc #super-admin)
+    const cleanHash = window.location.hash.replace(/^#\/?/, "");
+    if (cleanHash && ["tenant-admin", "super-admin", "tra-cuu", "bao-gia", "huong-dan", "gioi-thieu"].includes(cleanHash)) {
+      return cleanHash;
+    }
+    // 2. Khôi phục tab từ localStorage nếu đã đăng nhập quyền tương ứng
+    const saved = localStorage.getItem("saasActiveView");
+    const savedUserStr = localStorage.getItem("saasUser");
+    let savedUser = null;
+    try {
+      savedUser = savedUserStr ? JSON.parse(savedUserStr) : null;
+    } catch {}
+
+    if (saved === "tenant-admin") {
+      if (savedUser && (savedUser.role === "TENANT_ADMIN" || savedUser.role === "SUPER_ADMIN")) {
+        return "tenant-admin";
+      }
+    } else if (saved === "super-admin") {
+      if (savedUser && savedUser.role === "SUPER_ADMIN") {
+        return "super-admin";
+      }
+    } else if (saved && ["tra-cuu", "bao-gia", "huong-dan", "gioi-thieu"].includes(saved)) {
+      return saved;
+    }
+    return "gioi-thieu";
+  });
+
+  // Tự động lưu view hiện tại vào localStorage khi người dùng chuyển tab
+  useEffect(() => {
+    if (currentView) {
+      localStorage.setItem("saasActiveView", currentView);
+    }
+  }, [currentView]);
+
   const [initialLookupQuery, setInitialLookupQuery] = useState("");
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
@@ -260,6 +294,8 @@ export default function App() {
     setUser(null);
     localStorage.removeItem("saasToken");
     localStorage.removeItem("saasUser");
+    localStorage.removeItem("saasActiveView");
+    localStorage.removeItem("saasTenantAdminTab");
     setCurrentView("gioi-thieu");
   };
 

@@ -1618,6 +1618,64 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                         const userFinalVal = o.finalCommission !== undefined && o.finalCommission !== null ? Math.round(Number(o.finalCommission)) : Math.round(afterTaxVal * (customerSplitRate / 100));
                         const adminProfitVal = afterTaxVal - userFinalVal;
 
+                        const getOrderBuyerInfo = (orderObj) => {
+                          if (!orderObj) return { name: "Khách ẩn", isAssigned: false, isZaloName: false };
+                          const rawSubId = String(orderObj.subId || orderObj.sub_id || orderObj.subId1 || "").trim();
+                          const targetZaloId = String(orderObj.zaloId || "").trim();
+                          let cleanSub = rawSubId;
+                          if (cleanSub) {
+                            cleanSub = cleanSub.replace(/^(phamnga|ly|tranhuyen|lecuong|mailan|th)[_-]/i, "");
+                          }
+                          const lookupKey = targetZaloId || cleanSub || rawSubId;
+
+                          if (lookupKey && Array.isArray(zaloUsers) && zaloUsers.length > 0) {
+                            const zUser = zaloUsers.find((z) => {
+                              if (!z) return false;
+                              const zZaloId = String(z.zaloId || z.zalo_id || "").trim();
+                              const zId = String(z.id || "").trim();
+                              return (
+                                zZaloId === lookupKey ||
+                                zZaloId === targetZaloId ||
+                                zZaloId === cleanSub ||
+                                zZaloId === rawSubId ||
+                                zId === lookupKey ||
+                                (zZaloId.length >= 8 && lookupKey.length >= 8 && (zZaloId.startsWith(lookupKey) || lookupKey.startsWith(zZaloId)))
+                              );
+                            });
+                            if (zUser) {
+                              const zName = (zUser.zaloName || zUser.zalo_name || zUser.name || "").trim();
+                              const zAccName = (zUser.accountName || "").trim();
+                              const resolvedName = zName || zAccName;
+                              if (resolvedName && !resolvedName.toLowerCase().startsWith("zalo id") && !resolvedName.toLowerCase().startsWith("sub id")) {
+                                return { name: resolvedName, isAssigned: true, isZaloName: true, zaloId: zUser.zaloId || lookupKey };
+                              }
+                            }
+                          }
+
+                          if (orderObj.zaloName && !orderObj.zaloName.toLowerCase().startsWith("zalo id") && !orderObj.zaloName.toLowerCase().startsWith("sub id")) {
+                            return { name: orderObj.zaloName, isAssigned: true, isZaloName: true, zaloId: targetZaloId || cleanSub };
+                          }
+
+                          if (orderObj.user) {
+                            const uZaloName = (orderObj.user.zaloName || "").trim();
+                            const uName = (orderObj.user.name || "").trim();
+                            const uEmail = (orderObj.user.email || "").trim();
+                            const displayName = uZaloName || (uName && !uName.startsWith("Khách Zalo ") ? uName : null) || uEmail;
+                            if (displayName) {
+                              return { name: displayName, isAssigned: true, isZaloName: true, zaloId: orderObj.user.zaloId || targetZaloId };
+                            }
+                          }
+
+                          const finalId = cleanSub || targetZaloId || rawSubId;
+                          if (finalId) {
+                            return { name: `Sub ID: ${finalId}`, isAssigned: true, isZaloName: false, zaloId: finalId };
+                          }
+
+                          return { name: "Khách ẩn", isAssigned: false, isZaloName: false };
+                        };
+
+                        const buyer = getOrderBuyerInfo(o);
+
                         return (
                           <tr key={o.id} className="hover:bg-slate-50/80 transition">
                             <td className="p-3.5 text-slate-400 whitespace-nowrap">
@@ -1629,26 +1687,43 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                               </p>
                               <span className="text-[10px] text-slate-400 font-mono">ID: {o.orderId}</span>
                             </td>
-                            <td className="p-3.5">
+                            <td className="p-3.5 whitespace-nowrap">
                               <div className="flex items-center justify-between gap-1.5">
-                                <span className="font-bold text-slate-800">
-                                  {o.zaloName || o.zaloId || o.subId || "Khách ẩn"}
+                                <span
+                                  className={`font-bold ${
+                                    buyer.isZaloName
+                                      ? "text-slate-900"
+                                      : buyer.isAssigned
+                                      ? "text-slate-600 font-mono text-[11px]"
+                                      : "text-slate-400 italic"
+                                  }`}
+                                  title={buyer.name}
+                                >
+                                  {buyer.name}
                                 </span>
                                 <button
                                   type="button"
                                   onClick={() => {
                                     setSelectedOrderToAssign(o);
-                                    setAssignZaloId(o.zaloId || "");
+                                    setAssignZaloId(o.zaloId || buyer.zaloId || "");
                                   }}
-                                  className="text-[10px] font-bold text-purple-600 hover:bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200 cursor-pointer"
+                                  className="text-[10px] font-bold text-purple-600 hover:bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200 cursor-pointer shrink-0 ml-1"
                                   title="Gán đơn này cho thành viên Zalo"
                                 >
                                   Sửa gán
                                 </button>
                               </div>
                             </td>
-                            <td className="p-3.5">
-                              <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <td className="p-3.5 whitespace-nowrap">
+                              <span
+                                className={`px-2.5 py-1 rounded-full text-[10px] font-bold whitespace-nowrap inline-block ${
+                                  (o.status || "").includes("Hủy") || (o.status || "").includes("hủy") || (o.status || "").includes("CANCEL")
+                                    ? "bg-rose-50 text-rose-700 border border-rose-200"
+                                    : (o.status || "").includes("Chờ") || (o.status || "").includes("chờ") || (o.status || "").includes("PENDING")
+                                    ? "bg-amber-50 text-amber-700 border border-amber-200"
+                                    : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                }`}
+                              >
                                 {o.status || "Hoàn thành"}
                               </span>
                             </td>

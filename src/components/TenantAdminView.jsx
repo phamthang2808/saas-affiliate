@@ -1790,13 +1790,16 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                             <td className="p-3.5 sm:p-4 whitespace-nowrap">
                               {(() => {
                                 const rawSt = String(o.status || "").trim().toLowerCase();
-                                let badgeLabel = "Hoàn thành (Đã chốt)";
-                                let badgeClass = "bg-emerald-50 text-emerald-700 border border-emerald-200";
+                                let badgeLabel = "Chờ xử lý";
+                                let badgeClass = "bg-amber-50 text-amber-700 border border-amber-200";
 
                                 if (rawSt === "3" || rawSt === "300" || rawSt.includes("hủy") || rawSt.includes("cancel") || rawSt.includes("refund")) {
                                   badgeLabel = "Đã hủy";
                                   badgeClass = "bg-rose-50 text-rose-700 border border-rose-200";
-                                } else if (rawSt === "2" || rawSt === "200" || rawSt.includes("chờ") || rawSt.includes("pending") || rawSt.includes("xử lý") || rawSt.includes("unpaid") || rawSt.includes("vận chuyển")) {
+                                } else if (rawSt === "2" || rawSt === "200" || rawSt.includes("hoàn thành") || rawSt.includes("complete") || rawSt.includes("finish") || rawSt.includes("success") || rawSt.includes("settled") || rawSt.includes("paid")) {
+                                  badgeLabel = "Hoàn thành (Đã chốt)";
+                                  badgeClass = "bg-emerald-50 text-emerald-700 border border-emerald-200";
+                                } else if (rawSt === "1" || rawSt === "100" || rawSt.includes("chờ") || rawSt.includes("pending") || rawSt.includes("xử lý") || rawSt.includes("unpaid") || rawSt.includes("vận chuyển")) {
                                   badgeLabel = "Chờ xử lý";
                                   badgeClass = "bg-amber-50 text-amber-700 border border-amber-200";
                                 }

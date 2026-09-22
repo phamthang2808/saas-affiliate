@@ -414,8 +414,23 @@ export function PublicLookupView({
     return st.includes("hoàn thành") || st.includes("completed") || st.includes("thành công") || st.includes("duyệt") || st.includes("thanh toán");
   });
 
-  const pendingCommission = pendingOrders.reduce((sum, o) => sum + Number(o.finalCommission || 0), 0);
-  const completedCommission = completedOrders.reduce((sum, o) => sum + Number(o.finalCommission || 0), 0);
+  const customerSplitRate = currentTenant?.customerSplitRate || 80;
+  const currentTaxRate = currentTenant?.taxRate !== undefined && currentTenant?.taxRate !== null ? Number(currentTenant.taxRate) : 10;
+  const adminSplitRate = 100 - customerSplitRate;
+
+  const getOrderUserCommission = (o) => {
+    if (!o) return 0;
+    const raw = Number(o.rawCommission || 0);
+    if (raw > 0) {
+      const tax = Math.round(raw * (currentTaxRate / 100));
+      const afterTax = Math.max(0, raw - tax);
+      return Math.round(afterTax * (customerSplitRate / 100));
+    }
+    return Math.round(Number(o.finalCommission || 0));
+  };
+
+  const pendingCommission = pendingOrders.reduce((sum, o) => sum + getOrderUserCommission(o), 0);
+  const completedCommission = completedOrders.reduce((sum, o) => sum + getOrderUserCommission(o), 0);
 
   // Phân loại đơn hoàn thành: Đã qua số ngày giữ (eligible) vs Đang trong thời gian giữ (holding)
   const now = new Date();
@@ -425,7 +440,7 @@ export function PublicLookupView({
   let holdingCompletedCommission = 0;
 
   completedOrders.forEach((o) => {
-    const finalComm = Number(o.finalCommission || 0);
+    const finalComm = getOrderUserCommission(o);
     if (holdingDays <= 0) {
       eligibleCompletedCommission += finalComm;
     } else {
@@ -509,8 +524,6 @@ export function PublicLookupView({
     return (Number(b.id) || 0) - (Number(a.id) || 0);
   });
 
-  const customerSplitRate = currentTenant?.customerSplitRate || 80;
-  const adminSplitRate = 100 - (currentTenant?.taxRate || 10) - customerSplitRate;
 
   return (
     <div className="space-y-5 animate-fade-in pb-12 relative">
@@ -1091,11 +1104,7 @@ export function PublicLookupView({
                         <div className="text-right ml-auto">
                           <span className="text-[11px] font-semibold text-slate-500 mr-1">Hoa hồng:</span>
                           <span className="text-sm sm:text-base font-black text-orange-600 font-outfit">
-                            {formatMoney(
-                              order.rawCommission !== undefined && order.rawCommission !== null && Number(order.rawCommission) > 0
-                                ? Number(order.rawCommission)
-                                : Number(order.finalCommission || 0)
-                            )}
+                            {formatMoney(getOrderUserCommission(order))}
                           </span>
                         </div>
                       </div>

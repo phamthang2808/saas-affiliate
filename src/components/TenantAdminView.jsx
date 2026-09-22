@@ -122,7 +122,7 @@ const getStandardBotTemplates = (tenant) => {
     template_link_tiktok: `Hi @{ten_zalo}, link của sếp đây ạ:\n📦 {ten_san_pham}\n💵 Giá tham khảo: {gia_san_pham}\n🔗 Link: {link_mua_sam}\n💵 Tổng hoa hồng: {tong_hoahong_phantram}% ({tong_hoahong_tien})\n💡 Mẹo nhỏ nhận hoa hồng chuẩn 100%: Xóa sp cũ trong giỏ ➔ Bấm link vào App ➔ Mua ngay (không xem Live/Video giữa chừng) nhé sếp ơi!`,
     template_tiktok_not_configured: `@{ten_zalo} Tính năng chuyển đổi link TikTok Shop hiện đang sắp ra mắt! 🚀\nHệ thống hiện tại hỗ trợ chuyển đổi link Shopee, bạn vui lòng gửi link Shopee giúp mình nhé!`,
     template_welcome: `Hi, chào @{ten_zalo}\n🎉 Chào mừng bạn đã tham gia nhóm {ten_nhom}!\n📌 Bạn vui lòng đọc kỹ BÀI GHIM của nhóm hoặc gõ lệnh /help để xem hướng dẫn cách gửi link mua sắm và nhận hoàn {ty_le_hoan}% hoa hồng nhé! 🥰`,
-    template_order_detail: `@{ten_zalo} 🛒 DANH SÁCH ĐƠN HÀNG (Trang 1/3 - Tổng 11 đơn):\n\n1. Mã đơn: 2609058Y3A5UX3\n   📦 Áo Thun Nữ Cổ Tròn Sọc Dệt Kim Thêu...\n   💰 Hoa hồng: 1.773đ | Trạng thái: Hoàn thành\n\n2. Mã đơn: 260831RJR3QAA2\n   📦 Calem.Club- Quần Jeans Ống Suông Ve...\n   💰 Hoa hồng: 7.970đ | Trạng thái: Hoàn thành\n\n💡 Nhắn /donhang2 để xem trang tiếp theo.\n👉 Tra cứu & Rút tiền trên Web: {link_tra_cuu}`,
+    template_order_detail: `@{ten_zalo} 🛒 DANH SÁCH ĐƠN HÀNG (Tự động hiển thị đơn hàng thực tế của thành viên, phân trang 5 đơn/trang kèm gợi ý /donhang2, /donhang3...):\n👉 Tra cứu & Rút tiền trên Web: {link_tra_cuu}`,
     template_order_not_found: `@{ten_zalo} 🛒 Bạn chưa có đơn hàng nào trên hệ thống!`,
     template_wallet: `@{ten_zalo} 💳 VÍ TIỀN CỦA BẠN\n💰 Tổng hoa hồng: {tong_hoahong_tien}đ\n⏳ Đang chờ xử lý: {hoahong_dangcho}đ\n✅ Đã hoàn thành: {hoahong_dahoanthanh}đ\n📥 Đã nhận: {hoahong_danhan}đ\nHoa hồng từ các đơn đã hoàn thành sẽ được thanh toán vào thứ 6 của tuần kế tiếp.\nCảm ơn bạn đã đồng hành ❤️\n\nĐể xem đầy đủ các đơn hàng, vui lòng tra cứu tại: {link_tra_cuu}`,
     template_lookup: `@{ten_zalo} 🔍 TRA CỨU ĐƠN HÀNG & VÍ HOÀN TIỀN\n👉 Link tra cứu bảo mật (đã mã hóa định danh, click là xem ngay):\n🌐 {link_tra_cuu}\n\n💡 TÍNH NĂNG TRANG TRA CỨU:\n📦 Xem danh sách đơn đã mua & chi tiết hoa hồng từng đơn.\n💳 Quản lý 3 ví tiền: Đang chờ / Đã hoàn thành / Khả dụng.\n💸 Rút tiền hoa hồng & cập nhật tài khoản Ngân hàng 1 chạm.\n📌 Lưu ý: Đơn Hoàn thành sau 3 ngày sẽ tự chuyển xuống ví Khả Dụng để rút.`,
@@ -851,21 +851,19 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
   });
 
   // Calculate order totals
-  const totalRawSum = filteredOrders.reduce((sum, o) => sum + Math.round(Number(o.rawCommission || 0)), 0);
+  const totalRawSum = filteredOrders.reduce((sum, o) => sum + Math.round(Number(o.rawCommission || o.finalCommission || 0)), 0);
   const totalTaxSum = filteredOrders.reduce((sum, o) => {
-    const raw = Math.round(Number(o.rawCommission || 0));
-    const tax = o.taxAmount !== undefined && o.taxAmount !== null ? Math.round(Number(o.taxAmount)) : Math.round(raw * (taxRate / 100));
-    return sum + tax;
+    const raw = Math.round(Number(o.rawCommission || o.finalCommission || 0));
+    return sum + Math.round(raw * (taxRate / 100));
   }, 0);
-  const totalAfterTaxSum = totalRawSum - totalTaxSum;
+  const totalAfterTaxSum = Math.max(0, totalRawSum - totalTaxSum);
   const totalUserFinalSum = filteredOrders.reduce((sum, o) => {
-    const raw = Math.round(Number(o.rawCommission || 0));
-    const tax = o.taxAmount !== undefined && o.taxAmount !== null ? Math.round(Number(o.taxAmount)) : Math.round(raw * (taxRate / 100));
-    const afterTax = raw - tax;
-    const userFinal = o.finalCommission !== undefined && o.finalCommission !== null ? Math.round(Number(o.finalCommission)) : Math.round(afterTax * (customerSplitRate / 100));
-    return sum + userFinal;
+    const raw = Math.round(Number(o.rawCommission || o.finalCommission || 0));
+    const tax = Math.round(raw * (taxRate / 100));
+    const afterTax = Math.max(0, raw - tax);
+    return sum + Math.round(afterTax * (customerSplitRate / 100));
   }, 0);
-  const totalAdminProfitSum = totalAfterTaxSum - totalUserFinalSum;
+  const totalAdminProfitSum = Math.max(0, totalAfterTaxSum - totalUserFinalSum);
 
   const handleExportOrdersExcel = (platform = "Shopee") => {
     if (!filteredOrders || filteredOrders.length === 0) {
@@ -890,11 +888,11 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
     const cleanCell = (str) => `"${(str || "").toString().replace(/"/g, '""')}"`;
 
     const rows = filteredOrders.map((o, idx) => {
-      const rawVal = Math.round(Number(o.rawCommission || 0));
-      const taxVal = o.taxAmount !== undefined && o.taxAmount !== null ? Math.round(Number(o.taxAmount)) : Math.round(rawVal * (taxRate / 100));
-      const afterTaxVal = rawVal - taxVal;
-      const userFinalVal = o.finalCommission !== undefined && o.finalCommission !== null ? Math.round(Number(o.finalCommission)) : Math.round(afterTaxVal * (customerSplitRate / 100));
-      const adminProfitVal = afterTaxVal - userFinalVal;
+      const rawVal = Math.round(Number(o.rawCommission || o.finalCommission || 0));
+      const taxVal = Math.round(rawVal * (taxRate / 100));
+      const afterTaxVal = Math.max(0, rawVal - taxVal);
+      const userFinalVal = Math.round(afterTaxVal * (customerSplitRate / 100));
+      const adminProfitVal = Math.max(0, afterTaxVal - userFinalVal);
 
       const orderDateStr = o.orderDate ? new Date(o.orderDate).toLocaleDateString("vi-VN") : "";
 
@@ -1683,11 +1681,11 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                     filteredOrders
                       .slice((adminOrderPage - 1) * 50, adminOrderPage * 50)
                       .map((o) => {
-                        const rawVal = Math.round(Number(o.rawCommission || 0));
-                        const taxVal = o.taxAmount !== undefined && o.taxAmount !== null ? Math.round(Number(o.taxAmount)) : Math.round(rawVal * (taxRate / 100));
-                        const afterTaxVal = rawVal - taxVal;
-                        const userFinalVal = o.finalCommission !== undefined && o.finalCommission !== null ? Math.round(Number(o.finalCommission)) : Math.round(afterTaxVal * (customerSplitRate / 100));
-                        const adminProfitVal = afterTaxVal - userFinalVal;
+                        const rawVal = Math.round(Number(o.rawCommission || o.finalCommission || 0));
+                        const taxVal = Math.round(rawVal * (taxRate / 100));
+                        const afterTaxVal = Math.max(0, rawVal - taxVal);
+                        const userFinalVal = Math.round(afterTaxVal * (customerSplitRate / 100));
+                        const adminProfitVal = Math.max(0, afterTaxVal - userFinalVal);
 
                         const getOrderBuyerInfo = (orderObj) => {
                           if (!orderObj) return { name: "Khách ẩn", isAssigned: false, isZaloName: false };

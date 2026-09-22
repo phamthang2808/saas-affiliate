@@ -1107,7 +1107,7 @@ export function PublicLookupView({
                         <div className="text-right ml-auto">
                           <span className="text-[11px] font-semibold text-slate-500 mr-1">Hoa hồng:</span>
                           <span className="text-sm sm:text-base font-black text-orange-600 font-outfit">
-                            {formatMoney(getOrderUserCommission(order))}
+                            {formatMoney(order.rawCommission && Number(order.rawCommission) > 0 ? order.rawCommission : getOrderUserCommission(order))}
                           </span>
                         </div>
                       </div>

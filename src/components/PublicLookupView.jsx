@@ -19,6 +19,13 @@ export function PublicLookupView({
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [localSearch, setLocalSearch] = useState("");
 
+  // Toast Notification state
+  const [toast, setToast] = useState(null);
+  const notify = (msg, type = "success") => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 4000);
+  };
+
   // Bank Info form state
   const [selectedBank, setSelectedBank] = useState(BANKS[0]);
   const [isEditingBank, setIsEditingBank] = useState(false);
@@ -133,11 +140,11 @@ export function PublicLookupView({
     const cleanTargetId = targetZaloId || queryInput.trim() || lookupData?.query || "";
     if (!cleanTargetId) {
       setPinError("Không xác định được Zalo ID nhận mã OTP!");
-      return;
+      return false;
     }
     if (otpCountdown > 0) {
       setPinError(`Vui lòng đợi ${otpCountdown}s trước khi yêu cầu gửi lại mã OTP!`);
-      return;
+      return false;
     }
     setOtpSending(true);
     setPinError("");
@@ -154,11 +161,17 @@ export function PublicLookupView({
       const data = await res.json();
       if (res.ok) {
         setOtpCountdown(60);
+        notify("🔒 Đã gửi mã xác thực OTP 6 số về tin nhắn riêng Zalo của bạn!", "success");
+        return true;
       } else {
         setPinError(data.message || "Không thể gửi mã OTP");
+        notify(data.message || "Không thể gửi mã OTP", "error");
+        return false;
       }
     } catch (err) {
       setPinError("Lỗi kết nối máy chủ khi gửi mã OTP: " + err.message);
+      notify("Lỗi kết nối máy chủ khi gửi mã OTP", "error");
+      return false;
     } finally {
       setOtpSending(false);
     }
@@ -227,7 +240,7 @@ export function PublicLookupView({
 
         const data = await res.json();
         if (res.ok) {
-          alert("✅ " + (data.message || "Đã lưu thông tin tài khoản ngân hàng thành công!"));
+          notify("✅ " + (data.message || "Đã lưu thông tin tài khoản ngân hàng thành công!"), "success");
           setIsEditingBank(false);
           setBankName(finalBank);
           setPinModalOpen(false);
@@ -260,7 +273,7 @@ export function PublicLookupView({
 
         const data = await res.json();
         if (res.ok) {
-          alert("🎉 " + (data.message || "Yêu cầu rút tiền thành công! Vui lòng chờ Admin duyệt."));
+          notify("🎉 " + (data.message || "Yêu cầu rút tiền thành công! Vui lòng chờ Admin duyệt."), "success");
           setWithdrawAmount("");
           setPinModalOpen(false);
           handleLookup();
@@ -294,8 +307,10 @@ export function PublicLookupView({
       return;
     }
     setPinError("");
-    await requestZaloOtp();
-    setCreateStep(2);
+    const sent = await requestZaloOtp();
+    if (sent) {
+      setCreateStep(2);
+    }
   };
 
   const handleCreatePinComplete = async () => {
@@ -319,7 +334,7 @@ export function PublicLookupView({
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Lỗi khi kích hoạt mã PIN");
 
-      alert("🎉 Đã tạo mã PIN rút tiền 6 số thành công!");
+      notify("🎉 Đã tạo mã PIN rút tiền 6 số thành công!", "success");
       if (lookupData) lookupData.hasPin = true;
 
       if (pendingAction) {
@@ -372,7 +387,7 @@ export function PublicLookupView({
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Lỗi khi đặt lại mã PIN");
 
-      alert("🎉 Đã đặt lại mã PIN 6 số thành công!");
+      notify("🎉 Đã đặt lại mã PIN 6 số thành công!", "success");
       if (lookupData) lookupData.hasPin = true;
       setPinModalMode("ENTER_PIN");
       setInputPin("");
@@ -459,7 +474,30 @@ export function PublicLookupView({
   const adminSplitRate = 100 - (currentTenant?.taxRate || 10) - customerSplitRate;
 
   return (
-    <div className="space-y-5 animate-fade-in pb-12">
+    <div className="space-y-5 animate-fade-in pb-12 relative">
+      {/* Toast Notification Component */}
+      {toast && (
+        <div className={`fixed top-5 right-5 z-[9999] flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl border text-xs font-black transition-all animate-fade-in ${
+          toast.type === "success"
+            ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+            : toast.type === "warning"
+            ? "bg-amber-50 text-amber-800 border-amber-200"
+            : "bg-rose-50 text-rose-800 border-rose-200"
+        }`}>
+          <i className={
+            toast.type === "success"
+              ? "fa-solid fa-circle-check text-emerald-600 text-sm"
+              : toast.type === "warning"
+              ? "fa-solid fa-triangle-exclamation text-amber-600 text-sm"
+              : "fa-solid fa-circle-exclamation text-rose-600 text-sm"
+          }></i>
+          <span>{toast.msg}</span>
+          <button onClick={() => setToast(null)} className="ml-2 text-slate-400 hover:text-slate-600 cursor-pointer">
+            <i className="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      )}
+
       {/* Header Breadcrumb */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-200/80">
         <div>

@@ -5,6 +5,8 @@ import { APP_CONFIG } from "../config/api";
 // Standard default bot templates helper
 const CANONICAL_TEMPLATE_KEYS = [
   "template_link",
+  "template_link_tiktok",
+  "template_tiktok_not_configured",
   "template_welcome",
   "template_order_detail",
   "template_order_not_found",
@@ -21,79 +23,91 @@ const CANONICAL_TEMPLATE_KEYS = [
 
 const TEMPLATE_META = {
   template_link: {
-    title: "1. Mẫu tin nhắn Trả Link Mua Sắm Hoàn Tiền",
-    badge: "Tự động phản hồi khi thành viên gửi Link Shopee / TikTok",
+    title: "1. Mẫu tin nhắn Trả Link Mua Sắm Hoàn Tiền (Shopee)",
+    badge: "Tự động phản hồi khi thành viên gửi Link Shopee",
     icon: "fa-solid fa-link text-emerald-600",
-    desc: "Tin nhắn Bot tự động tạo link hoàn tiền và phản hồi ngay sau khi thành viên gửi 1 đường link sản phẩm vào nhóm Zalo."
+    desc: "Tin nhắn Bot tự động tạo link hoàn tiền Shopee và phản hồi ngay sau khi thành viên gửi link Shopee vào nhóm Zalo."
+  },
+  template_link_tiktok: {
+    title: "2. Mẫu tin nhắn Trả Link TikTok Shop (Khi có đủ API Key & Creator Username)",
+    badge: "Tự động phản hồi khi gửi link TikTok Shop và đã kết nối API",
+    icon: "fa-solid fa-music text-pink-600",
+    desc: "Tin nhắn Bot tự động tạo link tiếp thị TikTok và lấy hoa hồng chuẩn từ TikTok về khi Kênh đã nhập đủ API Key & Creator Username."
+  },
+  template_tiktok_not_configured: {
+    title: "3. Mẫu tin nhắn Báo Chưa Cấu Hình TikTok Shop (Khi thiếu API Key / Creator Username)",
+    badge: "Phản hồi khi gửi link TikTok nhưng chưa kết nối API",
+    icon: "fa-solid fa-triangle-exclamation text-amber-600",
+    desc: "Tin nhắn Bot phản hồi khi thành viên gửi link TikTok Shop nhưng Kênh chưa nhập đủ cả 2 thông tin TikTok API Key & Creator Username."
   },
   template_welcome: {
-    title: "2. Mẫu tin nhắn Chào Mừng Thành Viên Mới Gia Nhập Nhóm",
+    title: "4. Mẫu tin nhắn Chào Mừng Thành Viên Mới Gia Nhập Nhóm",
     badge: "Tự động khi có người mới vào nhóm Zalo",
     icon: "fa-solid fa-handshake text-blue-600",
     desc: "Tin nhắn Bot tag tên chào mừng và hướng dẫn đọc bài ghim khi có thành viên mới vào nhóm."
   },
   template_order_detail: {
-    title: "3. Mẫu tin nhắn Danh Sách Các Đơn Hàng Đã Mua (Lệnh /donhang)",
+    title: "5. Mẫu tin nhắn Danh Sách Các Đơn Hàng Đã Mua (Lệnh /donhang)",
     command: "/donhang hoặc /donhang2, /donhang3...",
     icon: "fa-solid fa-box text-blue-600",
     desc: "Tin nhắn Bot liệt kê danh sách mã đơn hàng, phân trang 5 đơn/trang và hướng dẫn gõ /donhang2, /donhang3 khi thành viên gõ lệnh /donhang."
   },
   template_order_not_found: {
-    title: "4. Mẫu tin nhắn Báo Chưa Có Đơn Hàng Nào (Khi Chưa Có Đơn)",
+    title: "6. Mẫu tin nhắn Báo Chưa Có Đơn Hàng Nào (Khi Chưa Có Đơn)",
     command: "/donhang hoặc #donhang (khi CHƯA CÓ đơn)",
     icon: "fa-solid fa-box-open text-rose-600",
     desc: "Tin nhắn thông báo khi thành viên gõ lệnh /donhang lúc chưa có đơn nào."
   },
   template_wallet: {
-    title: "5. Mẫu tin nhắn Tổng Quan Ví Tiền & Hoa Hồng (Lệnh /vitien)",
+    title: "7. Mẫu tin nhắn Tổng Quan Ví Tiền & Hoa Hồng (Lệnh /vitien)",
     command: "/vitien hoặc #vitien",
     icon: "fa-solid fa-wallet text-emerald-600",
     desc: "Tin nhắn Bot tổng hợp thông tin ví tiền, tổng hoa hồng, đang chờ xử lý, đã hoàn thành và đã nhận khi gõ /vitien."
   },
   template_lookup: {
-    title: "6. Mẫu tin nhắn Tra Cứu Đơn Hàng & Ví Tiền (Link Web 1 Chạm - Lệnh /tracuu)",
+    title: "8. Mẫu tin nhắn Tra Cứu Đơn Hàng & Ví Tiền (Link Web 1 Chạm - Lệnh /tracuu)",
     command: "/tracuu hoặc #tracuu",
     icon: "fa-solid fa-magnifying-glass text-purple-600",
     desc: "Tin nhắn Bot phản hồi kèm đường link Web tra cứu cá nhân rút gọn 1 chạm khi thành viên gõ lệnh /tracuu."
   },
   template_save_bank_success: {
-    title: "7. Mẫu tin nhắn Lưu Số Tài Khoản Thành Công (ĐÚNG cú pháp)",
+    title: "9. Mẫu tin nhắn Lưu Số Tài Khoản Thành Công (ĐÚNG cú pháp)",
     command: "/stk_[NGÂN_HÀNG]_[STK] (khi ĐÚNG cú pháp)",
     icon: "fa-solid fa-credit-card text-emerald-600",
     desc: "Tin nhắn phản hồi khi thành viên lưu hoặc cập nhật thành công số tài khoản ngân hàng nhận tiền."
   },
   template_invalid_bank_syntax: {
-    title: "8. Mẫu tin nhắn Báo Sai Cú Pháp Lưu Số Tài Khoản (SAI cú pháp)",
+    title: "10. Mẫu tin nhắn Báo Sai Cú Pháp Lưu Số Tài Khoản (SAI cú pháp)",
     command: "/stk (khi SAI cú pháp)",
     icon: "fa-solid fa-credit-card text-rose-500",
     desc: "Tin nhắn hướng dẫn lại cú pháp lưu số tài khoản ngân hàng khi người dùng gõ sai cú pháp /stk."
   },
   template_withdraw_success: {
-    title: "9. Mẫu tin nhắn Yêu Cầu Rút Tiền Thành Công",
+    title: "11. Mẫu tin nhắn Yêu Cầu Rút Tiền Thành Công",
     command: "/ruttien hoặc /rut (khi ĐỦ hạn mức)",
     icon: "fa-solid fa-paper-plane text-emerald-600",
     desc: "Tin nhắn thông báo khi thành viên lập lệnh rút tiền thành công và gửi thông tin STK chờ Trưởng Nhóm duyệt."
   },
   template_withdraw_zero: {
-    title: "10. Mẫu tin nhắn Báo Chưa Đủ Hạn Mức Rút Tiền",
+    title: "12. Mẫu tin nhắn Báo Chưa Đủ Hạn Mức Rút Tiền",
     command: "/ruttien hoặc /rut (khi CHƯA ĐỦ hạn mức)",
     icon: "fa-solid fa-wallet text-amber-600",
     desc: "Tin nhắn thông báo khi số dư khả dụng của thành viên chưa đạt hạn mức tối thiểu để lập lệnh rút."
   },
   template_approve_payout: {
-    title: "11. Mẫu tin nhắn Thông Báo Duyệt Rút Tiền Thành Công",
+    title: "13. Mẫu tin nhắn Thông Báo Duyệt Rút Tiền Thành Công",
     command: "/duyet_[MÃ_ID] (Chỉ Trưởng Nhóm)",
     icon: "fa-solid fa-circle-check text-purple-600",
     desc: "Tin nhắn thông báo trong nhóm Zalo khi Trưởng Nhóm thực hiện lệnh duyệt tiền thành công cho thành viên."
   },
   template_help: {
-    title: "12. Mẫu tin nhắn Trợ Giúp & Danh Sách Các Câu Lệnh",
+    title: "14. Mẫu tin nhắn Trợ Giúp & Danh Sách Các Câu Lệnh",
     command: "/help hoặc #help",
     icon: "fa-solid fa-circle-question text-indigo-600",
     desc: "Danh sách tổng hợp toàn bộ các câu lệnh Bot hỗ trợ để gửi cho thành viên khi họ cần trợ giúp."
   },
   template_invalid_command: {
-    title: "13. Mẫu tin nhắn Phản Hồi Khi Gõ Sai Cú Pháp Lệnh",
+    title: "15. Mẫu tin nhắn Phản Hồi Khi Gõ Sai Cú Pháp Lệnh",
     badge: "Khi người dùng gõ sai lệnh",
     icon: "fa-solid fa-triangle-exclamation text-amber-500",
     desc: "Tin nhắn nhắc nhở kèm gợi ý gõ /help khi người dùng gõ một câu lệnh không có trong hệ thống."
@@ -105,6 +119,8 @@ const getStandardBotTemplates = (tenant) => {
   const splitRate = tenant?.customerSplitRate || 80;
   return {
     template_link: `@{ten_zalo} mua qua link này để được hoàn hoa hồng nha 🥰\n🛍️ 1. {ten_san_pham}\n🧧 Hoa hồng dự kiến {tong_hoahong_phantram}% (~{tong_hoahong_tien})\n🔗 {link_mua_sam}\n📌 Lưu ý:\n1. Trước khi mua nên xóa giỏ hàng cũ\n2. Tránh xem Live hoặc Video Shopee trước và trong lúc mua\n3. Nên bấm 2-3 lần vào link trước khi mua\n4. Gõ /donhang hoặc /tracuu để kiểm tra đơn vào 9H hôm sau`,
+    template_link_tiktok: `Hi @{ten_zalo}, link của sếp đây ạ:\n📦 {ten_san_pham}\n💵 Giá tham khảo: {gia_san_pham}\n🔗 Link: {link_mua_sam}\n💵 Tổng hoa hồng: {tong_hoahong_phantram}% ({tong_hoahong_tien})\n💡 Mẹo nhỏ nhận hoa hồng chuẩn 100%: Xóa sp cũ trong giỏ ➔ Bấm link vào App ➔ Mua ngay (không xem Live/Video giữa chừng) nhé sếp ơi!`,
+    template_tiktok_not_configured: `@{ten_zalo} Tính năng chuyển đổi link TikTok Shop hiện đang sắp ra mắt! 🚀\nHệ thống hiện tại hỗ trợ chuyển đổi link Shopee, bạn vui lòng gửi link Shopee giúp mình nhé!`,
     template_welcome: `Hi, chào @{ten_zalo}\n🎉 Chào mừng bạn đã tham gia nhóm {ten_nhom}!\n📌 Bạn vui lòng đọc kỹ BÀI GHIM của nhóm hoặc gõ lệnh /help để xem hướng dẫn cách gửi link mua sắm và nhận hoàn {ty_le_hoan}% hoa hồng nhé! 🥰`,
     template_order_detail: `@{ten_zalo} 🛒 DANH SÁCH ĐƠN HÀNG (Trang 1/3 - Tổng 11 đơn):\n\n1. Mã đơn: 2609058Y3A5UX3\n   📦 Áo Thun Nữ Cổ Tròn Sọc Dệt Kim Thêu...\n   💰 Hoa hồng: 1.773đ | Trạng thái: Hoàn thành\n\n2. Mã đơn: 260831RJR3QAA2\n   📦 Calem.Club- Quần Jeans Ống Suông Ve...\n   💰 Hoa hồng: 7.970đ | Trạng thái: Hoàn thành\n\n💡 Nhắn /donhang2 để xem trang tiếp theo.\n👉 Tra cứu & Rút tiền trên Web: {link_tra_cuu}`,
     template_order_not_found: `@{ten_zalo} 🛒 Bạn chưa có đơn hàng nào trên hệ thống!`,
@@ -167,11 +183,9 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
   const [newBotZaloId, setNewBotZaloId] = useState("");
   const [newBotZaloName, setNewBotZaloName] = useState("");
   const [newBotName, setNewBotName] = useState("");
-  const [isConnectingBot, setIsConnectingBot] = useState(false);
-
   const handleSyncTiktokManual = async () => {
     if (!activeTenant?.slug) {
-      alert("❌ Chưa xác định được Kênh Trưởng Nhóm!");
+      showNotification("❌ Chưa xác định được Kênh Trưởng Nhóm!", "error");
       return;
     }
     setIsSyncingTiktok(true);
@@ -262,7 +276,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
   const handleSaveSettings = async (e) => {
     if (e) e.preventDefault();
     if (!activeTenant?.slug) {
-      alert("❌ Chưa xác định được Kênh Trưởng Nhóm! Vui lòng chọn Kênh hoặc liên hệ Super Admin.");
+      showNotification("❌ Chưa xác định được Kênh Trưởng Nhóm! Vui lòng chọn Kênh hoặc liên hệ Super Admin.", "error");
       return;
     }
     setIsSavingSettings(true);
@@ -276,13 +290,14 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
       const data = await res.json();
       if (res.ok) {
         setSettingsSaveMessage("✅ Đã lưu cấu hình điều kiện rút tiền & tỷ lệ chia thành công!");
+        showNotification("✅ Đã lưu cấu hình điều kiện rút tiền & tỷ lệ chia thành công!", "success");
         setTimeout(() => setSettingsSaveMessage(""), 4000);
         fetchTenantData();
       } else {
-        alert("❌ " + (data.message || "Lỗi lưu cấu hình"));
+        showNotification("❌ " + (data.message || "Lỗi lưu cấu hình"), "error");
       }
     } catch (err) {
-      alert("❌ Lỗi kết nối máy chủ: " + err.message);
+      showNotification("❌ Lỗi kết nối máy chủ: " + err.message, "error");
     } finally {
       setIsSavingSettings(false);
     }

@@ -9,18 +9,46 @@ export function PricingContactView() {
     note: "",
   });
   const [submitted, setSubmitted] = useState(false);
+  const [toast, setToast] = useState(null);
+
+  const notify = (msg, type = "success") => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 4000);
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.name || !formData.zalo) {
-      alert("Vui lòng điền Họ tên và Số Zalo liên hệ!");
+      notify("Vui lòng điền Họ tên và Số Zalo liên hệ!", "error");
       return;
     }
     setSubmitted(true);
   };
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto pb-12">
+    <div className="space-y-6 max-w-5xl mx-auto pb-12 relative">
+      {/* Toast Banner */}
+      {toast && (
+        <div className={`fixed top-5 right-5 z-[9999] flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl border text-xs font-black transition-all animate-fade-in ${
+          toast.type === "success"
+            ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+            : toast.type === "warning"
+            ? "bg-amber-50 text-amber-800 border-amber-200"
+            : "bg-rose-50 text-rose-800 border-rose-200"
+        }`}>
+          <i className={
+            toast.type === "success"
+              ? "fa-solid fa-circle-check text-emerald-600 text-sm"
+              : toast.type === "warning"
+              ? "fa-solid fa-triangle-exclamation text-amber-600 text-sm"
+              : "fa-solid fa-circle-exclamation text-rose-600 text-sm"
+          }></i>
+          <span>{toast.msg}</span>
+          <button onClick={() => setToast(null)} className="ml-2 text-slate-400 hover:text-slate-600 cursor-pointer">
+            <i className="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      )}
       {/* Hero Header */}
       <div className="bg-white rounded-3xl border border-slate-200/80 p-6 md:p-8 shadow-xs text-center space-y-3">
         <div className="inline-flex items-center gap-2 bg-orange-50 border border-orange-200 text-orange-700 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider">

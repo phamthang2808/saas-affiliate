@@ -735,6 +735,21 @@ export function PublicLookupView({
                     </select>
                   </div>
 
+                  {selectedBank.code === "OTHER" && (
+                    <div>
+                      <label className="block text-xs font-bold text-slate-600 mb-1">
+                        Tên Ngân hàng khác (Nhập thủ công)
+                      </label>
+                      <input
+                        type="text"
+                        value={customBankName}
+                        onChange={(e) => setCustomBankName(e.target.value)}
+                        placeholder="VD: MBBank, VIB, TPBank..."
+                        className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:border-orange-500 outline-hidden font-mono"
+                      />
+                    </div>
+                  )}
+
                   <div>
                     <label className="block text-xs font-bold text-slate-600 mb-1">
                       Số tài khoản (STK)

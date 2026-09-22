@@ -1780,10 +1780,10 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                                     setSelectedOrderToAssign(o);
                                     setAssignZaloId(o.zaloId || buyer.zaloId || "");
                                   }}
-                                  className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-2.5 py-0.5 rounded-lg border border-slate-200 cursor-pointer transition shadow-2xs"
+                                  className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-700 hover:text-slate-900 bg-slate-100/90 hover:bg-slate-200/90 px-2.5 py-1 rounded-md border border-slate-200/80 cursor-pointer transition shadow-2xs"
                                   title="Đổi / Gán đơn này cho thành viên Zalo"
                                 >
-                                  <i className="fa-solid fa-link text-[10px] text-slate-400"></i> Đổi người nhận
+                                  <i className="fa-solid fa-link text-[10px] text-slate-500"></i> Đổi người nhận
                                 </button>
                               </div>
                             </td>

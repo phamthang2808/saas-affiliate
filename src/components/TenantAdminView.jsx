@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { formatMoney, formatDate } from "../utils/formatters";
 import { APP_CONFIG } from "../config/api";
 import { MemberDetailModal } from "./MemberDetailModal";
+import { TemplatePreviewModal } from "./TemplatePreviewModal";
 
 // Standard default bot templates helper
 const CANONICAL_TEMPLATE_KEYS = [
@@ -231,6 +232,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
   const [isSavingTemplates, setIsSavingTemplates] = useState(false);
   const [templateSaveMessage, setTemplateSaveMessage] = useState("");
   const [templateSubTab, setTemplateSubTab] = useState("all");
+  const [previewModalKey, setPreviewModalKey] = useState(null);
 
   // Dynamic Settings state
   const [settings, setSettings] = useState({
@@ -2432,8 +2434,17 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                       )}
                       <button
                         type="button"
+                        onClick={() => setPreviewModalKey(key)}
+                        className="px-3 py-1 text-[11px] font-bold text-purple-700 hover:text-purple-900 bg-white hover:bg-purple-50 border border-purple-200 hover:border-purple-300 rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-2xs ml-1"
+                        title="Xem mô phỏng tin nhắn Bot Zalo thực tế kèm giải nghĩa biến động"
+                      >
+                        <i className="fa-solid fa-eye text-purple-600 text-[10px]"></i>
+                        <span>Ví dụ thực tế</span>
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => handleResetTemplate(key)}
-                        className="px-3 py-1 text-[11px] font-bold text-slate-500 hover:text-orange-600 bg-white hover:bg-orange-50 border border-slate-200 hover:border-orange-200 rounded-xl transition flex items-center gap-1 cursor-pointer shadow-2xs ml-1"
+                        className="px-3 py-1 text-[11px] font-bold text-slate-500 hover:text-orange-600 bg-white hover:bg-orange-50 border border-slate-200 hover:border-orange-200 rounded-xl transition flex items-center gap-1 cursor-pointer shadow-2xs"
                         title="Khôi phục mẫu này về mặc định hệ thống"
                       >
                         <i className="fa-solid fa-rotate-left text-[10px]"></i>
@@ -2722,6 +2733,19 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
             </form>
           </div>
         </div>
+      )}
+
+      {/* Modal Xem trước ví dụ tin nhắn thực tế trên Zalo */}
+      {previewModalKey && (
+        <TemplatePreviewModal
+          isOpen={!!previewModalKey}
+          onClose={() => setPreviewModalKey(null)}
+          templateKey={previewModalKey}
+          templateContent={botTemplates[previewModalKey] || defaultTemplates[previewModalKey] || ""}
+          templateMeta={TEMPLATE_META[previewModalKey] || { title: previewModalKey }}
+          tenant={activeTenant}
+          settings={settings}
+        />
       )}
     </div>
   );

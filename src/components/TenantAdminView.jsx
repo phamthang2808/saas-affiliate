@@ -1026,11 +1026,13 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                   onClick={() => setActiveTab(tab.key)}
                   className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer border ${tab.colSpan} ${
                     isActive
-                      ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white border-transparent shadow-md shadow-orange-500/20 scale-[1.02]"
+                      ? tab.key === "tiktok"
+                        ? "bg-slate-900 text-white border-transparent shadow-md shadow-slate-900/20 scale-[1.02]"
+                        : "bg-gradient-to-r from-orange-500 to-amber-500 text-white border-transparent shadow-md shadow-orange-500/20 scale-[1.02]"
                       : "bg-slate-50 text-slate-700 hover:bg-orange-50 hover:text-orange-900 border-slate-200/80 shadow-2xs"
                   }`}
                 >
-                  <i className={tab.icon}></i>
+                  <i className={`${tab.icon} ${tab.key === "tiktok" && !isActive ? "text-slate-900 font-bold" : ""}`}></i>
                   <span className="truncate">{tab.label}</span>
                   {tab.badge > 0 && (
                     <span className="bg-rose-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold ml-1 animate-bounce shrink-0">
@@ -1320,12 +1322,11 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
       {/* ===================== TAB 5 & 6: ĐƠN SHOPEE & TIKTOK ===================== */}
       {(activeTab === "shopee" || activeTab === "tiktok") && !isLoading && (
         <div className="space-y-6">
-          {/* TIKTOK SYNC CONTROL BANNER */}
-          {/* BANNER TIKTOK SHOP - NỀN SÁNG ĐỒNG BỘ MÀU SẮC GIAO DIỆN */}
+          {/* BANNER TIKTOK SHOP - NỀN SÁNG ĐỒNG BỘ MÀU SẮC GIAO DIỆN MÀU ĐEN SANG TRỌNG */}
           {activeTab === "tiktok" && (
-            <div className="bg-gradient-to-br from-rose-50/90 via-purple-50/40 to-white rounded-3xl p-5 sm:p-6 text-slate-800 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4 border border-rose-200/80">
+            <div className="bg-gradient-to-br from-slate-100 via-slate-50 to-white rounded-3xl p-5 sm:p-6 text-slate-800 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4 border border-slate-200/90">
               <div className="flex items-center gap-3.5">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-slate-900 via-rose-600 to-purple-600 text-white flex items-center justify-center text-2xl shrink-0 shadow-md shadow-rose-500/20">
+                <div className="w-12 h-12 rounded-2xl bg-black text-white flex items-center justify-center text-2xl shrink-0 shadow-md shadow-slate-900/20">
                   <i className="fa-brands fa-tiktok"></i>
                 </div>
                 <div>
@@ -1333,7 +1334,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                     <h3 className="font-extrabold text-sm tracking-wide text-slate-900 font-display">
                       Quản lý Đơn Hàng TikTok Shop — Kênh {groupDisplayName}
                     </h3>
-                    <span className="bg-rose-100 text-rose-800 text-[9px] font-black px-2.5 py-0.5 rounded-full border border-rose-300">
+                    <span className="bg-slate-900 text-white text-[9px] font-black px-2.5 py-0.5 rounded-full border border-slate-800">
                       ⚡ TỰ ĐỘNG SYNC RIOHUB 60S
                     </span>
                   </div>
@@ -1348,7 +1349,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                   type="button"
                   onClick={handleSyncTiktokManual}
                   disabled={isSyncingTiktok}
-                  className="px-5 py-2.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-2xl text-xs font-black transition flex items-center gap-2 shadow-md shadow-orange-500/20 cursor-pointer disabled:opacity-50"
+                  className="px-5 py-2.5 bg-slate-900 hover:bg-black text-white rounded-2xl text-xs font-black transition flex items-center gap-2 shadow-md shadow-slate-900/20 cursor-pointer disabled:opacity-50"
                 >
                   {isSyncingTiktok ? (
                     <>
@@ -1601,7 +1602,11 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
 
             <button
               onClick={() => handleExportOrdersExcel(activeTab === "tiktok" ? "TikTok" : "Shopee")}
-              className="px-4 py-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-2xl text-xs font-black transition flex items-center gap-2 shadow-md shadow-orange-500/20 cursor-pointer"
+              className={`px-4 py-2 text-white rounded-2xl text-xs font-black transition flex items-center gap-2 shadow-md cursor-pointer ${
+                activeTab === "tiktok"
+                  ? "bg-slate-900 hover:bg-black shadow-slate-900/20"
+                  : "bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 shadow-orange-500/20"
+              }`}
             >
               <i className="fa-solid fa-file-excel text-sm"></i> Xuất Excel {activeTab === "tiktok" ? "TikTok" : "Shopee"} ({filteredOrders.length})
             </button>

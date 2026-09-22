@@ -2564,37 +2564,16 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
               />
             </div>
 
-            <div className="md:col-span-2 p-4 bg-purple-50/60 rounded-2xl border border-purple-200/80 shadow-2xs space-y-1.5">
-              <label className="block text-xs font-black text-purple-950 flex items-center justify-between flex-wrap gap-1">
-                <span className="flex items-center gap-1.5">
-                  <i className="fa-solid fa-user-shield text-purple-600"></i>
-                  <span>Zalo ID Trưởng Nhóm / Admin (Quyền duyệt tiền):</span>
-                </span>
-                <span className="text-[10px] text-purple-700 font-bold bg-white px-2 py-0.5 rounded-md border border-purple-200 shadow-2xs">
-                  Cấp quyền lệnh /duyet
-                </span>
-              </label>
+            <div className="md:col-span-2">
+              <label className="block text-xs font-black text-slate-700 mb-1.5">Zalo ID Trưởng Nhóm (Admin):</label>
               <input
                 type="text"
-                placeholder="Ví dụ: 5128074989288259190 hoặc Phạm Thắng (có thể nhập nhiều ID cách nhau bằng dấu phẩy)"
+                placeholder="Nhập Zalo ID của Trưởng Nhóm (Admin)..."
                 value={settings.adminZaloId || ""}
                 onChange={(e) => setSettings({ ...settings, adminZaloId: e.target.value })}
-                className="w-full bg-white border border-purple-200 rounded-2xl px-4 py-2.5 text-xs font-mono font-bold text-purple-950 outline-none focus:border-purple-500 shadow-2xs transition"
+                className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-orange-500 transition"
               />
-              <div className="flex items-center justify-between flex-wrap gap-2 text-[11px] text-purple-900/80 mt-1 font-medium">
-                <span>
-                  💡 Điền Zalo ID (hoặc Tên Zalo) của Trưởng Nhóm để Bot nhận diện và cấp quyền duyệt lệnh <code className="font-bold text-purple-950 bg-purple-200/70 px-1 py-0.5 rounded">/duyet_[MÃ_ID]</code> trong nhóm Zalo.
-                </span>
-                {user?.zaloId && (
-                  <button
-                    type="button"
-                    onClick={() => setSettings({ ...settings, adminZaloId: user.zaloId })}
-                    className="text-[10px] font-bold text-purple-700 hover:text-purple-950 underline cursor-pointer"
-                  >
-                    👉 Dùng Zalo ID tài khoản đang đăng nhập ({user.zaloId})
-                  </button>
-                )}
-              </div>
+              <span className="text-[11px] text-slate-400 mt-1 block">Zalo ID của Trưởng Nhóm dùng để kiểm tra quyền duyệt lệnh /duyet trong nhóm Zalo.</span>
             </div>
 
             <div className="md:col-span-2">

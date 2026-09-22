@@ -811,6 +811,45 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
     return true;
   });
 
+  // Helper parse order timestamp safely for sorting
+  const parseOrderTimeForSort = (o) => {
+    if (!o) return 0;
+    const val = o.orderDate || o.createdAt;
+    if (!val) return o.id ? Number(o.id) || 0 : 0;
+    if (typeof val === "number") return val;
+    if (Array.isArray(val)) {
+      const [y, m, d, h = 0, min = 0, s = 0] = val;
+      return new Date(y, m - 1, d, h, min, s).getTime();
+    }
+    if (typeof val === "string") {
+      const str = val.trim();
+      if (str.includes("/")) {
+        const parts = str.split(/[\s/:]+/);
+        if (parts.length >= 3) {
+          const d = parseInt(parts[0], 10);
+          const m = parseInt(parts[1], 10) - 1;
+          const y = parseInt(parts[2], 10);
+          const h = parts[3] ? parseInt(parts[3], 10) : 0;
+          const min = parts[4] ? parseInt(parts[4], 10) : 0;
+          const s = parts[5] ? parseInt(parts[5], 10) : 0;
+          const time = new Date(y, m, d, h, min, s).getTime();
+          if (!isNaN(time)) return time;
+        }
+      }
+      const parsed = new Date(str).getTime();
+      if (!isNaN(parsed)) return parsed;
+    }
+    return o.id ? Number(o.id) || 0 : 0;
+  };
+
+  // Sort filtered orders descending by order date (newest first)
+  filteredOrders.sort((a, b) => {
+    const timeA = parseOrderTimeForSort(a);
+    const timeB = parseOrderTimeForSort(b);
+    if (timeA !== timeB) return timeB - timeA;
+    return (Number(b.id) || 0) - (Number(a.id) || 0);
+  });
+
   // Calculate order totals
   const totalRawSum = filteredOrders.reduce((sum, o) => sum + Math.round(Number(o.rawCommission || 0)), 0);
   const totalTaxSum = filteredOrders.reduce((sum, o) => {
@@ -1330,17 +1369,9 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                   <i className="fa-brands fa-tiktok"></i>
                 </div>
                 <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-extrabold text-sm tracking-wide text-slate-900 font-display">
-                      Quản lý Đơn Hàng TikTok Shop — Kênh {groupDisplayName}
-                    </h3>
-                    <span className="bg-slate-900 text-white text-[9px] font-black px-2.5 py-0.5 rounded-full border border-slate-800">
-                      ⚡ TỰ ĐỘNG SYNC RIOHUB 60S
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-500 font-medium mt-0.5">
-                    Đơn hàng TikTok được tự động kéo về từ RioHub API và tự động khớp SubID thành viên Kênh {groupDisplayName}
-                  </p>
+                  <h3 className="font-extrabold text-sm tracking-wide text-slate-900 font-display">
+                    Quản lý Đơn Hàng TikTok Shop — Kênh {groupDisplayName}
+                  </h3>
                 </div>
               </div>
 

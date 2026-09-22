@@ -472,6 +472,43 @@ export function PublicLookupView({
     return true;
   });
 
+  // Sort filtered orders descending by order date (newest first)
+  filteredOrders.sort((a, b) => {
+    const parseOrderTime = (o) => {
+      if (!o) return 0;
+      const val = o.orderDate || o.createdAt;
+      if (!val) return o.id ? Number(o.id) || 0 : 0;
+      if (typeof val === "number") return val;
+      if (Array.isArray(val)) {
+        const [y, m, d, h = 0, min = 0, s = 0] = val;
+        return new Date(y, m - 1, d, h, min, s).getTime();
+      }
+      if (typeof val === "string") {
+        const str = val.trim();
+        if (str.includes("/")) {
+          const parts = str.split(/[\s/:]+/);
+          if (parts.length >= 3) {
+            const d = parseInt(parts[0], 10);
+            const m = parseInt(parts[1], 10) - 1;
+            const y = parseInt(parts[2], 10);
+            const h = parts[3] ? parseInt(parts[3], 10) : 0;
+            const min = parts[4] ? parseInt(parts[4], 10) : 0;
+            const s = parts[5] ? parseInt(parts[5], 10) : 0;
+            const time = new Date(y, m, d, h, min, s).getTime();
+            if (!isNaN(time)) return time;
+          }
+        }
+        const parsed = new Date(str).getTime();
+        if (!isNaN(parsed)) return parsed;
+      }
+      return o.id ? Number(o.id) || 0 : 0;
+    };
+    const timeA = parseOrderTime(a);
+    const timeB = parseOrderTime(b);
+    if (timeA !== timeB) return timeB - timeA;
+    return (Number(b.id) || 0) - (Number(a.id) || 0);
+  });
+
   const customerSplitRate = currentTenant?.customerSplitRate || 80;
   const adminSplitRate = 100 - (currentTenant?.taxRate || 10) - customerSplitRate;
 

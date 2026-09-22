@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /quan-tri
+Disallow: /super-admin
+Disallow: /api/
+
+Sitemap: https://28affihub.com/sitemap.xml

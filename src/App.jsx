@@ -49,12 +49,51 @@ export default function App() {
   });
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
+  // Dynamic SEO Title & Meta Description based on active view and tenant
+  useEffect(() => {
+    const tenantName = currentTenant?.name || "28AffiHub";
+    let title = "";
+    let desc = "";
+
+    switch (currentView) {
+      case "gioi-thieu":
+        title = "28AffiHub — Nền Tảng Cho Thuê Bot Zalo Affiliate & Website Tra Cứu Hoàn Tiền Tự Động";
+        desc = "Hạ tầng SaaS chuyên nghiệp cho thuê Bot Zalo Affiliate Shopee, TikTok Shop và tạo Website Affiliate hoàn tiền tự động 24/7.";
+        break;
+      case "tra-cuu":
+        title = `Tra Cứu Đơn Hàng & Ví Tiền Hoàn Tiền Affiliate — ${tenantName}`;
+        desc = `Cổng tra cứu đơn hàng Shopee, TikTok Shop và quản lý ví hoa hồng khả dụng, rút tiền 1 chạm tại ${tenantName}.`;
+        break;
+      case "bao-gia":
+        title = "Bảng Giá Dịch Vụ Cho Thuê Bot Zalo Affiliate & Tạo Website Riêng — 28AffiHub";
+        desc = "Bảng giá thuê Bot Zalo tự động tạo link hoàn tiền và hạ tầng Website Affiliate riêng cho Trưởng Nhóm, KOC, KOL.";
+        break;
+      case "huong-dan":
+        title = `Hướng Dẫn Mua Sắm Nhận Hoàn Tiền & Quy Trình Vận Hành — ${tenantName}`;
+        desc = `Xem hướng dẫn chi tiết cách gửi link Shopee, TikTok Shop vào nhóm Zalo để nhận hoàn tiền hoa hồng tự động tại ${tenantName}.`;
+        break;
+      case "tenant-admin":
+        title = `Bảng Quản Trị Trưởng Nhóm & Đối Soát Đơn Hàng — ${tenantName}`;
+        desc = `Quản trị đơn hàng, cấu hình tỷ lệ chia hoa hồng, duyệt lệnh rút tiền và cài đặt Bot Zalo tại ${tenantName}.`;
+        break;
+      case "super-admin":
+        title = "Super Admin — Quản Trị Hệ Thống Nền Tảng 28AffiHub";
+        desc = "Bảng điều khiển quản trị trung tâm SaaS 28AffiHub.";
+        break;
+      default:
+        title = `${tenantName} — Hệ Thống Đối Soát & Hoàn Tiền Affiliate Tự Động`;
+        desc = "Nền tảng cho thuê Bot Zalo Affiliate và tạo Website hoàn tiền tự động Shopee, TikTok Shop.";
+    }
+
+    document.title = title;
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) {
+      metaDesc.setAttribute("content", desc);
+    }
+  }, [currentView, currentTenant]);
+
   // Fetch tenants on mount & parse URL slug / environment config
   useEffect(() => {
-    // Set dynamic document title if configured
-    if (APP_CONFIG.tenant.brandTitle) {
-      document.title = APP_CONFIG.tenant.brandTitle;
-    }
 
     const fetchTenants = async () => {
       try {

@@ -327,6 +327,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
       .replace(/\{completed_commission\}/g, "{hoahong_dahoanthanh}")
       .replace(/\{received_commission\}/g, "{hoahong_danhan}")
       .replace(/\{balance\}/g, "{so_du_vi}")
+      .replace(/\{holding_days\}/g, "{so_ngay_giu}")
       .replace(/\{order_id\}/g, "{ma_don_hang}")
       .replace(/\{command\}/g, "{lenh_sai}");
   };
@@ -364,12 +365,23 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
           custom.template_wallet = custom.template_wallet_has_orders;
         }
 
+        // Tự động nâng cấp mẫu cũ "VÍ TIỀN CỦA BẠN" sang mẫu mặc định chuẩn mới
+        if (!custom.template_wallet || String(custom.template_wallet).includes("VÍ TIỀN CỦA BẠN")) {
+          custom.template_wallet = defs.template_wallet || standard.template_wallet;
+        }
+        if (custom.template_wallet_has_orders && String(custom.template_wallet_has_orders).includes("VÍ TIỀN CỦA BẠN")) {
+          custom.template_wallet_has_orders = defs.template_wallet || standard.template_wallet;
+        }
+
         const merged = { ...defs };
         CANONICAL_TEMPLATE_KEYS.forEach((k) => {
           if (custom[k] !== undefined && custom[k] !== null && String(custom[k]).trim() !== "") {
             merged[k] = convertEnglishToVietnamesePlaceholders(custom[k]);
           }
         });
+        if (merged.template_wallet && String(merged.template_wallet).includes("VÍ TIỀN CỦA BẠN")) {
+          merged.template_wallet = defs.template_wallet || standard.template_wallet;
+        }
         setBotTemplates(merged);
       } else {
         setBotTemplates(standard);
@@ -591,14 +603,20 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
 
   const handleResetTemplate = (key) => {
     if (!window.confirm("Khôi phục mẫu này về bản MẶC ĐỊNH CHUẨN của hệ thống?")) return;
-    if (defaultTemplates[key]) {
-      setBotTemplates((prev) => ({ ...prev, [key]: defaultTemplates[key] }));
+    const std = getStandardBotTemplates(activeTenant);
+    let defVal = defaultTemplates[key] || std[key];
+    if (key === "template_wallet" && (!defVal || String(defVal).includes("VÍ TIỀN CỦA BẠN"))) {
+      defVal = std.template_wallet;
+    }
+    if (defVal) {
+      setBotTemplates((prev) => ({ ...prev, [key]: defVal }));
     }
   };
 
   const handleResetAllTemplates = () => {
     if (!window.confirm("Bạn có chắc chắn muốn khôi phục TẤT CẢ các mẫu tin nhắn về mặc định của hệ thống?")) return;
-    setBotTemplates({ ...defaultTemplates });
+    const std = getStandardBotTemplates(activeTenant);
+    setBotTemplates({ ...std, ...defaultTemplates, template_wallet: std.template_wallet });
   };
 
   useEffect(() => {
@@ -2308,15 +2326,39 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-[11px]">
               <div className="p-2.5 bg-white rounded-xl border border-purple-100 flex flex-col justify-between shadow-2xs">
                 <div><code className="font-bold text-purple-700">@{`{ten_zalo}`}</code>: Tag tên Zalo thành viên</div>
-                <div className="text-[10px] text-purple-900/70 font-semibold bg-purple-50 px-2 py-1 rounded-lg mt-1.5">👉 VD khi Bot gửi: <span className="font-bold text-purple-950">@Bảo Đỗ</span></div>
+                <div className="text-[10px] text-purple-900/70 font-semibold bg-purple-50 px-2 py-1 rounded-lg mt-1.5">👉 VD: <span className="font-bold text-purple-950">@Phạm Thắng</span></div>
               </div>
               <div className="p-2.5 bg-white rounded-xl border border-purple-100 flex flex-col justify-between shadow-2xs">
-                <div><code className="font-bold text-purple-700">{`{link_mua_sam}`}</code>: Link mua sắm hoàn tiền</div>
-                <div className="text-[10px] text-purple-900/70 font-semibold bg-purple-50 px-2 py-1 rounded-lg mt-1.5 truncate">👉 VD: <span className="font-bold text-purple-950">https://s.shopee.vn/...</span></div>
+                <div><code className="font-bold text-purple-700">{`{brand_name}`}</code>: Tên Thương hiệu / Kênh</div>
+                <div className="text-[10px] text-purple-900/70 font-semibold bg-purple-50 px-2 py-1 rounded-lg mt-1.5 truncate">👉 VD: <span className="font-bold text-purple-950">{groupDisplayName.toUpperCase()}</span></div>
+              </div>
+              <div className="p-2.5 bg-white rounded-xl border border-purple-100 flex flex-col justify-between shadow-2xs">
+                <div><code className="font-bold text-purple-700">{`{so_du_vi}`}</code>: Ví Khả Dụng (có thể rút)</div>
+                <div className="text-[10px] text-purple-900/70 font-semibold bg-purple-50 px-2 py-1 rounded-lg mt-1.5">👉 VD: <span className="font-bold text-purple-950">37.824đ</span></div>
+              </div>
+              <div className="p-2.5 bg-white rounded-xl border border-purple-100 flex flex-col justify-between shadow-2xs">
+                <div><code className="font-bold text-purple-700">{`{so_ngay_giu}`}</code>: Số ngày giữ đối soát</div>
+                <div className="text-[10px] text-purple-900/70 font-semibold bg-purple-50 px-2 py-1 rounded-lg mt-1.5">👉 VD: <span className="font-bold text-purple-950">{holdingDays} ngày</span></div>
+              </div>
+              <div className="p-2.5 bg-white rounded-xl border border-purple-100 flex flex-col justify-between shadow-2xs">
+                <div><code className="font-bold text-purple-700">{`{hoahong_cho_du_ngay}`}</code>: Đã HT (chưa đủ ngày)</div>
+                <div className="text-[10px] text-purple-900/70 font-semibold bg-purple-50 px-2 py-1 rounded-lg mt-1.5">👉 VD: <span className="font-bold text-purple-950">0đ</span></div>
+              </div>
+              <div className="p-2.5 bg-white rounded-xl border border-purple-100 flex flex-col justify-between shadow-2xs">
+                <div><code className="font-bold text-purple-700">{`{hoahong_cho}`}</code>: Đơn chờ đối soát</div>
+                <div className="text-[10px] text-purple-900/70 font-semibold bg-purple-50 px-2 py-1 rounded-lg mt-1.5">👉 VD: <span className="font-bold text-purple-950">23.079đ</span></div>
+              </div>
+              <div className="p-2.5 bg-white rounded-xl border border-purple-100 flex flex-col justify-between shadow-2xs">
+                <div><code className="font-bold text-purple-700">{`{hoahong_danhan}`}</code>: Đã rút thành công</div>
+                <div className="text-[10px] text-purple-900/70 font-semibold bg-purple-50 px-2 py-1 rounded-lg mt-1.5">👉 VD: <span className="font-bold text-purple-950">15.231đ</span></div>
               </div>
               <div className="p-2.5 bg-white rounded-xl border border-purple-100 flex flex-col justify-between shadow-2xs">
                 <div><code className="font-bold text-purple-700">{`{link_tra_cuu}`}</code>: Link tra cứu cá nhân</div>
                 <div className="text-[10px] text-purple-900/70 font-semibold bg-purple-50 px-2 py-1 rounded-lg mt-1.5 truncate">👉 VD: <span className="font-bold text-purple-950">https://28affihub.store/...</span></div>
+              </div>
+              <div className="p-2.5 bg-white rounded-xl border border-purple-100 flex flex-col justify-between shadow-2xs">
+                <div><code className="font-bold text-purple-700">{`{link_mua_sam}`}</code>: Link mua sắm hoàn tiền</div>
+                <div className="text-[10px] text-purple-900/70 font-semibold bg-purple-50 px-2 py-1 rounded-lg mt-1.5 truncate">👉 VD: <span className="font-bold text-purple-950">https://s.shopee.vn/...</span></div>
               </div>
               <div className="p-2.5 bg-white rounded-xl border border-purple-100 flex flex-col justify-between shadow-2xs">
                 <div><code className="font-bold text-purple-700">{`{ty_le_hoan}`}</code>: Tỷ lệ hoàn tiền Kênh</div>
@@ -2341,22 +2383,6 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
               <div className="p-2.5 bg-white rounded-xl border border-purple-100 flex flex-col justify-between shadow-2xs">
                 <div><code className="font-bold text-purple-700">{`{tong_hoahong_tien}`}</code>: Tiền hoa hồng (đ)</div>
                 <div className="text-[10px] text-purple-900/70 font-semibold bg-purple-50 px-2 py-1 rounded-lg mt-1.5">👉 VD: <span className="font-bold text-purple-950">36.575đ</span></div>
-              </div>
-              <div className="p-2.5 bg-white rounded-xl border border-purple-100 flex flex-col justify-between shadow-2xs">
-                <div><code className="font-bold text-purple-700">{`{hoahong_dangcho}`}</code>: Hoa hồng chờ xử lý</div>
-                <div className="text-[10px] text-purple-900/70 font-semibold bg-purple-50 px-2 py-1 rounded-lg mt-1.5">👉 VD: <span className="font-bold text-purple-950">12.000đ</span></div>
-              </div>
-              <div className="p-2.5 bg-white rounded-xl border border-purple-100 flex flex-col justify-between shadow-2xs">
-                <div><code className="font-bold text-purple-700">{`{hoahong_dahoanthanh}`}</code>: Hoa hồng đã hoàn thành</div>
-                <div className="text-[10px] text-purple-900/70 font-semibold bg-purple-50 px-2 py-1 rounded-lg mt-1.5">👉 VD: <span className="font-bold text-purple-950">50.000đ</span></div>
-              </div>
-              <div className="p-2.5 bg-white rounded-xl border border-purple-100 flex flex-col justify-between shadow-2xs">
-                <div><code className="font-bold text-purple-700">{`{hoahong_danhan}`}</code>: Hoa hồng đã nhận</div>
-                <div className="text-[10px] text-purple-900/70 font-semibold bg-purple-50 px-2 py-1 rounded-lg mt-1.5">👉 VD: <span className="font-bold text-purple-950">0đ</span></div>
-              </div>
-              <div className="p-2.5 bg-white rounded-xl border border-purple-100 flex flex-col justify-between shadow-2xs">
-                <div><code className="font-bold text-purple-700">{`{so_du_vi}`}</code>: Số dư ví hiện tại</div>
-                <div className="text-[10px] text-purple-900/70 font-semibold bg-purple-50 px-2 py-1 rounded-lg mt-1.5">👉 VD: <span className="font-bold text-purple-950">150.000đ</span></div>
               </div>
               <div className="p-2.5 bg-white rounded-xl border border-purple-100 flex flex-col justify-between shadow-2xs">
                 <div><code className="font-bold text-purple-700">{`{ma_don_hang}`}</code>: Mã đơn hàng</div>
@@ -2503,7 +2529,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                 onChange={(e) => setSettings({ ...settings, holdingDays: e.target.value })}
                 className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 text-xs font-bold text-slate-800 outline-none"
               />
-              <span className="text-[11px] text-slate-400 mt-1 block">Sau số ngày này đơn hoàn thành mới chuyển sang Ví Khả Dụng để rút (mặc định 3 ngày Shopee).</span>
+              <span className="text-[11px] text-slate-400 mt-1 block">Sau số ngày này đơn hoàn thành mới chuyển sang Ví Khả Dụng để rút (mặc định 3 ngày Shopee). Nếu cài 0 ngày: Khách được rút ngay khi hoàn thành và Bot tự động ẩn dòng "chưa đủ ngày" trong lệnh /vitien.</span>
             </div>
 
             <div>

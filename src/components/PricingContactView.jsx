@@ -55,10 +55,10 @@ export function PricingContactView() {
           <i className="fa-solid fa-crown text-amber-500"></i> Bảng Giá & Giải Pháp Hợp Tác Trưởng Nhóm
         </div>
         <h1 className="text-2xl md:text-4xl font-black text-slate-900 font-display">
-          Sở Hữu Hệ Thống Hoàn Tiền 28AffiHub Mang Tên Bạn
+          Bảng Giá Dịch Vụ Cho Thuê Bot Zalo Affiliate & Tạo Website Hoàn Tiền Riêng
         </h1>
         <p className="text-xs md:text-sm text-slate-500 max-w-2xl mx-auto font-medium">
-          Dành riêng cho KOC, Hot Tiktoker, Group Admin & Trưởng Nhóm Affiliate muốn xây dựng cổng tra cứu đơn hàng và Bot Zalo tự động riêng biệt 100%.
+          Giải pháp công nghệ chuyên biệt cho KOC, Hot Tiktoker, Group Admin & Trưởng Nhóm Affiliate Shopee, TikTok Shop: Sở hữu cổng tra cứu đơn hàng, ví tiền và Bot Zalo tự động 100%.
         </p>
       </div>
 

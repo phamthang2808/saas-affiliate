@@ -443,7 +443,9 @@ export function PublicLookupView({
   const pendingPayoutsList = payouts.filter((p) => (p.status || "").toUpperCase() === "PENDING");
 
   const totalWithdrawn = completedPayouts.reduce((sum, p) => sum + Number(p.amount || 0), 0);
-  const pendingPayoutAmount = pendingPayoutsList.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+  const pendingPayoutAmount = lookupData?.pendingWithdrawn !== undefined
+    ? Number(lookupData.pendingWithdrawn)
+    : pendingPayoutsList.reduce((sum, p) => sum + Number(p.amount || 0), 0);
 
   // Số dư khả dụng = Tổng hoa hồng đủ điều kiện rút - Đã rút - Đang chờ duyệt
   const availableBalance = lookupData?.availableBalance !== undefined
@@ -644,9 +646,15 @@ export function PublicLookupView({
                   SỐ DƯ KHẢ DỤNG
                 </p>
                 <p className="text-[9px] text-slate-400 font-semibold mb-2">
-                  {holdingDays === 0
-                    ? `(Rút ngay • Chia ${customerSplitRate}-${Math.max(0, adminSplitRate)})`
-                    : `(Sau ${holdingDays} ngày hoàn thành • Chia ${customerSplitRate}-${Math.max(0, adminSplitRate)})`}
+                  {pendingPayoutAmount > 0 ? (
+                    <span className="text-amber-600 font-bold">
+                      (Đang chờ duyệt rút: {formatMoney(pendingPayoutAmount)})
+                    </span>
+                  ) : holdingDays === 0 ? (
+                    `(Rút ngay • Chia ${customerSplitRate}-${Math.max(0, adminSplitRate)})`
+                  ) : (
+                    `(Sau ${holdingDays} ngày hoàn thành • Chia ${customerSplitRate}-${Math.max(0, adminSplitRate)})`
+                  )}
                 </p>
               </div>
               <div>
@@ -842,16 +850,20 @@ export function PublicLookupView({
             {availableBalance <= 0 ? (
               <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200/80 text-center text-xs font-bold text-amber-800 flex flex-col sm:flex-row items-center justify-center gap-2">
                 <div className="flex items-center gap-2">
-                  <i className="fa-solid fa-lock text-amber-600"></i>
-                  <span>Số dư khả dụng hiện là 0đ.</span>
+                  <i className="fa-solid fa-hourglass-half text-amber-600 animate-pulse"></i>
+                  <span>
+                    {pendingPayoutAmount > 0
+                      ? `Bạn có yêu cầu rút ${formatMoney(pendingPayoutAmount)} đang chờ Admin duyệt.`
+                      : "Số dư khả dụng hiện là 0đ."}
+                  </span>
                 </div>
                 {holdingCompletedCommission > 0 && holdingDays > 0 ? (
                   <span className="text-amber-700 font-normal">
                     (Bạn có <strong>{formatMoney(holdingCompletedCommission)}</strong> hoa hồng đang trong thời gian giữ {holdingDays} ngày sau khi hoàn thành đơn).
                   </span>
-                ) : (
+                ) : pendingPayoutAmount <= 0 ? (
                   <span className="text-amber-700 font-normal">Chưa đủ điều kiện rút tiền lúc này.</span>
-                )}
+                ) : null}
               </div>
             ) : (
               <form

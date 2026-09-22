@@ -1244,6 +1244,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-slate-50/80 text-slate-500 text-[11px] font-black uppercase tracking-wider border-b border-slate-100">
+                  <th className="p-3.5 text-center">Mã ID / Lệnh</th>
                   <th className="p-3.5">Thành viên</th>
                   <th className="p-3.5 text-right">Số tiền rút</th>
                   <th className="p-3.5">Thông tin Chuyển Khoản STK</th>
@@ -1254,11 +1255,17 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
               <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
                 {payouts.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="p-8 text-center text-slate-400">Chưa có yêu cầu rút tiền nào.</td>
+                    <td colSpan={6} className="p-8 text-center text-slate-400">Chưa có yêu cầu rút tiền nào.</td>
                   </tr>
                 ) : (
                   payouts.map((p) => (
                     <tr key={p.id} className="hover:bg-slate-50/80 transition">
+                      <td className="p-3.5 text-center whitespace-nowrap">
+                        <span className="px-2.5 py-1 bg-purple-100 text-purple-900 font-mono font-black rounded-xl text-xs border border-purple-200 inline-block shadow-2xs">
+                          #{p.id}
+                        </span>
+                        <p className="text-[10px] text-purple-600 font-mono font-bold mt-1">/duyet_{p.id}</p>
+                      </td>
                       <td className="p-3.5">
                         <p className="font-bold text-slate-900">{p.zaloName || p.zaloId}</p>
                         <p className="text-[10px] text-slate-400 font-mono">{formatDate(p.createdAt)}</p>

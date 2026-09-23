@@ -1757,22 +1757,21 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
                 onClick={() => setFormData({ ...formData, isTiktokEnabled: !formData.isTiktokEnabled })}
                 className={`p-4.5 rounded-2xl border-2 transition-all cursor-pointer select-none ${
                   formData.isTiktokEnabled
-                    ? "bg-slate-900 text-white border-emerald-500 shadow-lg shadow-emerald-950/20"
-                    : "bg-slate-50 text-slate-800 border-slate-200 hover:border-slate-300"
+                    ? "bg-orange-50/80 border-orange-300 shadow-sm text-slate-900"
+                    : "bg-slate-50 border-slate-200 text-slate-800 hover:border-slate-300"
                 }`}
               >
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3.5 min-w-0">
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0 font-bold transition-transform ${
-                      formData.isTiktokEnabled ? "bg-emerald-500 text-white scale-105 shadow-md shadow-emerald-500/30" : "bg-slate-200 text-slate-600"
-                    }`}>
+                    {/* Icon TikTok màu đen sang trọng */}
+                    <div className="w-12 h-12 rounded-2xl bg-slate-950 text-white flex items-center justify-center text-xl shrink-0 font-bold shadow-md shadow-slate-950/20">
                       <i className="fa-brands fa-tiktok"></i>
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs sm:text-sm font-black">Gói Dịch Vụ TikTok Shop</span>
+                        <span className="text-xs sm:text-sm font-black text-slate-900">Gói Dịch Vụ TikTok Shop</span>
                         {formData.isTiktokEnabled ? (
-                          <span className="text-[10px] font-black px-2.5 py-0.5 bg-emerald-500 text-white rounded-full uppercase tracking-wider shadow-xs flex items-center gap-1">
+                          <span className="text-[10px] font-black px-2.5 py-0.5 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-full uppercase tracking-wider shadow-xs flex items-center gap-1">
                             <i className="fa-solid fa-check text-[9px]"></i> Đang Bật
                           </span>
                         ) : (
@@ -1781,7 +1780,7 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
                           </span>
                         )}
                       </div>
-                      <p className={`text-[11px] sm:text-xs mt-1 leading-snug ${formData.isTiktokEnabled ? "text-slate-300" : "text-slate-500"}`}>
+                      <p className="text-[11px] sm:text-xs mt-1 leading-snug text-slate-600">
                         {formData.isTiktokEnabled
                           ? "Cho phép Kênh kết nối API & đồng bộ đơn TikTok Shop (Đã thu thêm phí dịch vụ)."
                           : "Tắt tính năng TikTok Shop (Ẩn tab Đơn TikTok & Cấu hình API TikTok của Trưởng Nhóm)."}
@@ -1789,17 +1788,17 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
                     </div>
                   </div>
 
-                  {/* Big Toggle Switch Button */}
+                  {/* Big Toggle Switch Button đồng bộ màu cam */}
                   <div className="shrink-0 flex items-center">
                     <div
                       className={`w-16 h-9 rounded-full transition-colors duration-200 relative p-1 flex items-center cursor-pointer ${
-                        formData.isTiktokEnabled ? "bg-emerald-500 shadow-inner" : "bg-slate-300"
+                        formData.isTiktokEnabled ? "bg-gradient-to-r from-orange-500 to-amber-500 shadow-md shadow-orange-500/25" : "bg-slate-300"
                       }`}
                     >
                       <div
                         className={`w-7 h-7 bg-white rounded-full shadow-md transform transition-transform duration-200 flex items-center justify-center text-xs font-bold ${
                           formData.isTiktokEnabled
-                            ? "translate-x-7 text-emerald-600"
+                            ? "translate-x-7 text-orange-600"
                             : "translate-x-0 text-slate-400"
                         }`}
                       >

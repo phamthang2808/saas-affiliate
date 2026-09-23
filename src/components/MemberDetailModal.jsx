@@ -5,6 +5,7 @@ export function MemberDetailModal({
   orders = [],
   payouts = [],
   onClose,
+  onDelete,
   apiRoot = "",
   activeTenant = {},
   formatMoney = (val) => Number(val || 0).toLocaleString("vi-VN") + " đ",
@@ -304,13 +305,26 @@ export function MemberDetailModal({
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 flex items-center justify-center text-base transition cursor-pointer"
-          >
-            <i className="fa-solid fa-xmark"></i>
-          </button>
+          <div className="flex items-center gap-2">
+            {onDelete && (
+              <button
+                type="button"
+                onClick={onDelete}
+                className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-700 border border-rose-200 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                title="Xóa thành viên này khỏi Kênh"
+              >
+                <i className="fa-regular fa-trash-can text-xs"></i>
+                <span className="hidden sm:inline">Xóa thành viên</span>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 flex items-center justify-center text-base transition cursor-pointer"
+            >
+              <i className="fa-solid fa-xmark"></i>
+            </button>
+          </div>
         </div>
 
         {/* 4 Wallet Cards — Giống 100% trang Tra Cứu */}

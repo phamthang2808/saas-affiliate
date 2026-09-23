@@ -690,6 +690,34 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
     }
   };
 
+  const handleDeleteMember = async (member) => {
+    if (!activeTenant?.slug || !member) return;
+    const name = member.zaloName || member.zalo_name || member.zaloId || "thành viên này";
+    const zId = member.zaloId || member.zalo_id || member.id;
+    if (!window.confirm(`⚠️ Bạn có chắc chắn muốn XÓA thành viên "${name}" (Zalo ID: ${zId}) khỏi Kênh?\n\nThao tác này sẽ xóa hồ sơ thành viên này và không thể hoàn tác!`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`${apiRoot}/api/saas/admin/${activeTenant.slug}/zalo-users/${member.id}`, {
+        method: "DELETE",
+        headers: authHeaders,
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showNotification("✅ " + (data.message || "Đã xóa thành viên thành công!"), "success");
+        setZaloUsers((prev) => prev.filter((u) => u.id !== member.id));
+        if (selectedMember?.id === member.id) {
+          setSelectedMember(null);
+        }
+      } else {
+        showNotification("❌ " + (data.message || "Lỗi xóa thành viên"), "error");
+      }
+    } catch (err) {
+      showNotification("❌ Lỗi kết nối máy chủ: " + err.message, "error");
+    }
+  };
+
   const handleUploadExcel = async () => {
     if (!activeTenant?.slug) {
       showNotification("❌ Chưa xác định được Kênh Trưởng Nhóm! Vui lòng chọn Kênh hoặc liên hệ Super Admin để gán Kênh cho tài khoản của bạn.", "error");
@@ -736,9 +764,9 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
     }
   };
 
-  const handleAssignOrder = async (e) => {
+  const handleAssignOrder = async (e, unassign = false) => {
     if (e) e.preventDefault();
-    if (!selectedOrderToAssign || !assignZaloId) {
+    if (!unassign && (!selectedOrderToAssign || !assignZaloId)) {
       showNotification("Vui lòng chọn tài khoản Zalo để gán đơn!", "error");
       return;
     }
@@ -749,7 +777,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
       const res = await fetch(`${apiRoot}/api/saas/admin/${activeTenant.slug}/orders/${selectedOrderToAssign.id}/assign`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", ...authHeaders },
-        body: JSON.stringify({ zaloId: assignZaloId }),
+        body: JSON.stringify(unassign ? { unassign: true } : { zaloId: assignZaloId }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -1054,8 +1082,8 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
         {/* GROUP 1: CẤU HÌNH & KẾT NỐI (STEP-BY-STEP SETUP) */}
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-[10px] font-black uppercase tracking-wider text-purple-900 bg-purple-100 border border-purple-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
-              <i className="fa-solid fa-gears text-purple-600"></i> NHÓM 1: THIẾT LẬP KÊNH (THỰC HIỆN THEO THỨ TỰ BƯỚC 1 ➔ BƯỚC 3)
+            <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-purple-900 bg-purple-100 border border-purple-200 px-3 py-1 rounded-full flex items-center gap-1.5 shadow-2xs">
+              <i className="fa-solid fa-list-check text-purple-600"></i> QUY TRÌNH THIẾT LẬP KÊNH (BẮT BUỘC KHI BẮT ĐẦU: BƯỚC 1 ➔ BƯỚC 3)
             </span>
           </div>
           <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-stretch gap-2">
@@ -1245,9 +1273,11 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                             {bot.status === "ACTIVE" ? "🟢 ĐANG HOẠT ĐỘNG 24/7" : "⏳ CHỜ QUÉT QR"}
                           </span>
                         </div>
-                        <p className="text-xs text-slate-500 font-medium">
-                          Zalo ID (UID): <span className="font-bold font-mono text-emerald-700">{bot.zaloId || "Đang cập nhật..."}</span>
-                        </p>
+                        {bot.zaloId && bot.zaloId !== "Đang cập nhật..." && (
+                          <p className="text-xs text-slate-500 font-medium">
+                            Zalo ID (UID): <span className="font-bold font-mono text-emerald-700">{bot.zaloId}</span>
+                          </p>
+                        )}
                       </div>
                     </div>
 
@@ -1474,7 +1504,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                           <th className="px-4 py-3.5 font-black text-slate-700 whitespace-nowrap text-right">Tích lũy hoàn thành</th>
                           <th className="px-4 py-3.5 font-black text-slate-700 whitespace-nowrap text-right">Khả dụng rút</th>
                           <th className="px-4 py-3.5 font-black text-slate-700 whitespace-nowrap text-right">Đã rút</th>
-                          <th className="px-4 py-3.5 font-black text-slate-700 whitespace-nowrap text-center">Chi tiết</th>
+                          <th className="px-4 py-3.5 font-black text-slate-700 whitespace-nowrap text-center">Thao tác</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1527,13 +1557,24 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                                 {formatMoney(wallet.totalWithdrawn)}
                               </td>
                               <td className="px-4 py-3.5 text-center whitespace-nowrap">
-                                <button
-                                  type="button"
-                                  onClick={() => setSelectedMember(u)}
-                                  className="px-3 py-1.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-xl text-[11px] font-bold transition shadow-xs cursor-pointer inline-flex items-center gap-1.5"
-                                >
-                                  <i className="fa-regular fa-eye text-[10px]"></i> Xem
-                                </button>
+                                <div className="flex items-center justify-center gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => setSelectedMember(u)}
+                                    className="px-2.5 py-1.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-xl text-[11px] font-bold transition shadow-xs cursor-pointer inline-flex items-center gap-1"
+                                    title="Xem chi tiết ví & đơn hàng"
+                                  >
+                                    <i className="fa-regular fa-eye text-[10px]"></i> Xem
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteMember(u)}
+                                    className="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-700 border border-rose-200/80 rounded-xl text-[11px] font-bold transition shadow-2xs cursor-pointer inline-flex items-center gap-1"
+                                    title="Xóa thành viên khỏi danh sách"
+                                  >
+                                    <i className="fa-regular fa-trash-can text-[10px]"></i> Xóa
+                                  </button>
+                                </div>
                               </td>
                             </tr>
                           );
@@ -1654,6 +1695,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                 orders={orders}
                 payouts={payouts}
                 onClose={() => setSelectedMember(null)}
+                onDelete={() => handleDeleteMember(selectedMember)}
                 apiRoot={apiRoot}
                 activeTenant={activeTenant}
                 formatMoney={formatMoney}
@@ -2151,18 +2193,25 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                             </td>
                             <td className="p-3.5 sm:p-4 min-w-[160px] whitespace-nowrap text-xs sm:text-xs">
                               <div className="flex flex-col items-start gap-1">
-                                <span
-                                  className={`font-bold leading-snug ${
-                                    buyer.isZaloName
-                                      ? "text-slate-900"
-                                      : buyer.isAssigned
-                                      ? "text-slate-700 font-mono text-xs"
-                                      : "text-slate-400 italic"
-                                  }`}
-                                  title={buyer.name}
-                                >
-                                  {buyer.name}
-                                </span>
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span
+                                    className={`font-bold leading-snug ${
+                                      buyer.isZaloName
+                                        ? "text-slate-900"
+                                        : buyer.isAssigned
+                                        ? "text-slate-700 font-mono text-xs"
+                                        : "text-slate-400 italic"
+                                    }`}
+                                    title={buyer.name}
+                                  >
+                                    {buyer.name}
+                                  </span>
+                                  {Boolean(o.isManuallyAssigned) && (
+                                    <span className="inline-flex items-center gap-0.5 text-[9px] font-black text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 shadow-2xs" title="Đơn đã được Admin gán thủ công, vĩnh viễn không bị ghi đè khi import lại Excel">
+                                      <i className="fa-solid fa-lock text-[8px]"></i> Đã gán
+                                    </span>
+                                  )}
+                                </div>
                                 <button
                                   type="button"
                                   onClick={() => {
@@ -2782,21 +2831,36 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                 </select>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setSelectedOrderToAssign(null)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl cursor-pointer"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmittingAssign}
-                  className="px-5 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-black rounded-xl shadow-md cursor-pointer"
-                >
-                  {isSubmittingAssign ? "Đang gán..." : "Xác nhận gán đơn"}
-                </button>
+              <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                <div>
+                  {(selectedOrderToAssign.zaloId || selectedOrderToAssign.isManuallyAssigned) && (
+                    <button
+                      type="button"
+                      disabled={isSubmittingAssign}
+                      onClick={() => handleAssignOrder(null, true)}
+                      className="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold rounded-xl border border-rose-200 cursor-pointer transition flex items-center gap-1"
+                      title="Gỡ gán đơn hàng này về trạng thái chưa gán"
+                    >
+                      <i className="fa-solid fa-unlink text-[10px]"></i> Gỡ gán
+                    </button>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedOrderToAssign(null)}
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl cursor-pointer"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmittingAssign}
+                    className="px-5 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-black rounded-xl shadow-md cursor-pointer"
+                  >
+                    {isSubmittingAssign ? "Đang gán..." : "Xác nhận gán đơn"}
+                  </button>
+                </div>
               </div>
             </form>
           </div>

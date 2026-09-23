@@ -20,7 +20,7 @@ export function LandingIntroView({ currentTenant, availableTenants, onSelectTena
     },
     {
       q: "Hệ thống quản lý đơn hàng và đối soát hoa hồng hỗ trợ những sàn nào?",
-      a: "28AffiHub hỗ trợ đầy đủ 2 sàn thương mại điện tử lớn nhất hiện nay là Shopee Affiliate và TikTok Shop (kết nối trực tiếp qua RioHub API hoặc nhập file đối soát Excel). Hệ thống tự động phân loại trạng thái: Đang chờ xử lý, Đã hoàn thành, Đã hủy và phân bổ chính xác theo từng SubID thành viên."
+      a: "28AffiHub hỗ trợ đầy đủ 2 sàn thương mại điện tử lớn nhất hiện nay là Shopee Affiliate và TikTok Shop (kết nối trực tiếp qua API TikTok Shop hoặc nhập file đối soát Excel). Hệ thống tự động phân loại trạng thái: Đang chờ xử lý, Đã hoàn thành, Đã hủy và phân bổ chính xác theo từng SubID thành viên."
     },
     {
       q: "Cơ chế tính thuế TNCN, tỷ lệ chia hoa hồng và thời gian giữ tiền (holding days) ra sao?",
@@ -160,7 +160,7 @@ export function LandingIntroView({ currentTenant, availableTenants, onSelectTena
               3. Quản Lý Đơn Hàng & Đối Soát Hoa Hồng Thông Minh
             </h3>
             <p className="text-xs text-slate-600 leading-relaxed font-medium">
-              Tích hợp trực tiếp API TikTok Shop (RioHub) và Shopee Affiliate. Đơn hàng phát sinh được tự động map với SubID thành viên, phân tách trạng thái Đang vận chuyển, Hoàn thành, Đã hủy. Tự động trừ thuế TNCN 10% và tính toán hoa hồng thực nhận của khách theo đúng tỷ lệ chia sẻ.
+              Tích hợp trực tiếp API TikTok Shop và Shopee Affiliate. Đơn hàng phát sinh được tự động map với SubID thành viên, phân tách trạng thái Đang vận chuyển, Hoàn thành, Đã hủy. Tự động trừ thuế TNCN 10% và tính toán hoa hồng thực nhận của khách theo đúng tỷ lệ chia sẻ.
             </p>
           </div>
 

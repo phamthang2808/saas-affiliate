@@ -3,6 +3,9 @@ import { formatMoney, formatDate } from "../utils/formatters";
 
 export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) {
   const [adminSubTab, setAdminSubTab] = useState("tenants"); // 'tenants' | 'users'
+  const [tenantViewMode, setTenantViewMode] = useState("matrix"); // 'matrix' | 'table'
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [togglingMonth, setTogglingMonth] = useState({}); // { [`${tenantId}-${monthKey}`]: boolean }
   const [tenants, setTenants] = useState([]);
   const [stats, setStats] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -173,35 +176,91 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
     }
   };
 
-  const handleTogglePayment = async (t) => {
-    const isPaid = (t.subscriptionStatus || "PAID").toUpperCase() === "PAID";
-    const confirmMsg = isPaid
-      ? `Đổi trạng thái của "${t.name}" sang: CHƯA ĐÓNG TIỀN THUÊ THÁNG NÀY?`
-      : `Xác nhận Trưởng Nhóm "${t.name}" ĐÃ ĐÓNG TIỀN THUÊ (${formatMoney(t.monthlyFee || 500000)}) cho tháng này?`;
+  const getPaidMonths = (tenant) => {
+    if (!tenant) return new Set();
+    const note = tenant.billingNote;
+    if (!note || typeof note !== "string" || !note.trim()) {
+      if ((tenant.subscriptionStatus || "PAID").toUpperCase() === "PAID") {
+        const now = new Date();
+        const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+        return new Set([currentMonth]);
+      }
+      return new Set();
+    }
+    try {
+      if (note.trim().startsWith("{") && note.includes("paidMonths")) {
+        const parsed = JSON.parse(note);
+        if (Array.isArray(parsed.paidMonths)) {
+          return new Set(parsed.paidMonths);
+        }
+      }
+      return new Set(note.split(",").map((s) => s.trim()).filter(Boolean));
+    } catch {
+      return new Set();
+    }
+  };
 
-    if (!window.confirm(confirmMsg)) return;
+  const handleToggleMonth = async (tenant, monthKey) => {
+    const toggleKey = `${tenant.id}-${monthKey}`;
+    if (togglingMonth[toggleKey]) return;
+
+    setTogglingMonth((prev) => ({ ...prev, [toggleKey]: true }));
+
+    const currentPaid = getPaidMonths(tenant);
+    const willBePaid = !currentPaid.has(monthKey);
+    const nextPaid = new Set(currentPaid);
+    if (willBePaid) nextPaid.add(monthKey);
+    else nextPaid.delete(monthKey);
+
+    const newNote = JSON.stringify({ paidMonths: Array.from(nextPaid) });
+    const now = new Date();
+    const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    const newSubStatus = nextPaid.has(currentMonthKey) ? "PAID" : "UNPAID";
+
+    // Cập nhật giao diện tức thì (Optimistic UI)
+    setTenants((prev) =>
+      prev.map((t) =>
+        t.id === tenant.id
+          ? { ...t, billingNote: newNote, subscriptionStatus: newSubStatus }
+          : t
+      )
+    );
 
     try {
-      const res = await fetch(`${apiRoot}/api/saas/super-admin/tenants/${t.id}`, {
+      const res = await fetch(`${apiRoot}/api/saas/super-admin/tenants/${tenant.id}/toggle-month`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
           ...authHeaders,
         },
-        body: JSON.stringify({
-          subscriptionStatus: isPaid ? "UNPAID" : "PAID",
-        }),
+        body: JSON.stringify({ month: monthKey, paid: willBePaid }),
       });
       const data = await res.json();
-      if (res.ok) {
-        notify(isPaid ? "Đã chuyển sang Chưa đóng tiền" : "Đã xác nhận thanh toán tiền thuê thành công!");
-        fetchTenantsAndStats();
+      if (res.ok && data.tenant) {
+        setTenants((prev) =>
+          prev.map((t) => (t.id === tenant.id ? { ...t, ...data.tenant } : t))
+        );
+        notify(data.message || (willBePaid ? `Đã xác nhận Tháng ${monthKey}` : `Đã hủy Tháng ${monthKey}`));
       } else {
-        notify(data.message || "Lỗi cập nhật", "error");
+        notify(data.message || "Lỗi cập nhật tháng", "error");
+        fetchTenantsAndStats();
       }
     } catch (err) {
-      notify("Lỗi máy chủ: " + err.message, "error");
+      notify("Lỗi kết nối máy chủ: " + err.message, "error");
+      fetchTenantsAndStats();
+    } finally {
+      setTogglingMonth((prev) => {
+        const next = { ...prev };
+        delete next[toggleKey];
+        return next;
+      });
     }
+  };
+
+  const handleTogglePayment = async (t) => {
+    const now = new Date();
+    const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    await handleToggleMonth(t, currentMonthKey);
   };
 
   const handleDeleteTenant = async (id, name) => {
@@ -285,6 +344,38 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
     (t) => (t.subscriptionStatus || "PAID").toUpperCase() === "PAID"
   ).length;
   const unpaidTenantsCount = tenants.length - paidTenantsCount;
+
+  // Tính toán dữ liệu Ma trận 12 tháng thu tiền
+  const months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonthNum = now.getMonth() + 1;
+  const currentMonthKey = `${currentYear}-${String(currentMonthNum).padStart(2, "0")}`;
+
+  const monthSummaries = months.map((m) => {
+    const monthKey = `${selectedYear}-${String(m).padStart(2, "0")}`;
+    let paidCount = 0;
+    let totalRevenue = 0;
+    filteredTenants.forEach((t) => {
+      const paid = getPaidMonths(t);
+      if (paid.has(monthKey)) {
+        paidCount++;
+        totalRevenue += Number(t.monthlyFee || 500000);
+      }
+    });
+    return {
+      month: m,
+      monthKey,
+      paidCount,
+      totalRevenue,
+      isCurrentMonth: selectedYear === currentYear && m === currentMonthNum,
+      isPastMonth: selectedYear < currentYear || (selectedYear === currentYear && m < currentMonthNum),
+      isFutureMonth: selectedYear > currentYear || (selectedYear === currentYear && m > currentMonthNum),
+    };
+  });
+
+  const totalYearRevenue = monthSummaries.reduce((sum, item) => sum + item.totalRevenue, 0);
+  const totalYearPaidSlots = monthSummaries.reduce((sum, item) => sum + item.paidCount, 0);
 
   // Filter Users
   const filteredUsers = users.filter((u) => {
@@ -373,17 +464,35 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
       </div>
 
       {/* ===================== SUB TABS NAVIGATION ===================== */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 border-b border-slate-200/80 pb-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 border-b border-slate-200/80 pb-3">
         <button
-          onClick={() => setAdminSubTab("tenants")}
+          onClick={() => {
+            setAdminSubTab("tenants");
+            setTenantViewMode("matrix");
+          }}
           className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer ${
-            adminSubTab === "tenants"
+            adminSubTab === "tenants" && tenantViewMode === "matrix"
               ? "bg-slate-900 text-white shadow-md shadow-slate-900/20"
               : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
           }`}
         >
-          <i className="fa-solid fa-store text-xs"></i>
-          <span>1. Quản Lý Kênh Đối Tác ({tenants.length})</span>
+          <i className="fa-solid fa-table-cells text-xs text-orange-400"></i>
+          <span>1. Bảng Thu Phí Tháng ({tenants.length})</span>
+        </button>
+
+        <button
+          onClick={() => {
+            setAdminSubTab("tenants");
+            setTenantViewMode("table");
+          }}
+          className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer ${
+            adminSubTab === "tenants" && tenantViewMode === "table"
+              ? "bg-slate-900 text-white shadow-md shadow-slate-900/20"
+              : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+          }`}
+        >
+          <i className="fa-solid fa-store text-xs text-blue-400"></i>
+          <span>2. Cấu Hình Kênh ({tenants.length})</span>
         </button>
 
         <button
@@ -398,7 +507,7 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
           }`}
         >
           <i className="fa-solid fa-users-gear text-xs"></i>
-          <span>2. Quản Lý Tài Khoản & Phân Quyền ({users.length})</span>
+          <span>3. Quản Lý Tài Khoản ({users.length})</span>
         </button>
       </div>
 
@@ -474,6 +583,70 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
             </div>
           </div>
 
+          {/* VIEW SWITCHER & YEAR SELECTOR BAR */}
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-3 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3">
+            {/* View Mode Switcher */}
+            <div className="flex items-center gap-1.5 bg-slate-100/90 p-1 rounded-2xl w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={() => setTenantViewMode("matrix")}
+                className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl text-xs font-black transition cursor-pointer ${
+                  tenantViewMode === "matrix"
+                    ? "bg-white text-slate-900 shadow-xs border border-slate-200/60"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                <i className="fa-solid fa-table-cells text-orange-500"></i>
+                <span>Bảng Thu Phí Tháng</span>
+                <span className="bg-orange-100 text-orange-700 text-[10px] px-1.5 py-0.2 rounded-full font-bold">Ma Trận</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setTenantViewMode("table")}
+                className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl text-xs font-black transition cursor-pointer ${
+                  tenantViewMode === "table"
+                    ? "bg-white text-slate-900 shadow-xs border border-slate-200/60"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                <i className="fa-solid fa-sliders text-blue-500"></i>
+                <span>Cấu Hình Kênh</span>
+              </button>
+            </div>
+
+            {/* Matrix Year Switcher & Quick Metric */}
+            {tenantViewMode === "matrix" && (
+              <div className="flex items-center gap-2.5 w-full sm:w-auto justify-between sm:justify-end">
+                <div className="flex items-center gap-1 bg-slate-50 border border-slate-200/80 rounded-2xl p-1 shadow-2xs">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedYear((y) => y - 1)}
+                    className="w-7 h-7 flex items-center justify-center rounded-xl hover:bg-slate-200/80 text-slate-600 transition cursor-pointer text-xs"
+                    title="Năm trước"
+                  >
+                    <i className="fa-solid fa-chevron-left"></i>
+                  </button>
+                  <span className="px-2.5 py-0.5 font-black text-xs text-slate-900 font-display min-w-[75px] text-center">
+                    Năm {selectedYear}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedYear((y) => y + 1)}
+                    className="w-7 h-7 flex items-center justify-center rounded-xl hover:bg-slate-200/80 text-slate-600 transition cursor-pointer text-xs"
+                    title="Năm sau"
+                  >
+                    <i className="fa-solid fa-chevron-right"></i>
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-2xl text-xs">
+                  <span className="text-emerald-700 font-medium text-[11px] hidden md:inline">Đã thu {selectedYear}:</span>
+                  <span className="font-black text-emerald-800 font-display">{formatMoney(totalYearRevenue)}</span>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* SEARCH & FILTER BAR */}
           <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="relative w-full sm:w-80">
@@ -521,226 +694,478 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
             </div>
           </div>
 
-          {/* MOBILE & TABLET CARD VIEW (Ẩn trên Desktop >= lg) */}
-          <div className="block lg:hidden space-y-3">
-            {isLoading ? (
-              <div className="bg-white rounded-2xl border border-slate-200/80 p-8 text-center text-slate-400 shadow-2xs">
-                <i className="fa-solid fa-circle-notch fa-spin text-xl text-orange-500 mb-2 block"></i>
-                Đang tải dữ liệu Kênh Đối Tác...
-              </div>
-            ) : filteredTenants.length === 0 ? (
-              <div className="bg-white rounded-2xl border border-slate-200/80 p-8 text-center text-slate-400 shadow-2xs">
-                <i className="fa-solid fa-store-slash text-2xl text-slate-300 mb-2 block"></i>
-                Không tìm thấy Kênh nào phù hợp.
-              </div>
-            ) : (
-              filteredTenants.map((t) => {
-                const isPaid = (t.subscriptionStatus || "PAID").toUpperCase() === "PAID";
-                return (
-                  <div
-                    key={t.id}
-                    className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs space-y-3 hover:border-orange-200 transition"
-                  >
-                    {/* Header: Logo, Name, Slug, Payment Button */}
-                    <div className="flex items-start justify-between gap-2.5">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div
-                          className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-white text-sm shadow-2xs shrink-0"
-                          style={{ backgroundColor: t.primaryColor || "#f97316" }}
-                        >
-                          {t.name.charAt(0)}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="font-bold text-slate-900 text-sm leading-snug truncate">{t.name}</p>
-                          <p className="text-[11px] font-mono text-slate-400">/{t.slug}</p>
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={() => handleTogglePayment(t)}
-                        className={`px-3 py-1 rounded-full text-[11px] font-black cursor-pointer transition shadow-2xs inline-flex items-center gap-1.5 shrink-0 ${
-                          isPaid
-                            ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border border-emerald-300"
-                            : "bg-rose-100 text-rose-800 hover:bg-rose-200 border border-rose-300 animate-pulse"
-                        }`}
-                      >
-                        <i className={`fa-solid ${isPaid ? "fa-circle-check text-emerald-600" : "fa-clock text-rose-600"}`}></i>
-                        <span>{isPaid ? "Đã đóng tiền" : "Chưa đóng"}</span>
-                      </button>
-                    </div>
-
-                    {/* Details Box */}
-                    <div className="bg-slate-50/80 rounded-xl p-3 border border-slate-100 space-y-2 text-xs">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-slate-400 font-medium text-[11px] shrink-0">Domain:</span>
-                        <div className="truncate text-right">
-                          {t.publicLookupDomain ? (
-                            <span className="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200 font-mono text-[11px] font-semibold">
-                              {t.publicLookupDomain}
-                            </span>
-                          ) : (
-                            <span className="text-slate-500 font-mono text-[11px]">28affihub.store/{t.slug}</span>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-slate-400 font-medium text-[11px] shrink-0">Tỷ lệ chia:</span>
-                        <span className="text-[11px] font-bold">
-                          <span className="text-orange-600">{t.customerSplitRate || 80}%</span>
-                          <span className="text-slate-400 mx-1">-</span>
-                          <span className="text-slate-700">{100 - (t.customerSplitRate || 80)}%</span>
-                          <span className="text-[10px] text-slate-400 font-normal ml-1">(Thuế {t.taxRate || 10}%)</span>
-                        </span>
-                      </div>
-
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-slate-400 font-medium text-[11px] shrink-0">Tiền thuê / tháng:</span>
-                        <span className="font-bold text-slate-900 font-display text-xs">
-                          {formatMoney(t.monthlyFee || 500000)}
-                          <span className="text-[10px] font-normal text-slate-400 ml-1">
-                            (Ngày {t.billingCycleDay || 15})
-                          </span>
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex items-center gap-2 pt-1">
-                      <button
-                        onClick={() => handleOpenEdit(t)}
-                        className="flex-1 py-2 bg-orange-50 hover:bg-orange-100 text-orange-700 rounded-xl font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1.5 border border-orange-200"
-                      >
-                        <i className="fa-solid fa-pen-to-square text-xs"></i>
-                        <span>Chỉnh Sửa</span>
-                      </button>
-                      <button
-                        onClick={() => handleDeleteTenant(t.id, t.name)}
-                        className="py-2 px-3 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1.5 border border-rose-200"
-                        title="Xóa Kênh"
-                      >
-                        <i className="fa-solid fa-trash-can text-xs"></i>
-                      </button>
-                    </div>
+          {/* ========================================================================= */}
+          {/* CHẾ ĐỘ 1: BẢNG MA TRẬN THU PHÍ THEO THÁNG (MATRIX 12 THÁNG)              */}
+          {/* ========================================================================= */}
+          {tenantViewMode === "matrix" && (
+            <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
+              <div className="p-4 sm:p-5 bg-gradient-to-r from-slate-50 via-white to-orange-50/30 border-b border-slate-200/80 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-orange-500/10 text-orange-600 flex items-center justify-center text-lg font-bold border border-orange-200/60 shadow-2xs">
+                    <i className="fa-solid fa-calendar-check"></i>
                   </div>
-                );
-              })
-            )}
-          </div>
+                  <div>
+                    <h3 className="text-sm font-black text-slate-900 font-display flex items-center gap-2">
+                      <span>Bảng Đối Soát Thu Tiền Thuê 12 Tháng Năm {selectedYear}</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold border border-emerald-200">
+                        1-Chạm Đổi Trạng Thái
+                      </span>
+                    </h3>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      Hàng ngang là các Trưởng Nhóm, cột là Tháng 1..12. Bấm trực tiếp vào từng ô để đánh dấu đã thanh toán / chưa thanh toán.
+                    </p>
+                  </div>
+                </div>
 
-          {/* DESKTOP TABLE VIEW (Hiện trên màn hình >= lg) */}
-          <div className="hidden lg:block bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-black text-slate-500 uppercase tracking-wider">
-                    <th className="py-3.5 px-4">Kênh Đối Tác</th>
-                    <th className="py-3.5 px-4">Tên Miền / Đường Dẫn Tra Cứu</th>
-                    <th className="py-3.5 px-4">Tỷ Lệ Chia (Khách - Trưởng Nhóm)</th>
-                    <th className="py-3.5 px-4">Tiền Thuê / Chu Kỳ</th>
-                    <th className="py-3.5 px-4 text-center">Thu Phí Thuê</th>
-                    <th className="py-3.5 px-4 text-right">Thao Tác</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-xs font-medium text-slate-700">
-                  {isLoading ? (
-                    <tr>
-                      <td colSpan={6} className="py-12 text-center text-slate-400">
-                        <i className="fa-solid fa-circle-notch fa-spin text-xl text-orange-500 mb-2 block"></i>
-                        Đang tải dữ liệu Kênh Đối Tác...
-                      </td>
-                    </tr>
-                  ) : filteredTenants.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="py-12 text-center text-slate-400">
-                        <i className="fa-solid fa-store-slash text-2xl text-slate-300 mb-2 block"></i>
-                        Không tìm thấy Kênh nào phù hợp.
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredTenants.map((t) => {
-                      const isPaid = (t.subscriptionStatus || "PAID").toUpperCase() === "PAID";
-                      return (
-                        <tr key={t.id} className="hover:bg-slate-50/80 transition">
-                          <td className="py-3.5 px-4">
-                            <div className="flex items-center gap-3">
-                              <div
-                                className="w-9 h-9 rounded-xl flex items-center justify-center font-bold text-white text-xs shadow-2xs shrink-0"
-                                style={{ backgroundColor: t.primaryColor || "#f97316" }}
-                              >
-                                {t.name.charAt(0)}
-                              </div>
-                              <div>
-                                <p className="font-bold text-slate-900 leading-snug">{t.name}</p>
-                                <p className="text-[11px] font-mono text-slate-400">/{t.slug}</p>
-                              </div>
+                <div className="flex items-center gap-2 text-xs text-slate-500">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span>
+                    <span>Đã đóng</span>
+                  </span>
+                  <span className="flex items-center gap-1.5 ml-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block"></span>
+                    <span>Chưa đóng</span>
+                  </span>
+                  <span className="flex items-center gap-1.5 ml-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-slate-300 inline-block"></span>
+                    <span>Tháng tới</span>
+                  </span>
+                </div>
+              </div>
+
+              {/* Scrollable Matrix Table */}
+              <div className="overflow-x-auto relative">
+                <table className="w-full text-left border-collapse min-w-[950px]">
+                  <thead>
+                    <tr className="bg-slate-50/95 border-b border-slate-200/90 text-[11px] font-black text-slate-600 uppercase tracking-wider">
+                      {/* Cột Trưởng Nhóm Cố Định (Sticky Left) */}
+                      <th className="py-3.5 px-4 sticky left-0 bg-slate-50/95 backdrop-blur-xs z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] min-w-[220px]">
+                        Trưởng Nhóm Đối Tác
+                      </th>
+
+                      {/* 12 Cột Tháng */}
+                      {months.map((m) => {
+                        const isCurrent = selectedYear === currentYear && m === currentMonthNum;
+                        return (
+                          <th
+                            key={m}
+                            className={`py-3 px-1.5 text-center text-xs whitespace-nowrap min-w-[65px] ${
+                              isCurrent
+                                ? "bg-orange-100/70 text-orange-950 font-black border-x border-orange-200"
+                                : "text-slate-700"
+                            }`}
+                          >
+                            <div className="flex flex-col items-center">
+                              <span>T{m}</span>
+                              {isCurrent && (
+                                <span className="text-[9px] bg-orange-500 text-white font-black px-1.5 py-0.2 rounded-full uppercase tracking-tighter mt-0.5 shadow-2xs">
+                                  Hiện tại
+                                </span>
+                              )}
                             </div>
-                          </td>
+                          </th>
+                        );
+                      })}
 
-                          <td className="py-3.5 px-4">
-                            {t.publicLookupDomain ? (
-                              <span className="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200 font-mono text-[11px] font-semibold">
-                                {t.publicLookupDomain}
-                              </span>
-                            ) : (
-                              <span className="text-slate-400 font-mono text-[11px]">28affihub.store/{t.slug}</span>
-                            )}
-                          </td>
+                      {/* Cột Tổng Kết Cả Năm */}
+                      <th className="py-3.5 px-4 text-right min-w-[140px]">
+                        Tổng Đã Thu ({selectedYear})
+                      </th>
+                    </tr>
+                  </thead>
 
-                          <td className="py-3.5 px-4">
-                            <span className="font-bold text-orange-600">{t.customerSplitRate || 80}%</span>
-                            <span className="text-slate-400 mx-1">-</span>
-                            <span className="font-bold text-slate-700">{100 - (t.customerSplitRate || 80)}%</span>
-                            <span className="text-[10px] text-slate-400 block">(Thuế: {t.taxRate || 10}%)</span>
-                          </td>
+                  <tbody className="divide-y divide-slate-100 text-xs">
+                    {isLoading ? (
+                      <tr>
+                        <td colSpan={14} className="py-12 text-center text-slate-400">
+                          <i className="fa-solid fa-circle-notch fa-spin text-xl text-orange-500 mb-2 block"></i>
+                          Đang tải dữ liệu đối soát Trưởng Nhóm...
+                        </td>
+                      </tr>
+                    ) : filteredTenants.length === 0 ? (
+                      <tr>
+                        <td colSpan={14} className="py-12 text-center text-slate-400">
+                          <i className="fa-solid fa-store-slash text-2xl text-slate-300 mb-2 block"></i>
+                          Không tìm thấy Kênh nào phù hợp.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredTenants.map((t) => {
+                        const paidSet = getPaidMonths(t);
+                        const fee = Number(t.monthlyFee || 500000);
+                        let paidCountThisYear = 0;
 
-                          <td className="py-3.5 px-4 font-bold text-slate-900 font-display">
-                            {formatMoney(t.monthlyFee || 500000)}
-                            <span className="text-[10px] font-normal text-slate-400 block">
-                              Ngày {t.billingCycleDay || 15} hàng tháng
-                            </span>
-                          </td>
+                        return (
+                          <tr key={t.id} className="hover:bg-slate-50/70 transition group">
+                            {/* Cột Tên Trưởng Nhóm (Sticky Left) */}
+                            <td className="py-3 px-4 sticky left-0 bg-white group-hover:bg-slate-50/90 transition z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)]">
+                              <div className="flex items-center gap-3">
+                                <div
+                                  className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-white text-xs shadow-2xs shrink-0"
+                                  style={{ backgroundColor: t.primaryColor || "#f97316" }}
+                                >
+                                  {t.name.charAt(0)}
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="font-bold text-slate-900 leading-tight truncate max-w-[140px]" title={t.name}>
+                                    {t.name}
+                                  </p>
+                                  <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+                                    {formatMoney(fee)} <span className="text-[9px] text-slate-400">(N{t.billingCycleDay || 15})</span>
+                                  </p>
+                                </div>
+                              </div>
+                            </td>
 
-                          <td className="py-3.5 px-4 text-center">
-                            <button
-                              onClick={() => handleTogglePayment(t)}
-                              className={`px-3 py-1 rounded-full text-[11px] font-black cursor-pointer transition shadow-2xs inline-flex items-center gap-1.5 ${
-                                isPaid
-                                  ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border border-emerald-300"
-                                  : "bg-rose-100 text-rose-800 hover:bg-rose-200 border border-rose-300 animate-pulse"
-                              }`}
+                            {/* 12 Ô Tháng Tương Tác */}
+                            {months.map((m) => {
+                              const monthKey = `${selectedYear}-${String(m).padStart(2, "0")}`;
+                              const isPaid = paidSet.has(monthKey);
+                              if (isPaid) paidCountThisYear++;
+                              const isCurrent = selectedYear === currentYear && m === currentMonthNum;
+                              const isPast = selectedYear < currentYear || (selectedYear === currentYear && m < currentMonthNum);
+                              const isFuture = selectedYear > currentYear || (selectedYear === currentYear && m > currentMonthNum);
+                              const isToggling = togglingMonth[`${t.id}-${monthKey}`];
+
+                              return (
+                                <td
+                                  key={monthKey}
+                                  className={`py-2 px-1 text-center ${
+                                    isCurrent ? "bg-orange-50/30 border-x border-orange-100" : ""
+                                  }`}
+                                >
+                                  <button
+                                    type="button"
+                                    disabled={isToggling}
+                                    onClick={() => handleToggleMonth(t, monthKey)}
+                                    title={`${t.name} - Tháng ${m}/${selectedYear}: ${
+                                      isPaid ? "ĐÃ THANH TOÁN (" + formatMoney(fee) + "). Bấm để hủy." : "CHƯA THANH TOÁN. Bấm để xác nhận đã thu."
+                                    }`}
+                                    className={`w-full py-1.5 px-1 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 border ${
+                                      isToggling
+                                        ? "opacity-50 cursor-wait bg-slate-100 border-slate-200 text-slate-400"
+                                        : isPaid
+                                        ? "bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100 hover:border-emerald-400 shadow-2xs active:scale-95"
+                                        : isPast || isCurrent
+                                        ? "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100 hover:border-rose-300 active:scale-95"
+                                        : "bg-slate-50/80 text-slate-400 border-dashed border-slate-200 hover:bg-slate-100 hover:text-slate-600 active:scale-95"
+                                    }`}
+                                  >
+                                    {isToggling ? (
+                                      <i className="fa-solid fa-circle-notch fa-spin text-xs text-orange-500 py-1"></i>
+                                    ) : isPaid ? (
+                                      <>
+                                        <i className="fa-solid fa-circle-check text-emerald-600 text-xs"></i>
+                                        <span className="text-[10px] leading-none font-black text-emerald-700">Đã đóng</span>
+                                      </>
+                                    ) : isPast || isCurrent ? (
+                                      <>
+                                        <i className="fa-solid fa-clock text-rose-500 text-xs"></i>
+                                        <span className="text-[10px] leading-none font-semibold text-rose-600">Chưa thu</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <i className="fa-regular fa-circle text-slate-300 text-xs"></i>
+                                        <span className="text-[10px] leading-none text-slate-400">-</span>
+                                      </>
+                                    )}
+                                  </button>
+                                </td>
+                              );
+                            })}
+
+                            {/* Cột Tổng Kết Nhóm */}
+                            <td className="py-3 px-4 text-right">
+                              <div className="font-black text-xs text-slate-900 font-display">
+                                {formatMoney(paidCountThisYear * fee)}
+                              </div>
+                              <div className="text-[10px] text-slate-400 font-semibold mt-0.5">
+                                {paidCountThisYear} / 12 tháng
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+
+                  {/* Footer Tổng Hợp Toàn Sàn */}
+                  {!isLoading && filteredTenants.length > 0 && (
+                    <tfoot>
+                      <tr className="bg-slate-100/90 border-t-2 border-slate-300 text-xs font-black text-slate-800">
+                        {/* Nhãn Tổng Cộng Cố Định (Sticky Left) */}
+                        <td className="py-3.5 px-4 sticky left-0 bg-slate-100/95 backdrop-blur-xs z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] uppercase tracking-wider text-[11px]">
+                          <div className="flex items-center gap-1.5 text-slate-800">
+                            <i className="fa-solid fa-calculator text-orange-500"></i>
+                            <span>Tổng Thu Tháng</span>
+                          </div>
+                        </td>
+
+                        {/* Tổng Thu Theo Từng Tháng */}
+                        {monthSummaries.map((ms) => (
+                          <td
+                            key={ms.monthKey}
+                            className={`py-3 px-1 text-center whitespace-nowrap ${
+                              ms.isCurrentMonth ? "bg-orange-100/80 border-x border-orange-200" : ""
+                            }`}
+                          >
+                            <p className="text-[11px] font-black text-slate-900 font-display leading-tight">
+                              {ms.totalRevenue > 0
+                                ? ms.totalRevenue >= 1000000
+                                  ? `${(ms.totalRevenue / 1000000).toFixed(1)}Tr`
+                                  : formatMoney(ms.totalRevenue)
+                                : "0đ"}
+                            </p>
+                            <p className="text-[9px] text-slate-500 font-semibold mt-0.5">
+                              {ms.paidCount}/{filteredTenants.length}
+                            </p>
+                          </td>
+                        ))}
+
+                        {/* Tổng Doanh Thu Cả Năm */}
+                        <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                          <p className="text-xs font-black text-emerald-800 font-display">
+                            {formatMoney(totalYearRevenue)}
+                          </p>
+                          <p className="text-[10px] text-slate-500 font-semibold mt-0.5">
+                            {totalYearPaidSlots} lượt thu
+                          </p>
+                        </td>
+                      </tr>
+                    </tfoot>
+                  )}
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* CHẾ ĐỘ 2: DANH SÁCH CẤU HÌNH KÊNH (TABLE CHI TIẾT & SỬA / XÓA)            */}
+          {/* ========================================================================= */}
+          {tenantViewMode === "table" && (
+            <>
+              {/* MOBILE & TABLET CARD VIEW (Ẩn trên Desktop >= lg) */}
+              <div className="block lg:hidden space-y-3">
+                {isLoading ? (
+                  <div className="bg-white rounded-2xl border border-slate-200/80 p-8 text-center text-slate-400 shadow-2xs">
+                    <i className="fa-solid fa-circle-notch fa-spin text-xl text-orange-500 mb-2 block"></i>
+                    Đang tải dữ liệu Kênh Đối Tác...
+                  </div>
+                ) : filteredTenants.length === 0 ? (
+                  <div className="bg-white rounded-2xl border border-slate-200/80 p-8 text-center text-slate-400 shadow-2xs">
+                    <i className="fa-solid fa-store-slash text-2xl text-slate-300 mb-2 block"></i>
+                    Không tìm thấy Kênh nào phù hợp.
+                  </div>
+                ) : (
+                  filteredTenants.map((t) => {
+                    const isPaid = (t.subscriptionStatus || "PAID").toUpperCase() === "PAID";
+                    return (
+                      <div
+                        key={t.id}
+                        className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs space-y-3 hover:border-orange-200 transition"
+                      >
+                        {/* Header: Logo, Name, Slug, Payment Button */}
+                        <div className="flex items-start justify-between gap-2.5">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div
+                              className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-white text-sm shadow-2xs shrink-0"
+                              style={{ backgroundColor: t.primaryColor || "#f97316" }}
                             >
-                              <i className={`fa-solid ${isPaid ? "fa-circle-check text-emerald-600" : "fa-clock text-rose-600"}`}></i>
-                              <span>{isPaid ? "Đã đóng tiền" : "Chưa đóng"}</span>
-                            </button>
-                          </td>
-
-                          <td className="py-3.5 px-4 text-right">
-                            <div className="flex items-center justify-end gap-1.5">
-                              <button
-                                onClick={() => handleOpenEdit(t)}
-                                className="p-2 text-slate-500 hover:text-orange-600 hover:bg-orange-50 rounded-xl transition cursor-pointer"
-                                title="Chỉnh sửa Kênh"
-                              >
-                                <i className="fa-solid fa-pen-to-square"></i>
-                              </button>
-                              <button
-                                onClick={() => handleDeleteTenant(t.id, t.name)}
-                                className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition cursor-pointer"
-                                title="Xóa Kênh"
-                              >
-                                <i className="fa-solid fa-trash-can"></i>
-                              </button>
+                              {t.name.charAt(0)}
                             </div>
+                            <div className="min-w-0">
+                              <p className="font-bold text-slate-900 text-sm leading-snug truncate">{t.name}</p>
+                              <p className="text-[11px] font-mono text-slate-400">/{t.slug}</p>
+                            </div>
+                          </div>
+
+                          <button
+                            onClick={() => handleTogglePayment(t)}
+                            className={`px-3 py-1 rounded-full text-[11px] font-black cursor-pointer transition shadow-2xs inline-flex items-center gap-1.5 shrink-0 ${
+                              isPaid
+                                ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border border-emerald-300"
+                                : "bg-rose-100 text-rose-800 hover:bg-rose-200 border border-rose-300 animate-pulse"
+                            }`}
+                          >
+                            <i className={`fa-solid ${isPaid ? "fa-circle-check text-emerald-600" : "fa-clock text-rose-600"}`}></i>
+                            <span>{isPaid ? "Đã đóng tiền" : "Chưa đóng"}</span>
+                          </button>
+                        </div>
+
+                        {/* Details Box */}
+                        <div className="bg-slate-50/80 rounded-xl p-3 border border-slate-100 space-y-2 text-xs">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-slate-400 font-medium text-[11px] shrink-0">Domain:</span>
+                            <div className="truncate text-right">
+                              {t.publicLookupDomain ? (
+                                <span className="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200 font-mono text-[11px] font-semibold">
+                                  {t.publicLookupDomain}
+                                </span>
+                              ) : (
+                                <span className="text-slate-500 font-mono text-[11px]">28affihub.store/{t.slug}</span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-slate-400 font-medium text-[11px] shrink-0">Tỷ lệ chia:</span>
+                            <span className="text-[11px] font-bold">
+                              <span className="text-orange-600">{t.customerSplitRate || 80}%</span>
+                              <span className="text-slate-400 mx-1">-</span>
+                              <span className="text-slate-700">{100 - (t.customerSplitRate || 80)}%</span>
+                              <span className="text-[10px] text-slate-400 font-normal ml-1">(Thuế {t.taxRate || 10}%)</span>
+                            </span>
+                          </div>
+
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-slate-400 font-medium text-[11px] shrink-0">Tiền thuê / tháng:</span>
+                            <span className="font-bold text-slate-900 font-display text-xs">
+                              {formatMoney(t.monthlyFee || 500000)}
+                              <span className="text-[10px] font-normal text-slate-400 ml-1">
+                                (Ngày {t.billingCycleDay || 15})
+                              </span>
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-2 pt-1">
+                          <button
+                            onClick={() => handleOpenEdit(t)}
+                            className="flex-1 py-2 bg-orange-50 hover:bg-orange-100 text-orange-700 rounded-xl font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1.5 border border-orange-200"
+                          >
+                            <i className="fa-solid fa-pen-to-square text-xs"></i>
+                            <span>Chỉnh Sửa</span>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteTenant(t.id, t.name)}
+                            className="py-2 px-3 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1.5 border border-rose-200"
+                            title="Xóa Kênh"
+                          >
+                            <i className="fa-solid fa-trash-can text-xs"></i>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* DESKTOP TABLE VIEW (Hiện trên màn hình >= lg) */}
+              <div className="hidden lg:block bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-black text-slate-500 uppercase tracking-wider">
+                        <th className="py-3.5 px-4">Kênh Đối Tác</th>
+                        <th className="py-3.5 px-4">Tên Miền / Đường Dẫn Tra Cứu</th>
+                        <th className="py-3.5 px-4">Tỷ Lệ Chia (Khách - Trưởng Nhóm)</th>
+                        <th className="py-3.5 px-4">Tiền Thuê / Chu Kỳ</th>
+                        <th className="py-3.5 px-4 text-center">Thu Phí Thuê</th>
+                        <th className="py-3.5 px-4 text-right">Thao Tác</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-xs font-medium text-slate-700">
+                      {isLoading ? (
+                        <tr>
+                          <td colSpan={6} className="py-12 text-center text-slate-400">
+                            <i className="fa-solid fa-circle-notch fa-spin text-xl text-orange-500 mb-2 block"></i>
+                            Đang tải dữ liệu Kênh Đối Tác...
                           </td>
                         </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+                      ) : filteredTenants.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="py-12 text-center text-slate-400">
+                            <i className="fa-solid fa-store-slash text-2xl text-slate-300 mb-2 block"></i>
+                            Không tìm thấy Kênh nào phù hợp.
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredTenants.map((t) => {
+                          const isPaid = (t.subscriptionStatus || "PAID").toUpperCase() === "PAID";
+                          return (
+                            <tr key={t.id} className="hover:bg-slate-50/80 transition">
+                              <td className="py-3.5 px-4">
+                                <div className="flex items-center gap-3">
+                                  <div
+                                    className="w-9 h-9 rounded-xl flex items-center justify-center font-bold text-white text-xs shadow-2xs shrink-0"
+                                    style={{ backgroundColor: t.primaryColor || "#f97316" }}
+                                  >
+                                    {t.name.charAt(0)}
+                                  </div>
+                                  <div>
+                                    <p className="font-bold text-slate-900 leading-snug">{t.name}</p>
+                                    <p className="text-[11px] font-mono text-slate-400">/{t.slug}</p>
+                                  </div>
+                                </div>
+                              </td>
+
+                              <td className="py-3.5 px-4">
+                                {t.publicLookupDomain ? (
+                                  <span className="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200 font-mono text-[11px] font-semibold">
+                                    {t.publicLookupDomain}
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-400 font-mono text-[11px]">28affihub.store/{t.slug}</span>
+                                )}
+                              </td>
+
+                              <td className="py-3.5 px-4">
+                                <span className="font-bold text-orange-600">{t.customerSplitRate || 80}%</span>
+                                <span className="text-slate-400 mx-1">-</span>
+                                <span className="font-bold text-slate-700">{100 - (t.customerSplitRate || 80)}%</span>
+                                <span className="text-[10px] text-slate-400 block">(Thuế: {t.taxRate || 10}%)</span>
+                              </td>
+
+                              <td className="py-3.5 px-4 font-bold text-slate-900 font-display">
+                                {formatMoney(t.monthlyFee || 500000)}
+                                <span className="text-[10px] font-normal text-slate-400 block">
+                                  Ngày {t.billingCycleDay || 15} hàng tháng
+                                </span>
+                              </td>
+
+                              <td className="py-3.5 px-4 text-center">
+                                <button
+                                  onClick={() => handleTogglePayment(t)}
+                                  className={`px-3 py-1 rounded-full text-[11px] font-black cursor-pointer transition shadow-2xs inline-flex items-center gap-1.5 ${
+                                    isPaid
+                                      ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border border-emerald-300"
+                                      : "bg-rose-100 text-rose-800 hover:bg-rose-200 border border-rose-300 animate-pulse"
+                                  }`}
+                                >
+                                  <i className={`fa-solid ${isPaid ? "fa-circle-check text-emerald-600" : "fa-clock text-rose-600"}`}></i>
+                                  <span>{isPaid ? "Đã đóng tiền" : "Chưa đóng"}</span>
+                                </button>
+                              </td>
+
+                              <td className="py-3.5 px-4 text-right">
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <button
+                                    onClick={() => handleOpenEdit(t)}
+                                    className="p-2 text-slate-500 hover:text-orange-600 hover:bg-orange-50 rounded-xl transition cursor-pointer"
+                                    title="Chỉnh sửa Kênh"
+                                  >
+                                    <i className="fa-solid fa-pen-to-square"></i>
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteTenant(t.id, t.name)}
+                                    className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition cursor-pointer"
+                                    title="Xóa Kênh"
+                                  >
+                                    <i className="fa-solid fa-trash-can"></i>
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
         </>
       )}
 

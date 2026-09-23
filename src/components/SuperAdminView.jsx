@@ -23,6 +23,10 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
   const [userRoleForm, setUserRoleForm] = useState({ role: "BUYER", tenantId: "" });
   const [isSavingUserRole, setIsSavingUserRole] = useState(false);
 
+  // Backup state
+  const [isBackingUp, setIsBackingUp] = useState(false);
+  const [lastBackupInfo, setLastBackupInfo] = useState(null);
+
   const [formData, setFormData] = useState({
     slug: "",
     name: "",
@@ -94,6 +98,31 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
   const notify = (msg, type = "success") => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 4000);
+  };
+
+  const handleTriggerBackup = async () => {
+    if (isBackingUp) return;
+    if (!window.confirm("Bạn có chắc muốn sao lưu toàn bộ Database SaaS và gửi file nén ngay sang kho lưu trữ Telegram không?")) {
+      return;
+    }
+    setIsBackingUp(true);
+    try {
+      const res = await fetch(`${apiRoot}/api/saas/super-admin/backup/trigger`, {
+        method: "POST",
+        headers: authHeaders,
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setLastBackupInfo(data);
+        notify(data.message || "Đã sao lưu Database và gửi sang Telegram thành công! 🎉", "success");
+      } else {
+        notify(data.message || "Sao lưu thất bại!", "error");
+      }
+    } catch (err) {
+      notify("Lỗi kết nối máy chủ khi sao lưu: " + err.message, "error");
+    } finally {
+      setIsBackingUp(false);
+    }
   };
 
   const handleOpenAdd = () => {
@@ -417,36 +446,81 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
         </div>
       )}
       {/* ===================== HERO CARD ===================== */}
-      <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-6 shadow-xs flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
         <div className="flex items-center gap-3 sm:gap-4 min-w-0">
           <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-amber-500/10 border border-amber-200 text-amber-600 flex items-center justify-center text-xl sm:text-2xl font-black shrink-0 shadow-2xs">
             <i className="fa-solid fa-crown"></i>
           </div>
           <div className="min-w-0">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-lg sm:text-xl md:text-2xl font-black text-slate-900 font-display truncate">
                 Quản Trị Toàn Sàn
               </h1>
               <span className="bg-amber-100 text-amber-800 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider border border-amber-300 shrink-0">
                 Super Admin
               </span>
+              <span className="bg-sky-50 text-sky-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-sky-200 flex items-center gap-1 shrink-0" title="Tự động sao lưu database hàng ngày lúc 02:00 sáng vào Telegram">
+                <i className="fa-solid fa-cloud-arrow-up text-sky-500 text-[9px]"></i>
+                Auto Backup 02:00 AM
+              </span>
             </div>
             <p className="text-xs text-slate-500 mt-0.5 truncate">
-              Quản lý các Trưởng Nhóm đối tác và phân quyền toàn sàn.
+              Quản lý các Trưởng Nhóm đối tác, phân quyền và sao lưu cơ sở dữ liệu.
             </p>
           </div>
         </div>
 
-        {adminSubTab === "tenants" && (
+        <div className="flex items-center gap-2 w-full lg:w-auto flex-wrap sm:flex-nowrap">
           <button
-            onClick={handleOpenAdd}
-            className="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black text-xs rounded-xl shadow-md shadow-orange-500/20 transition cursor-pointer flex items-center gap-2 justify-center shrink-0 active:scale-95"
+            onClick={handleTriggerBackup}
+            disabled={isBackingUp}
+            className={`flex-1 sm:flex-none px-4 py-2.5 rounded-xl font-black text-xs transition cursor-pointer flex items-center gap-2 justify-center shrink-0 active:scale-95 border ${
+              isBackingUp
+                ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
+                : "bg-sky-50 hover:bg-sky-100 text-sky-700 border-sky-200 hover:border-sky-300 shadow-xs"
+            }`}
+            title="Kích hoạt sao lưu toàn bộ Database SaaS và gửi ngay vào Telegram"
           >
-            <i className="fa-solid fa-plus-circle text-xs"></i>
-            <span>Thêm Trưởng Nhóm Mới</span>
+            <i className={isBackingUp ? "fa-solid fa-spinner fa-spin text-sky-500 text-xs" : "fa-solid fa-paper-plane text-sky-600 text-xs"}></i>
+            <span>{isBackingUp ? "Đang sao lưu & gửi Telegram..." : "Sao Lưu Telegram"}</span>
           </button>
-        )}
+
+          {adminSubTab === "tenants" && (
+            <button
+              onClick={handleOpenAdd}
+              className="flex-1 sm:flex-none px-5 py-2.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black text-xs rounded-xl shadow-md shadow-orange-500/20 transition cursor-pointer flex items-center gap-2 justify-center shrink-0 active:scale-95"
+            >
+              <i className="fa-solid fa-plus-circle text-xs"></i>
+              <span>Thêm Trưởng Nhóm Mới</span>
+            </button>
+          )}
+        </div>
       </div>
+
+      {/* Backup Result Banner (nếu vừa sao lưu xong) */}
+      {lastBackupInfo && (
+        <div className="bg-emerald-50/90 border border-emerald-200/80 rounded-2xl p-4 shadow-xs flex items-center justify-between gap-3 text-xs text-emerald-900 animate-fade-in">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-emerald-500 text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-2xs">
+              <i className="fa-solid fa-check"></i>
+            </div>
+            <div className="min-w-0">
+              <div className="font-black text-emerald-900 flex items-center gap-2 flex-wrap">
+                <span>Sao lưu thành công: <code>{lastBackupInfo.fileName}</code></span>
+                <span className="bg-emerald-200/70 text-emerald-800 text-[10px] px-2 py-0.5 rounded-full font-bold">
+                  {lastBackupInfo.fileSize}
+                </span>
+              </div>
+              <p className="text-[11px] text-emerald-700 mt-0.5 truncate">
+                Đã gửi file nén qua Telegram lúc {lastBackupInfo.timestamp} ({lastBackupInfo.durationMs}ms) • Kênh: {lastBackupInfo.totalTenants} • Đơn: {lastBackupInfo.totalOrders} • Khách Zalo: {lastBackupInfo.totalZaloUsers}
+              </p>
+            </div>
+          </div>
+          <button onClick={() => setLastBackupInfo(null)} className="text-emerald-500 hover:text-emerald-700 p-1 cursor-pointer">
+            <i className="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      )}
 
       {/* ===================== SUB TABS NAVIGATION (1 HÀNG DUY NHẤT) ===================== */}
       <div className="bg-slate-100/90 p-1.5 rounded-2xl flex items-center gap-1 border border-slate-200/80 shadow-2xs">

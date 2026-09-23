@@ -174,34 +174,40 @@ export function TopBar({
 
         {/* User profile / Login */}
         {user ? (
-          <div className="flex items-center gap-1.5 bg-slate-100/90 pl-1 pr-1.5 py-0.5 rounded-full border border-slate-200 shrink-0">
-            {user.avatarUrl ? (
-              <img
-                src={user.avatarUrl}
-                alt={user.name}
-                className="w-7 h-7 rounded-full object-cover border border-orange-400 shrink-0"
-              />
-            ) : (
-              <div className="w-7 h-7 rounded-full bg-orange-500 text-white text-[11px] font-black flex items-center justify-center shrink-0">
-                {user.name ? user.name.charAt(0).toUpperCase() : "U"}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            {/* User Avatar + Info Pill */}
+            <div className="flex items-center gap-1.5 bg-slate-100/90 pl-1 pr-1.5 sm:pr-2.5 py-0.5 rounded-full border border-slate-200/90 shadow-2xs shrink-0">
+              {user.avatarUrl ? (
+                <img
+                  src={user.avatarUrl}
+                  alt={user.name}
+                  className="w-7 h-7 rounded-full object-cover border border-orange-400 shrink-0"
+                />
+              ) : (
+                <div className="w-7 h-7 rounded-full bg-orange-500 text-white text-[11px] font-black flex items-center justify-center shrink-0">
+                  {user.name ? user.name.charAt(0).toUpperCase() : "U"}
+                </div>
+              )}
+              <div className="hidden sm:flex flex-col text-left">
+                <span className="text-xs font-bold text-slate-800 truncate max-w-[90px] sm:max-w-[120px] leading-tight">
+                  {user.name || user.email}
+                </span>
+                <span className="text-[9px] font-bold text-orange-600">
+                  {user.role === "SUPER_ADMIN" ? "👑 Quản trị viên" : "👔 Trưởng nhóm"}
+                </span>
               </div>
-            )}
-            <div className="hidden sm:flex flex-col text-left">
-              <span className="text-xs font-bold text-slate-800 truncate max-w-[90px] sm:max-w-[120px] leading-tight">
-                {user.name || user.email}
-              </span>
-              <span className="text-[9px] font-bold text-orange-600">
-                {user.role === "SUPER_ADMIN" ? "👑 Quản trị viên" : "👔 Trưởng nhóm"}
-              </span>
             </div>
+
+            {/* Nút Đăng Xuất Đẹp & Rõ Ràng */}
             {onLogout && (
               <button
                 type="button"
                 onClick={onLogout}
                 title="Đăng xuất tài khoản"
-                className="w-6 h-6 rounded-full bg-white hover:bg-rose-50 text-slate-400 hover:text-rose-600 border border-slate-200/80 flex items-center justify-center transition cursor-pointer shadow-2xs shrink-0 ml-0.5 active:scale-95"
+                className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200/90 text-xs font-bold transition shadow-2xs cursor-pointer active:scale-95 shrink-0"
               >
-                <i className="fa-solid fa-arrow-right-from-bracket text-[10px]"></i>
+                <i className="fa-solid fa-arrow-right-from-bracket text-xs text-rose-500"></i>
+                <span className="hidden sm:inline">Đăng xuất</span>
               </button>
             )}
           </div>

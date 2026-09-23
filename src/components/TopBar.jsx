@@ -65,24 +65,24 @@ export function TopBar({
   const info = getHeaderInfo();
 
   return (
-    <header className="bg-white/90 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-30 px-3.5 md:px-8 py-2.5 md:py-3 flex items-center justify-between gap-3">
+    <header className="bg-white/95 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-30 px-3 sm:px-4 md:px-8 py-2 md:py-3 flex items-center justify-between gap-2 sm:gap-4">
       {/* Left: Mobile Brand Logo & Dynamic Breadcrumb + Title */}
-      <div className="flex items-center gap-2.5">
+      <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1 overflow-hidden">
         {/* Mobile Logo Link */}
         <div
           onClick={() => onNavigate && onNavigate("gioi-thieu")}
-          className="lg:hidden flex items-center gap-2 cursor-pointer shrink-0"
+          className="lg:hidden flex items-center gap-1.5 cursor-pointer shrink-0"
         >
           <img
             src={logoImg}
             alt="28AffiHub"
-            className="h-8 w-auto object-contain"
+            className="h-7 sm:h-8 w-auto object-contain"
           />
         </div>
 
-        <div>
+        <div className="min-w-0 flex-1">
           {/* Breadcrumb */}
-          <div className="hidden sm:flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 mb-0.5">
+          <div className="hidden sm:flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 mb-0.5 truncate">
             <span
               onClick={() => onNavigate && onNavigate("gioi-thieu")}
               className="hover:text-orange-600 cursor-pointer"
@@ -92,17 +92,26 @@ export function TopBar({
             <span>/</span>
             {currentView === "tenant-admin" && (
               <>
-                <span className="text-slate-500 font-bold">{groupName}</span>
+                <span className="text-slate-500 font-bold truncate">{groupName}</span>
                 <span>/</span>
               </>
             )}
             <span className="text-orange-600 font-bold">{info.breadcrumb}</span>
           </div>
 
-          <h1 className="text-xs sm:text-sm md:text-base font-black text-slate-900 font-display flex items-center gap-2 truncate max-w-[200px] sm:max-w-none">
-            <span>{info.title}</span>
+          <h1 className="text-xs sm:text-sm md:text-base font-black text-slate-900 font-display flex items-center gap-1.5 truncate">
+            {currentView === "tenant-admin" ? (
+              <>
+                <span className="sm:hidden truncate font-black">Trưởng Nhóm</span>
+                <span className="hidden sm:inline truncate">
+                  Quản Trị: <span className="text-orange-600">{groupName}</span>
+                </span>
+              </>
+            ) : (
+              <span className="truncate">{info.title}</span>
+            )}
             {currentView === "tenant-admin" && currentTenant && (
-              <span className="hidden md:inline-block text-[10px] px-2 py-0.5 rounded-md bg-orange-50 text-orange-600 border border-orange-200 font-bold font-mono">
+              <span className="hidden lg:inline-block text-[10px] px-2 py-0.5 rounded-md bg-orange-50 text-orange-600 border border-orange-200 font-bold font-mono shrink-0">
                 /{currentTenant.slug}
               </span>
             )}
@@ -111,22 +120,23 @@ export function TopBar({
       </div>
 
       {/* Right: Group Switcher (only in tenant-admin) + Profile / Login */}
-      <div className="flex items-center gap-2.5">
+      <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
         {/* Show Group selector ONLY when user is SUPER_ADMIN */}
         {currentView === "tenant-admin" && user?.role === "SUPER_ADMIN" && availableTenants.length > 0 && (
-          <div className="flex items-center gap-1.5 bg-slate-100/90 px-2.5 py-1.5 rounded-xl border border-slate-200">
-            <i className="fa-solid fa-users text-[11px] text-slate-400"></i>
-            <span className="text-[11px] font-bold text-slate-500 hidden md:inline">Nhóm:</span>
+          <div className="flex items-center gap-1 sm:gap-1.5 bg-gradient-to-r from-orange-50/90 to-amber-50/90 hover:from-orange-100/80 hover:to-amber-100/80 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-xl border border-orange-200/90 shadow-2xs transition shrink-0">
+            <i className="fa-solid fa-users-viewfinder text-orange-600 text-[11px] shrink-0"></i>
+            <span className="text-[10px] font-black text-orange-800 uppercase tracking-wider hidden md:inline">Nhóm:</span>
             <select
               value={currentTenant?.slug || ""}
               onChange={(e) => {
                 const t = availableTenants.find((item) => item.slug === e.target.value);
                 if (t) onSelectTenant(t);
               }}
-              className="bg-transparent text-orange-600 font-black text-xs outline-none border-0 cursor-pointer font-sans max-w-[130px] sm:max-w-[170px]"
+              className="bg-transparent text-orange-950 font-black text-xs outline-none border-0 cursor-pointer font-sans max-w-[95px] sm:max-w-[150px] truncate"
+              title="Lọc Kênh Trưởng Nhóm"
             >
               {availableTenants.map((t) => (
-                <option key={t.id} value={t.slug}>
+                <option key={t.id} value={t.slug} className="text-slate-800 font-medium bg-white">
                   {t.name}
                 </option>
               ))}

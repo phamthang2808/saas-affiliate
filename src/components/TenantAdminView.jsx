@@ -1013,9 +1013,10 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
 
         {/* Quick Group Switcher for Multi-tenant mode */}
         {!APP_CONFIG.isStandalone && (user?.role === "SUPER_ADMIN" || !activeTenant?.slug) && availableTenants.length > 0 && (
-          <div className="flex items-center gap-2 bg-white border border-slate-200 px-3 py-1.5 rounded-2xl shadow-2xs">
-            <span className="text-xs font-bold text-slate-400">
-              {user?.role === "SUPER_ADMIN" ? "Nhóm (Super Admin):" : "Chọn Kênh Trưởng Nhóm:"}
+          <div className="flex items-center gap-2 bg-gradient-to-r from-orange-50/80 via-white to-amber-50/80 border border-orange-200/90 px-3.5 py-2 rounded-2xl shadow-2xs w-full sm:w-auto justify-between sm:justify-start">
+            <span className="text-xs font-black text-orange-900 flex items-center gap-1.5 shrink-0">
+              <i className="fa-solid fa-users-viewfinder text-orange-600"></i>
+              {user?.role === "SUPER_ADMIN" ? "Lọc Trưởng Nhóm:" : "Chọn Kênh:"}
             </span>
             <select
               value={activeTenant?.slug || ""}
@@ -1023,7 +1024,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                 const t = availableTenants.find((item) => item.slug === e.target.value);
                 if (t) onSelectTenant(t);
               }}
-              className="bg-transparent text-orange-600 font-extrabold text-xs outline-none border-0 cursor-pointer font-sans"
+              className="bg-white text-orange-950 font-bold text-xs px-2.5 py-1 rounded-xl border border-orange-200 outline-none cursor-pointer font-sans truncate max-w-[200px]"
             >
               <option value="">-- Chọn 1 Kênh Đối Tác --</option>
               {availableTenants.map((t) => (

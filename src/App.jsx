@@ -12,6 +12,7 @@ import { SuperAdminView } from "./components/SuperAdminView";
 import { TenantAdminView } from "./components/TenantAdminView";
 import { TopBar } from "./components/TopBar";
 import { API_URL_ROOT, APP_CONFIG } from "./config/api";
+import { isZaloBrowser, isAndroidDevice, openExternalBrowser } from "./utils/browserDetect";
 
 export default function App() {
   // Views: 'gioi-thieu' | 'tra-cuu' | 'huong-dan' | 'bao-gia' | 'tenant-admin' | 'super-admin'
@@ -82,6 +83,34 @@ export default function App() {
     }
   });
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
+  // Unified login opener with auto-breakout for Zalo Android
+  const handleOpenLogin = () => {
+    if (isZaloBrowser() && isAndroidDevice()) {
+      try {
+        openExternalBrowser(true);
+      } catch (e) {
+        console.error("Android breakout error:", e);
+      }
+    }
+    setIsAuthModalOpen(true);
+  };
+
+  // Listen for ?auth=1 when jumping from Zalo into Safari/Chrome
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("auth") === "1" || params.get("login") === "true") {
+        setIsAuthModalOpen(true);
+        params.delete("auth");
+        params.delete("login");
+        const newQuery = params.toString() ? `?${params.toString()}` : "";
+        window.history.replaceState({}, "", window.location.pathname + newQuery + window.location.hash);
+      }
+    } catch (e) {
+      console.error("Auth param check error:", e);
+    }
+  }, []);
 
   // Dynamic SEO Title & Meta Description based on active view and tenant
   useEffect(() => {
@@ -315,7 +344,7 @@ export default function App() {
         setCurrentView={setCurrentView}
         currentTenant={currentTenant}
         user={user}
-        onOpenLogin={() => setIsAuthModalOpen(true)}
+        onOpenLogin={handleOpenLogin}
         onLogout={handleLogout}
         isMobileOpen={isMobileOpen}
         onCloseMobile={() => setIsMobileOpen(false)}
@@ -330,7 +359,7 @@ export default function App() {
           availableTenants={availableTenants}
           onSelectTenant={setCurrentTenant}
           user={user}
-          onOpenLogin={() => setIsAuthModalOpen(true)}
+          onOpenLogin={handleOpenLogin}
           onToggleMobile={() => setIsMobileOpen((prev) => !prev)}
           onNavigate={(view) => setCurrentView(view)}
         />
@@ -379,7 +408,7 @@ export default function App() {
                 type="login_required"
                 title="Khu Vực Quản Trị Trưởng Nhóm"
                 requiredRole="Trưởng Nhóm (TENANT_ADMIN)"
-                onOpenLogin={() => setIsAuthModalOpen(true)}
+                onOpenLogin={handleOpenLogin}
                 onNavigateHome={() => setCurrentView("gioi-thieu")}
               />
             ) : user.role !== "TENANT_ADMIN" && user.role !== "SUPER_ADMIN" ? (
@@ -388,7 +417,7 @@ export default function App() {
                 title="Chưa Được Cấp Quyền Trưởng Nhóm"
                 requiredRole="TENANT_ADMIN"
                 user={user}
-                onOpenLogin={() => setIsAuthModalOpen(true)}
+                onOpenLogin={handleOpenLogin}
                 onLogout={handleLogout}
                 onNavigateHome={() => setCurrentView("gioi-thieu")}
               />
@@ -400,7 +429,7 @@ export default function App() {
                 onSelectTenant={setCurrentTenant}
                 user={user}
                 token={token}
-                onOpenLogin={() => setIsAuthModalOpen(true)}
+                onOpenLogin={handleOpenLogin}
               />
             )
           )}
@@ -412,7 +441,7 @@ export default function App() {
                 type="login_required"
                 title="Khu Vực Quản Trị Toàn Sàn (Super Admin)"
                 requiredRole="SUPER_ADMIN"
-                onOpenLogin={() => setIsAuthModalOpen(true)}
+                onOpenLogin={handleOpenLogin}
                 onNavigateHome={() => setCurrentView("gioi-thieu")}
               />
             ) : user.role !== "SUPER_ADMIN" ? (
@@ -421,7 +450,7 @@ export default function App() {
                 title="Không Có Quyền Super Admin"
                 requiredRole="SUPER_ADMIN"
                 user={user}
-                onOpenLogin={() => setIsAuthModalOpen(true)}
+                onOpenLogin={handleOpenLogin}
                 onLogout={handleLogout}
                 onNavigateHome={() => setCurrentView("gioi-thieu")}
               />
@@ -430,7 +459,7 @@ export default function App() {
                 apiRoot={API_URL_ROOT}
                 user={user}
                 token={token}
-                onOpenLogin={() => setIsAuthModalOpen(true)}
+                onOpenLogin={handleOpenLogin}
               />
             )
           )}
@@ -449,6 +478,7 @@ export default function App() {
         currentView={currentView}
         setCurrentView={setCurrentView}
         user={user}
+        onOpenLogin={handleOpenLogin}
       />
 
       {/* Google Login Modal */}

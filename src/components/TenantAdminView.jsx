@@ -146,6 +146,23 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
       : null) ||
     (APP_CONFIG.isStandalone ? APP_CONFIG.tenant : null);
 
+  // Dynamic Settings state
+  const [settings, setSettings] = useState({
+    holdingDays: 0,
+    minWithdrawAmount: 10000,
+    customerSplitRate: 80,
+    taxRate: 10,
+    name: "",
+    adminZaloId: "",
+    withdrawalRuleNote: "",
+    shopeePubId: "",
+    tiktokApiKey: "",
+    tiktokCreatorUsername: "",
+    isTiktokEnabled: activeTenant?.isTiktokEnabled ?? false,
+  });
+
+  const isTiktokEnabled = Boolean(activeTenant?.isTiktokEnabled ?? settings.isTiktokEnabled);
+
   // Tabs: 'overview' | 'shopee' | 'tiktok' | 'payouts' | 'members' | 'settings' | 'templates' | 'bots'
   const VALID_TENANT_TABS = ["overview", "shopee", "tiktok", "payouts", "members", "settings", "templates", "bots"];
   const [activeTab, setActiveTab] = useState(() => {
@@ -158,6 +175,12 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
       localStorage.setItem("saasTenantAdminTab", activeTab);
     }
   }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab === "tiktok" && !isTiktokEnabled) {
+      setActiveTab("overview");
+    }
+  }, [activeTab, isTiktokEnabled]);
   const [stats, setStats] = useState(null);
   const [orders, setOrders] = useState([]);
   const [payouts, setPayouts] = useState([]);
@@ -244,19 +267,6 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
   const [templateSubTab, setTemplateSubTab] = useState("all");
   const [previewModalKey, setPreviewModalKey] = useState(null);
 
-  // Dynamic Settings state
-  const [settings, setSettings] = useState({
-    holdingDays: 0,
-    minWithdrawAmount: 10000,
-    customerSplitRate: 80,
-    taxRate: 10,
-    name: "",
-    adminZaloId: "",
-    withdrawalRuleNote: "",
-    shopeePubId: "",
-    tiktokApiKey: "",
-    tiktokCreatorUsername: "",
-  });
   const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [settingsSaveMessage, setSettingsSaveMessage] = useState("");
 
@@ -284,6 +294,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
           shopeePubId: data.shopeePubId || "",
           tiktokApiKey: data.tiktokApiKey || "",
           tiktokCreatorUsername: data.tiktokCreatorUsername || "",
+          isTiktokEnabled: data.isTiktokEnabled ?? activeTenant?.isTiktokEnabled ?? false,
         });
       }
     } catch (e) {
@@ -1122,7 +1133,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
             {[
               { key: "overview", icon: "fa-solid fa-chart-pie", label: "Tổng quan", colSpan: "col-span-1" },
               { key: "shopee", icon: "fa-solid fa-bag-shopping", label: `Đơn Shopee (${shopeeOrders.length})`, colSpan: "col-span-1" },
-              { key: "tiktok", icon: "fa-brands fa-tiktok", label: `Đơn TikTok (${tiktokOrders.length})`, colSpan: "col-span-1" },
+              ...(isTiktokEnabled ? [{ key: "tiktok", icon: "fa-brands fa-tiktok", label: `Đơn TikTok (${tiktokOrders.length})`, colSpan: "col-span-1" }] : []),
               { key: "payouts", icon: "fa-solid fa-money-bill-transfer", label: "Lệnh Rút tiền", badge: pendingPayouts.length, colSpan: "col-span-1" },
               { key: "zalo_users", icon: "fa-solid fa-users", label: `Thành viên (${zaloUsers.length})`, colSpan: "col-span-2 sm:col-span-1" },
             ].map((tab) => {
@@ -1191,7 +1202,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
           <div>
             <h3 className="text-xs font-black text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2 font-display">
               <i className="fa-solid fa-coins text-amber-500"></i>
-              <span>Tài chính Shopee & TikTok (Sau đối soát hoàn thành)</span>
+              <span>Tài chính Shopee {isTiktokEnabled ? "& TikTok " : ""}(Sau đối soát hoàn thành)</span>
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               {[
@@ -2503,7 +2514,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
           </div>
 
           <div className="space-y-5">
-            {CANONICAL_TEMPLATE_KEYS.map((key) => {
+            {CANONICAL_TEMPLATE_KEYS.filter((key) => isTiktokEnabled || !key.includes("tiktok")).map((key) => {
               const meta = TEMPLATE_META[key] || { title: key, desc: "" };
               const val = botTemplates[key] || defaultTemplates[key] || "";
               const lineCount = (val.match(/\n/g) || []).length + 1;
@@ -2682,36 +2693,38 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
               <span className="text-[11px] text-slate-400 mt-1 block">Mã ID tiếp thị Shopee Affiliate của Trưởng Nhóm dùng để gắn vào link tạo hoa hồng.</span>
             </div>
 
-            <div className="md:col-span-2 pt-3 border-t border-slate-100">
-              <h4 className="text-xs font-black uppercase text-slate-800 tracking-wider mb-3 flex items-center gap-2">
-                <i className="fa-brands fa-tiktok text-black"></i>
-                <span>Cấu hình Kết nối API TikTok Shop</span>
-              </h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">TikTok API Key:</label>
-                  <input
-                    type="text"
-                    value={settings.tiktokApiKey}
-                    onChange={(e) => setSettings({ ...settings, tiktokApiKey: e.target.value })}
-                    placeholder="Để trống nếu Kênh không dùng TikTok..."
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 text-xs font-mono font-bold text-slate-800 outline-none focus:border-orange-500"
-                  />
-                  <span className="text-[10px] text-slate-400 mt-1 block">Khóa API kết nối để kéo đơn TikTok Shop tự động cho Kênh này.</span>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">TikTok Creator Username:</label>
-                  <input
-                    type="text"
-                    value={settings.tiktokCreatorUsername}
-                    onChange={(e) => setSettings({ ...settings, tiktokCreatorUsername: e.target.value })}
-                    placeholder="VD: tran_huyen_affiliate..."
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 text-xs font-mono font-bold text-slate-800 outline-none focus:border-orange-500"
-                  />
-                  <span className="text-[10px] text-slate-400 mt-1 block">Tên tài khoản Creator TikTok Affiliate tương ứng.</span>
+            {isTiktokEnabled && (
+              <div className="md:col-span-2 pt-3 border-t border-slate-100">
+                <h4 className="text-xs font-black uppercase text-slate-800 tracking-wider mb-3 flex items-center gap-2">
+                  <i className="fa-brands fa-tiktok text-black"></i>
+                  <span>Cấu hình Kết nối API TikTok Shop</span>
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">TikTok API Key:</label>
+                    <input
+                      type="text"
+                      value={settings.tiktokApiKey}
+                      onChange={(e) => setSettings({ ...settings, tiktokApiKey: e.target.value })}
+                      placeholder="Để trống nếu Kênh không dùng TikTok..."
+                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 text-xs font-mono font-bold text-slate-800 outline-none focus:border-orange-500"
+                    />
+                    <span className="text-[10px] text-slate-400 mt-1 block">Khóa API kết nối để kéo đơn TikTok Shop tự động cho Kênh này.</span>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">TikTok Creator Username:</label>
+                    <input
+                      type="text"
+                      value={settings.tiktokCreatorUsername}
+                      onChange={(e) => setSettings({ ...settings, tiktokCreatorUsername: e.target.value })}
+                      placeholder="VD: tran_huyen_affiliate..."
+                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 text-xs font-mono font-bold text-slate-800 outline-none focus:border-orange-500"
+                    />
+                    <span className="text-[10px] text-slate-400 mt-1 block">Tên tài khoản Creator TikTok Affiliate tương ứng.</span>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         </form>
       )}

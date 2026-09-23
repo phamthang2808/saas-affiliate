@@ -30,18 +30,10 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
   const [formData, setFormData] = useState({
     slug: "",
     name: "",
-    shopeePubId: "",
-    tiktokApiKey: "",
-    tiktokCreatorUsername: "",
-    taxRate: "10.00",
-    customerSplitRate: "80.00",
-    subidPrefix: "u_",
-    primaryColor: "#f97316",
-    adminZaloId: "",
-    publicLookupDomain: "",
     monthlyFee: "500000",
     billingCycleDay: "15",
     subscriptionStatus: "PAID",
+    isTiktokEnabled: false,
     billingNote: "",
   });
 
@@ -130,18 +122,10 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
     setFormData({
       slug: "",
       name: "",
-      shopeePubId: "",
-      tiktokApiKey: "",
-      tiktokCreatorUsername: "",
-      taxRate: "10.00",
-      customerSplitRate: "80.00",
-      subidPrefix: "u_",
-      primaryColor: "#f97316",
-      adminZaloId: "",
-      publicLookupDomain: "",
       monthlyFee: "500000",
       billingCycleDay: "15",
       subscriptionStatus: "PAID",
+      isTiktokEnabled: false,
       billingNote: "",
     });
     setShowAddModal(true);
@@ -152,18 +136,10 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
     setFormData({
       slug: t.slug || "",
       name: t.name || "",
-      shopeePubId: t.shopeePubId || "",
-      tiktokApiKey: t.tiktokApiKey || "",
-      tiktokCreatorUsername: t.tiktokCreatorUsername || "",
-      taxRate: t.taxRate !== undefined ? String(t.taxRate) : "10.00",
-      customerSplitRate: t.customerSplitRate !== undefined ? String(t.customerSplitRate) : "80.00",
-      subidPrefix: t.subidPrefix || "u_",
-      primaryColor: t.primaryColor || "#f97316",
-      adminZaloId: t.adminZaloId || "",
-      publicLookupDomain: t.publicLookupDomain || "",
       monthlyFee: t.monthlyFee !== undefined ? String(t.monthlyFee) : "500000",
       billingCycleDay: t.billingCycleDay !== undefined ? String(t.billingCycleDay) : "15",
       subscriptionStatus: t.subscriptionStatus || "PAID",
+      isTiktokEnabled: Boolean(t.isTiktokEnabled),
       billingNote: t.billingNote || "",
     });
     setShowAddModal(true);
@@ -831,9 +807,16 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
                                   {t.name.charAt(0)}
                                 </div>
                                 <div className="min-w-0">
-                                  <p className="font-bold text-slate-900 leading-tight truncate max-w-[140px]" title={t.name}>
-                                    {t.name}
-                                  </p>
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <p className="font-bold text-slate-900 leading-tight truncate max-w-[130px]" title={t.name}>
+                                      {t.name}
+                                    </p>
+                                    {t.isTiktokEnabled && (
+                                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-md text-[8px] font-black bg-slate-900 text-white shrink-0" title="Đã kích hoạt gói TikTok Shop">
+                                        <i className="fa-brands fa-tiktok text-[7px]"></i> TikTok
+                                      </span>
+                                    )}
+                                  </div>
                                   <p className="text-[10px] text-slate-400 font-mono mt-0.5">
                                     {formatMoney(fee)} <span className="text-[9px] text-slate-400">(N{t.billingCycleDay || 15})</span>
                                   </p>
@@ -1032,13 +1015,20 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
                           </div>
 
                           <div className="flex items-center justify-between gap-2">
-                            <span className="text-slate-400 font-medium text-[11px] shrink-0">Tỷ lệ chia:</span>
-                            <span className="text-[11px] font-bold">
-                              <span className="text-orange-600">{t.customerSplitRate || 80}%</span>
-                              <span className="text-slate-400 mx-1">-</span>
-                              <span className="text-slate-700">{100 - (t.customerSplitRate || 80)}%</span>
-                              <span className="text-[10px] text-slate-400 font-normal ml-1">(Thuế {t.taxRate || 10}%)</span>
-                            </span>
+                            <span className="text-slate-400 font-medium text-[11px] shrink-0">Gói tính năng:</span>
+                            <div>
+                              {t.isTiktokEnabled ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-slate-900 text-white shadow-2xs">
+                                  <i className="fa-brands fa-tiktok text-[10px]"></i>
+                                  <span>Shopee + TikTok</span>
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-50 text-orange-700 border border-orange-200">
+                                  <i className="fa-solid fa-bag-shopping text-[10px]"></i>
+                                  <span>Chỉ Shopee</span>
+                                </span>
+                              )}
+                            </div>
                           </div>
 
                           <div className="flex items-center justify-between gap-2">
@@ -1083,7 +1073,7 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
                       <tr className="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-black text-slate-500 uppercase tracking-wider">
                         <th className="py-3.5 px-4">Kênh Đối Tác</th>
                         <th className="py-3.5 px-4">Tên Miền / Đường Dẫn Tra Cứu</th>
-                        <th className="py-3.5 px-4">Tỷ Lệ Chia (Khách - Trưởng Nhóm)</th>
+                        <th className="py-3.5 px-4 text-center">Gói Tính Năng</th>
                         <th className="py-3.5 px-4">Tiền Thuê / Chu Kỳ</th>
                         <th className="py-3.5 px-4 text-center">Thu Phí Thuê</th>
                         <th className="py-3.5 px-4 text-right">Thao Tác</th>
@@ -1118,7 +1108,9 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
                                     {t.name.charAt(0)}
                                   </div>
                                   <div>
-                                    <p className="font-bold text-slate-900 leading-snug">{t.name}</p>
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      <p className="font-bold text-slate-900 leading-snug">{t.name}</p>
+                                    </div>
                                     <p className="text-[11px] font-mono text-slate-400">/{t.slug}</p>
                                   </div>
                                 </div>
@@ -1134,11 +1126,18 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
                                 )}
                               </td>
 
-                              <td className="py-3.5 px-4">
-                                <span className="font-bold text-orange-600">{t.customerSplitRate || 80}%</span>
-                                <span className="text-slate-400 mx-1">-</span>
-                                <span className="font-bold text-slate-700">{100 - (t.customerSplitRate || 80)}%</span>
-                                <span className="text-[10px] text-slate-400 block">(Thuế: {t.taxRate || 10}%)</span>
+                              <td className="py-3.5 px-4 text-center">
+                                {t.isTiktokEnabled ? (
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-slate-900 text-white shadow-2xs">
+                                    <i className="fa-brands fa-tiktok text-[10px]"></i>
+                                    <span>Shopee + TikTok</span>
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-orange-50 text-orange-700 border border-orange-200">
+                                    <i className="fa-solid fa-bag-shopping text-[10px]"></i>
+                                    <span>Chỉ Shopee</span>
+                                  </span>
+                                )}
                               </td>
 
                               <td className="py-3.5 px-4 font-bold text-slate-900 font-display">
@@ -1751,62 +1750,53 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Tỷ lệ hoàn cho khách (%)</label>
-                  <input
-                    type="number"
-                    value={formData.customerSplitRate}
-                    onChange={(e) => setFormData({ ...formData, customerSplitRate: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-orange-500"
-                  />
-                  <span className="text-[10px] text-slate-400">Mặc định: 80%</span>
-                </div>
+              {/* GÓI DỊCH VỤ TIKTOK SHOP (BẬT/TẮT THU THÊM PHÍ) */}
+              <div className={`p-4 rounded-2xl border transition-all ${
+                formData.isTiktokEnabled
+                  ? "bg-slate-900 text-white border-slate-700 shadow-md shadow-slate-900/20"
+                  : "bg-slate-50 text-slate-800 border-slate-200"
+              }`}>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-lg shrink-0 font-bold shadow-2xs ${
+                      formData.isTiktokEnabled ? "bg-white/15 text-white" : "bg-slate-200 text-slate-600"
+                    }`}>
+                      <i className="fa-brands fa-tiktok"></i>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-black truncate flex items-center gap-2">
+                        <span>Gói Dịch Vụ TikTok Shop</span>
+                        {formData.isTiktokEnabled ? (
+                          <span className="text-[9px] font-black px-2 py-0.5 bg-emerald-500 text-white rounded-full uppercase tracking-wider">
+                            Đang Bật
+                          </span>
+                        ) : (
+                          <span className="text-[9px] font-black px-2 py-0.5 bg-slate-200 text-slate-600 rounded-full uppercase tracking-wider">
+                            Đang Tắt
+                          </span>
+                        )}
+                      </p>
+                      <p className={`text-[11px] mt-0.5 leading-snug ${formData.isTiktokEnabled ? "text-slate-300" : "text-slate-500"}`}>
+                        {formData.isTiktokEnabled
+                          ? "Cho phép Kênh kết nối API & đồng bộ đơn TikTok Shop (Đã thu thêm phí dịch vụ)."
+                          : "Tắt tính năng TikTok Shop (Ẩn tab Đơn TikTok & Cấu hình API TikTok của Trưởng Nhóm)."}
+                      </p>
+                    </div>
+                  </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Thuế TNCN khấu trừ (%)</label>
-                  <input
-                    type="number"
-                    value={formData.taxRate}
-                    onChange={(e) => setFormData({ ...formData, taxRate: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-orange-500"
-                  />
-                  <span className="text-[10px] text-slate-400">Mặc định: 10%</span>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Domain Cổng Tra Cứu Riêng (Nếu có)</label>
-                <input
-                  type="text"
-                  placeholder="VD: hoantien47.store, mailan.hoantien.store..."
-                  value={formData.publicLookupDomain}
-                  onChange={(e) => setFormData({ ...formData, publicLookupDomain: e.target.value.toLowerCase().trim() })}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-slate-800 outline-none focus:border-orange-500"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Shopee Publisher ID</label>
-                  <input
-                    type="text"
-                    placeholder="VD: 17192837492..."
-                    value={formData.shopeePubId}
-                    onChange={(e) => setFormData({ ...formData, shopeePubId: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-slate-800 outline-none focus:border-orange-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">TikTok Creator Username</label>
-                  <input
-                    type="text"
-                    placeholder="VD: @nhuy.affiliate..."
-                    value={formData.tiktokCreatorUsername}
-                    onChange={(e) => setFormData({ ...formData, tiktokCreatorUsername: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-orange-500"
-                  />
+                  {/* Toggle Switch Button */}
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, isTiktokEnabled: !formData.isTiktokEnabled })}
+                    className={`w-12 h-6.5 rounded-full transition-colors relative cursor-pointer shrink-0 p-0.5 ${
+                      formData.isTiktokEnabled ? "bg-emerald-500" : "bg-slate-300"
+                    }`}
+                    title={formData.isTiktokEnabled ? "Nhấn để Tắt TikTok Shop" : "Nhấn để Bật TikTok Shop"}
+                  >
+                    <div className={`w-5.5 h-5.5 bg-white rounded-full shadow-md transition-transform ${
+                      formData.isTiktokEnabled ? "translate-x-5.5" : "translate-x-0"
+                    }`} />
+                  </button>
                 </div>
               </div>
 

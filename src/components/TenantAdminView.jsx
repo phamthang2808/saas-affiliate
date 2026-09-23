@@ -538,7 +538,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
 
   const handleDisconnectBot = async (botId) => {
     if (!activeTenant?.slug) return;
-    if (!window.confirm("Bạn có chắc chắn muốn ngắt kết nối nick Bot Zalo này khỏi Kênh?")) return;
+    if (!window.confirm("Bạn có chắc chắn muốn ngắt kết nối và đăng xuất hoàn toàn nick Bot Zalo này khỏi Kênh?")) return;
     stopQrPolling();
     try {
       const res = await fetch(`${apiRoot}/api/saas/admin/${activeTenant.slug}/bot/${botId}`, {
@@ -547,8 +547,10 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
       });
       const data = await res.json();
       if (res.ok) {
-        showNotification("✅ " + (data.message || "Đã ngắt kết nối nick Bot thành công!"), "success");
-        fetchTenantBots();
+        showNotification("✅ " + (data.message || "Đã ngắt kết nối và đăng xuất Bot thành công!"), "success");
+        setTenantBots([]);
+        setRealQrBase64(null);
+        await fetchTenantBots();
       } else {
         showNotification("❌ " + (data.message || "Lỗi ngắt kết nối"), "error");
       }

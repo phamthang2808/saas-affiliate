@@ -157,10 +157,28 @@ export function MemberDetailModal({
   });
 
   const fallbackTotalWithdrawn = fallbackApprovedPayouts.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
-  const fallbackPendingWithdrawn = fallbackPendingPayoutsList.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+  const isOrderEligible = (o) => {
+    if (holdingDays <= 0) return true;
+    const dateStr = o.completeTime || o.completedAt || o.orderDate || o.createdAt;
+    if (!dateStr) return true;
+    const oDate = new Date(dateStr);
+    if (isNaN(oDate.getTime())) return true;
+    const now = new Date();
+    const thresholdTime = new Date(now.getTime() - holdingDays * 24 * 60 * 60 * 1000);
+    if (oDate <= thresholdTime) return true;
+    const oDay = new Date(oDate.getFullYear(), oDate.getMonth(), oDate.getDate());
+    oDay.setDate(oDay.getDate() + holdingDays);
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    return oDay <= today;
+  };
+
+  const fallbackEligibleCompletedCommission = fallbackCompletedOrders.reduce((sum, o) => {
+    return isOrderEligible(o) ? sum + calculateUserComm(o) : sum;
+  }, 0);
+
   const fallbackAvailableBalance = Math.max(
     0,
-    fallbackCompletedCommission - fallbackTotalWithdrawn - fallbackPendingWithdrawn
+    fallbackEligibleCompletedCommission - fallbackTotalWithdrawn - fallbackPendingWithdrawn
   );
 
   // Live vs Fallback data
@@ -532,7 +550,12 @@ export function MemberDetailModal({
                           {formatMoney(finalComm)}
                         </td>
                         <td className="px-3 py-2.5 whitespace-nowrap text-slate-500 text-[11px] font-mono">
-                          {formatDateTime(o.orderDate || o.purchaseTime || o.createdAt)}
+                          <div>{formatDateTime(o.orderDate || o.purchaseTime || o.createdAt)}</div>
+                          {(o.completeTime || o.completedAt) && (
+                            <div className="text-[10px] text-emerald-600 font-semibold">
+                              ✓ Xong: {formatDateTime(o.completeTime || o.completedAt)}
+                            </div>
+                          )}
                         </td>
                         <td className="px-3 py-2.5 text-center whitespace-nowrap">
                           <span className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold border ${stBadge.cls}`}>

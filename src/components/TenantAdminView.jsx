@@ -1011,19 +1011,6 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
               </p>
             </div>
           </div>
-
-          {/* Nút Đăng Xuất Nhanh trên Điện Thoại */}
-          {onLogout && (
-            <button
-              type="button"
-              onClick={onLogout}
-              className="sm:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold border border-rose-200 shadow-2xs transition active:scale-95 cursor-pointer shrink-0"
-              title="Đăng xuất tài khoản Trưởng Nhóm"
-            >
-              <i className="fa-solid fa-arrow-right-from-bracket text-rose-500 text-xs"></i>
-              <span>Đăng xuất</span>
-            </button>
-          )}
         </div>
 
         {/* Quick Group Switcher for Multi-tenant mode */}
@@ -1355,6 +1342,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
 
           const currentSplit = customerSplitRate || 80;
           const currentTax = taxRate !== undefined ? taxRate : 10;
+          const tenantHoldingDays = Number(settings?.holdingDays !== undefined ? settings.holdingDays : (tenant?.holdingDays || 0));
 
           const calculateComm = (o) => {
             const raw = Number(o.rawCommission || 0);
@@ -1366,8 +1354,31 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
             return Math.round(Number(o.finalCommission || 0));
           };
 
+          const isEligible = (o) => {
+            if (tenantHoldingDays <= 0) return true;
+            const dateStr = o.completeTime || o.completedAt || o.orderDate || o.createdAt;
+            if (!dateStr) return true;
+            const oDate = new Date(dateStr);
+            if (isNaN(oDate.getTime())) return true;
+            const now = new Date();
+            const thresholdTime = new Date(now.getTime() - tenantHoldingDays * 24 * 60 * 60 * 1000);
+            if (oDate <= thresholdTime) return true;
+            const oDay = new Date(oDate.getFullYear(), oDate.getMonth(), oDate.getDate());
+            oDay.setDate(oDay.getDate() + tenantHoldingDays);
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            return oDay <= today;
+          };
+
           const pendingCommission = pendingOrders.reduce((sum, o) => sum + calculateComm(o), 0);
           const completedCommission = completedOrders.reduce((sum, o) => sum + calculateComm(o), 0);
+
+          let eligibleCommission = 0;
+          completedOrders.forEach((o) => {
+            const comm = calculateComm(o);
+            if (isEligible(o)) {
+              eligibleCommission += comm;
+            }
+          });
 
           const approvedPayouts = memberPayouts.filter((p) => {
             const st = String(p.status || "").toUpperCase();
@@ -1380,7 +1391,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
 
           const totalWithdrawn = approvedPayouts.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
           const pendingWithdrawn = pendingPayoutsList.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
-          const availableBalance = Math.max(0, completedCommission - totalWithdrawn - pendingWithdrawn);
+          const availableBalance = Math.max(0, eligibleCommission - totalWithdrawn - pendingWithdrawn);
 
           return {
             pendingCommission,

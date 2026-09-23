@@ -434,28 +434,37 @@ export function PublicLookupView({
 
   // Phân loại đơn hoàn thành: Đã qua số ngày giữ (eligible) vs Đang trong thời gian giữ (holding)
   const now = new Date();
-  const thresholdTime = new Date(now.getTime() - holdingDays * 24 * 60 * 60 * 1000);
+
+  // Helper kiểm tra đơn hoàn thành đã đủ thời gian giữ chưa
+  const isOrderEligibleForWithdrawal = (o) => {
+    if (!holdingDays || holdingDays <= 0) return true;
+    const dateStr = o.completeTime || o.completedAt || o.orderDate || o.createdAt;
+    if (!dateStr) return true;
+    const oDate = new Date(dateStr);
+    if (isNaN(oDate.getTime())) return true;
+
+    // 1. Đủ 24h * holdingDays
+    const thresholdTime = new Date(now.getTime() - holdingDays * 24 * 60 * 60 * 1000);
+    if (oDate <= thresholdTime) return true;
+
+    // 2. Qua số ngày theo lịch (Ví dụ hoàn thành hôm qua 22/09, holdingDays = 1, hôm nay 23/09 đã qua 1 ngày)
+    const oDay = new Date(oDate.getFullYear(), oDate.getMonth(), oDate.getDate());
+    oDay.setDate(oDay.getDate() + holdingDays);
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    if (oDay <= today) return true;
+
+    return false;
+  };
 
   let eligibleCompletedCommission = 0;
   let holdingCompletedCommission = 0;
 
   completedOrders.forEach((o) => {
     const finalComm = getOrderUserCommission(o);
-    if (holdingDays <= 0) {
+    if (isOrderEligibleForWithdrawal(o)) {
       eligibleCompletedCommission += finalComm;
     } else {
-      const isTiktok = (o.platform || "").toUpperCase().includes("TIKTOK");
-      if (isTiktok) {
-        eligibleCompletedCommission += finalComm;
-      } else {
-        const dateStr = o.orderDate || o.createdAt;
-        const oDate = dateStr ? new Date(dateStr) : null;
-        if (oDate && oDate <= thresholdTime) {
-          eligibleCompletedCommission += finalComm;
-        } else {
-          holdingCompletedCommission += finalComm;
-        }
-      }
+      holdingCompletedCommission += finalComm;
     }
   });
 
@@ -1079,11 +1088,15 @@ export function PublicLookupView({
                         <span
                           className={`px-3 py-1 rounded-full text-xs font-extrabold ${
                             isDone
-                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                              ? isOrderEligibleForWithdrawal(order)
+                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                : "bg-amber-50 text-amber-700 border border-amber-200"
                               : "bg-amber-50 text-amber-700 border border-amber-200"
                           }`}
                         >
-                          {order.status || "Chờ xử lý"}
+                          {isDone && holdingDays > 0 && !isOrderEligibleForWithdrawal(order)
+                            ? `Đang giữ (${holdingDays} ngày)`
+                            : order.status || "Chờ xử lý"}
                         </span>
                       </div>
 
@@ -1092,15 +1105,15 @@ export function PublicLookupView({
                       </p>
 
                       <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-xs flex-wrap gap-2">
-                        <div className="flex items-center gap-3 text-slate-500 font-medium text-[11px]">
+                        <div className="flex items-center gap-3 text-slate-500 font-medium text-[11px] flex-wrap">
                           {order.orderDate && (
                             <span>
                               📅 Ngày đặt: <strong className="text-slate-700">{formatDate(order.orderDate)}</strong>
                             </span>
                           )}
-                          {order.completedAt && (
+                          {(order.completeTime || order.completedAt) && (
                             <span>
-                              📅 Ngày hoàn thành: <strong className="text-slate-700">{formatDate(order.completedAt)}</strong>
+                              📅 Hoàn thành: <strong className="text-emerald-700">{formatDate(order.completeTime || order.completedAt)}</strong>
                             </span>
                           )}
                         </div>

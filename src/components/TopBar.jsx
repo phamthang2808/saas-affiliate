@@ -120,31 +120,8 @@ export function TopBar({
         </div>
       </div>
 
-      {/* Right: Group Switcher (only in tenant-admin) + Profile / Login */}
+      {/* Right: Notification Bell & Profile / Logout */}
       <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
-        {/* Show Group selector ONLY when user is SUPER_ADMIN */}
-        {currentView === "tenant-admin" && user?.role === "SUPER_ADMIN" && availableTenants.length > 0 && (
-          <div className="flex items-center gap-1 sm:gap-1.5 bg-gradient-to-r from-orange-50/90 to-amber-50/90 hover:from-orange-100/80 hover:to-amber-100/80 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-xl border border-orange-200/90 shadow-2xs transition shrink-0">
-            <i className="fa-solid fa-users-viewfinder text-orange-600 text-[11px] shrink-0"></i>
-            <span className="text-[10px] font-black text-orange-800 uppercase tracking-wider hidden md:inline">Nhóm:</span>
-            <select
-              value={currentTenant?.slug || ""}
-              onChange={(e) => {
-                const t = availableTenants.find((item) => item.slug === e.target.value);
-                if (t) onSelectTenant(t);
-              }}
-              className="bg-transparent text-orange-950 font-black text-xs outline-none border-0 cursor-pointer font-sans max-w-[95px] sm:max-w-[150px] truncate"
-              title="Lọc Kênh Trưởng Nhóm"
-            >
-              {availableTenants.map((t) => (
-                <option key={t.id} value={t.slug} className="text-slate-800 font-medium bg-white">
-                  {t.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
         {/* Notification Bell Button & Popover */}
         <div className="relative">
           <button

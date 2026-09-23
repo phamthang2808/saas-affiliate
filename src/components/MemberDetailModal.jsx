@@ -47,7 +47,7 @@ export function MemberDetailModal({
     setIsLoadingLive(true);
 
     const queryKey = encodeURIComponent(zaloId.trim());
-    fetch(`${apiRoot}/api/saas/${tenantSlug}/lookup?query=${queryKey}`)
+    fetch(`${apiRoot}/api/saas/public/${tenantSlug}/lookup?query=${queryKey}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (isMounted && data) {
@@ -158,6 +158,7 @@ export function MemberDetailModal({
   });
 
   const fallbackTotalWithdrawn = fallbackApprovedPayouts.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+  const fallbackPendingWithdrawn = fallbackPendingPayoutsList.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
   const isOrderEligible = (o) => {
     if (holdingDays <= 0) return true;
     const dateStr = o.completeTime || o.completedAt || o.orderDate || o.createdAt;

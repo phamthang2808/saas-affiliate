@@ -9,6 +9,7 @@ export function TopBar({
   onSelectTenant,
   user,
   onOpenLogin,
+  onLogout,
   onToggleMobile,
   onNavigate,
 }) {
@@ -173,15 +174,15 @@ export function TopBar({
 
         {/* User profile / Login */}
         {user ? (
-          <div className="flex items-center gap-2 bg-slate-100 pl-1 pr-2.5 py-1 rounded-full border border-slate-200">
+          <div className="flex items-center gap-1.5 bg-slate-100/90 pl-1 pr-1.5 py-0.5 rounded-full border border-slate-200 shrink-0">
             {user.avatarUrl ? (
               <img
                 src={user.avatarUrl}
                 alt={user.name}
-                className="w-7 h-7 rounded-full object-cover border border-orange-400"
+                className="w-7 h-7 rounded-full object-cover border border-orange-400 shrink-0"
               />
             ) : (
-              <div className="w-7 h-7 rounded-full bg-orange-500 text-white text-[11px] font-black flex items-center justify-center">
+              <div className="w-7 h-7 rounded-full bg-orange-500 text-white text-[11px] font-black flex items-center justify-center shrink-0">
                 {user.name ? user.name.charAt(0).toUpperCase() : "U"}
               </div>
             )}
@@ -193,6 +194,16 @@ export function TopBar({
                 {user.role === "SUPER_ADMIN" ? "👑 Quản trị viên" : "👔 Trưởng nhóm"}
               </span>
             </div>
+            {onLogout && (
+              <button
+                type="button"
+                onClick={onLogout}
+                title="Đăng xuất tài khoản"
+                className="w-6 h-6 rounded-full bg-white hover:bg-rose-50 text-slate-400 hover:text-rose-600 border border-slate-200/80 flex items-center justify-center transition cursor-pointer shadow-2xs shrink-0 ml-0.5 active:scale-95"
+              >
+                <i className="fa-solid fa-arrow-right-from-bracket text-[10px]"></i>
+              </button>
+            )}
           </div>
         ) : (
           <button

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { formatMoney, formatDate } from "../utils/formatters";
 
-export function SuperAdminView({ apiRoot, user, token, onOpenLogin }) {
+export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) {
   const [adminSubTab, setAdminSubTab] = useState("tenants"); // 'tenants' | 'users'
   const [tenants, setTenants] = useState([]);
   const [stats, setStats] = useState(null);
@@ -327,23 +327,38 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin }) {
       )}
       {/* ===================== HERO CARD ===================== */}
       <div className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-200 text-amber-600 flex items-center justify-center text-2xl font-black shrink-0">
-            <i className="fa-solid fa-crown"></i>
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl md:text-2xl font-black text-slate-900 font-display">
-                Trang Quản Trị Viên (Super Admin)
-              </h1>
-              <span className="bg-amber-100 text-amber-800 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider border border-amber-300">
-                Toàn sàn
-              </span>
+        <div className="flex items-center justify-between w-full md:w-auto gap-3">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-amber-500/10 border border-amber-200 text-amber-600 flex items-center justify-center text-xl sm:text-2xl font-black shrink-0">
+              <i className="fa-solid fa-crown"></i>
             </div>
-            <p className="text-xs text-slate-500 mt-1">
-              Quản lý danh sách các Trưởng Nhóm đối tác, phân quyền tài khoản và theo dõi doanh thu toàn sàn.
-            </p>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-lg sm:text-xl md:text-2xl font-black text-slate-900 font-display">
+                  Quản Trị Toàn Sàn
+                </h1>
+                <span className="bg-amber-100 text-amber-800 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider border border-amber-300">
+                  Super Admin
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5 truncate max-w-[200px] sm:max-w-none">
+                Quản lý các Trưởng Nhóm đối tác và phân quyền toàn sàn.
+              </p>
+            </div>
           </div>
+
+          {/* Nút Đăng Xuất Nhanh trên Mobile cho Super Admin */}
+          {onLogout && (
+            <button
+              type="button"
+              onClick={onLogout}
+              className="md:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold border border-rose-200 shadow-2xs transition active:scale-95 cursor-pointer shrink-0"
+              title="Đăng xuất tài khoản Super Admin"
+            >
+              <i className="fa-solid fa-arrow-right-from-bracket text-rose-500 text-xs"></i>
+              <span>Đăng xuất</span>
+            </button>
+          )}
         </div>
 
         {adminSubTab === "tenants" && (

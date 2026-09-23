@@ -360,6 +360,7 @@ export default function App() {
           onSelectTenant={setCurrentTenant}
           user={user}
           onOpenLogin={handleOpenLogin}
+          onLogout={handleLogout}
           onToggleMobile={() => setIsMobileOpen((prev) => !prev)}
           onNavigate={(view) => setCurrentView(view)}
         />
@@ -430,6 +431,7 @@ export default function App() {
                 user={user}
                 token={token}
                 onOpenLogin={handleOpenLogin}
+                onLogout={handleLogout}
               />
             )
           )}
@@ -460,6 +462,7 @@ export default function App() {
                 user={user}
                 token={token}
                 onOpenLogin={handleOpenLogin}
+                onLogout={handleLogout}
               />
             )
           )}
@@ -479,6 +482,7 @@ export default function App() {
         setCurrentView={setCurrentView}
         user={user}
         onOpenLogin={handleOpenLogin}
+        onLogout={handleLogout}
       />
 
       {/* Google Login Modal */}

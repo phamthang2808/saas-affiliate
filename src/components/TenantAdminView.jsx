@@ -138,7 +138,7 @@ const getStandardBotTemplates = (tenant) => {
   };
 };
 
-export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSelectTenant, user, token, onOpenLogin }) {
+export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSelectTenant, user, token, onOpenLogin, onLogout }) {
   const activeTenant =
     currentTenant ||
     (availableTenants && user?.tenantId
@@ -997,18 +997,33 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
 
       {/* ===================== 1. HEADER ===================== */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-white flex items-center justify-center text-xl font-black shadow-md shadow-purple-500/20 shrink-0">
-            <i className="fa-solid fa-shield-halved"></i>
+        <div className="flex items-center justify-between w-full sm:w-auto gap-3">
+          <div className="flex items-center gap-3.5">
+            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-white flex items-center justify-center text-lg sm:text-xl font-black shadow-md shadow-purple-500/20 shrink-0">
+              <i className="fa-solid fa-shield-halved"></i>
+            </div>
+            <div>
+              <h1 className="text-lg sm:text-xl md:text-2xl font-black text-slate-900 font-display tracking-tight">
+                Bảng Quản Trị
+              </h1>
+              <p className="text-xs text-slate-500 font-medium truncate max-w-[200px] sm:max-w-none">
+                Dành riêng cho Admin — {groupDisplayName} System
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-xl md:text-2xl font-black text-slate-900 font-display tracking-tight">
-              Bảng Quản Trị
-            </h1>
-            <p className="text-xs text-slate-500 font-medium">
-              Dành riêng cho Admin — {groupDisplayName} System
-            </p>
-          </div>
+
+          {/* Nút Đăng Xuất Nhanh trên Điện Thoại */}
+          {onLogout && (
+            <button
+              type="button"
+              onClick={onLogout}
+              className="sm:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold border border-rose-200 shadow-2xs transition active:scale-95 cursor-pointer shrink-0"
+              title="Đăng xuất tài khoản Trưởng Nhóm"
+            >
+              <i className="fa-solid fa-arrow-right-from-bracket text-rose-500 text-xs"></i>
+              <span>Đăng xuất</span>
+            </button>
+          )}
         </div>
 
         {/* Quick Group Switcher for Multi-tenant mode */}
@@ -2167,10 +2182,26 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                                   badgeClass = "bg-amber-50 text-amber-700 border border-amber-200";
                                 }
 
+                                const isCompleted = badgeLabel.includes("Hoàn thành");
+                                const completedDateRaw = o.completeTime || o.completedDate || o.completedAt || o.updatedAt || o.orderDate;
+
                                 return (
-                                  <span className={`px-3 py-1 rounded-full text-xs font-extrabold whitespace-nowrap inline-block ${badgeClass}`}>
-                                    {badgeLabel}
-                                  </span>
+                                  <div className="flex flex-col items-start gap-1">
+                                    <span className={`px-3 py-1 rounded-full text-xs font-extrabold whitespace-nowrap inline-block ${badgeClass}`}>
+                                      {badgeLabel}
+                                    </span>
+                                    {isCompleted && (
+                                      <div
+                                        className="text-[11px] font-semibold text-emerald-700/90 flex items-center gap-1.5 mt-0.5"
+                                        title={completedDateRaw ? `Ngày hoàn thành: ${new Date(completedDateRaw).toLocaleString("vi-VN")}` : "Ngày hoàn thành"}
+                                      >
+                                        <i className="fa-regular fa-calendar-check text-[10px] text-emerald-600"></i>
+                                        <span>
+                                          {completedDateRaw ? new Date(completedDateRaw).toLocaleDateString("vi-VN") : "—"}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
                                 );
                               })()}
                             </td>

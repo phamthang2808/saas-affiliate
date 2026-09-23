@@ -53,7 +53,15 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
 
       if (resTenants.ok) {
         const dataTenants = await resTenants.json();
-        setTenants(dataTenants);
+        const sortedTenants = Array.isArray(dataTenants)
+          ? [...dataTenants].sort((a, b) => {
+              const dayA = Number(a.billingCycleDay || 15);
+              const dayB = Number(b.billingCycleDay || 15);
+              if (dayA !== dayB) return dayA - dayB;
+              return (a.name || "").localeCompare(b.name || "");
+            })
+          : [];
+        setTenants(sortedTenants);
       }
       if (resStats.ok) {
         const dataStats = await resStats.json();
@@ -331,21 +339,30 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
     }
   };
 
-  // Filter Tenants
-  const filteredTenants = tenants.filter((t) => {
-    const matchQuery =
-      !searchQuery ||
-      t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.slug.toLowerCase().includes(searchQuery.toLowerCase());
+  // Filter & Sort Tenants by Billing Cycle Day (Ascending: 1 -> 31)
+  const filteredTenants = tenants
+    .filter((t) => {
+      const matchQuery =
+        !searchQuery ||
+        t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        t.slug.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const isPaid = (t.subscriptionStatus || "PAID").toUpperCase() === "PAID";
-    const matchPayment =
-      paymentFilter === "ALL" ||
-      (paymentFilter === "PAID" && isPaid) ||
-      (paymentFilter === "UNPAID" && !isPaid);
+      const isPaid = (t.subscriptionStatus || "PAID").toUpperCase() === "PAID";
+      const matchPayment =
+        paymentFilter === "ALL" ||
+        (paymentFilter === "PAID" && isPaid) ||
+        (paymentFilter === "UNPAID" && !isPaid);
 
-    return matchQuery && matchPayment;
-  });
+      return matchQuery && matchPayment;
+    })
+    .sort((a, b) => {
+      const dayA = a.billingCycleDay !== undefined && a.billingCycleDay !== null ? Number(a.billingCycleDay) : 15;
+      const dayB = b.billingCycleDay !== undefined && b.billingCycleDay !== null ? Number(b.billingCycleDay) : 15;
+      if (dayA !== dayB) {
+        return dayA - dayB;
+      }
+      return (a.name || "").localeCompare(b.name || "");
+    });
 
   const paidTenantsCount = tenants.filter(
     (t) => (t.subscriptionStatus || "PAID").toUpperCase() === "PAID"

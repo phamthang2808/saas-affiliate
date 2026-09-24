@@ -365,9 +365,9 @@ export function TemplatePreviewModal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div className="shrink-0 px-4 py-3 sm:px-5 sm:py-4 bg-linear-to-r from-purple-700 via-indigo-700 to-purple-800 text-white flex items-center justify-between shadow-xs">
+        <div className="shrink-0 px-4 py-3 sm:px-5 sm:py-4 bg-purple-700 bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 text-white flex items-center justify-between shadow-md">
           <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center text-base sm:text-lg shadow-inner shrink-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-white/20 backdrop-blur-md border border-white/25 flex items-center justify-center text-base sm:text-lg shadow-inner shrink-0">
               <i className={templateMeta?.icon || "fa-solid fa-message"}></i>
             </div>
             <div className="min-w-0">
@@ -375,7 +375,7 @@ export function TemplatePreviewModal({
                 <h3 className="text-sm sm:text-base font-black font-display tracking-tight text-white truncate">
                   Mô Phỏng Tin Nhắn Zalo Thực Tế
                 </h3>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/20 text-purple-100 border border-white/20">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/20 text-purple-100 border border-white/25">
                   {templateMeta?.title?.split(".")[0] || "Mẫu"}
                 </span>
               </div>
@@ -388,10 +388,11 @@ export function TemplatePreviewModal({
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl sm:rounded-2xl bg-white/10 hover:bg-white/25 active:scale-95 text-white flex items-center justify-center transition cursor-pointer shrink-0 ml-2"
-            title="Đóng xem trước"
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/20 hover:bg-white text-white hover:text-purple-900 border border-white/30 shadow-sm flex items-center justify-center transition-all active:scale-95 cursor-pointer shrink-0 ml-2"
+            title="Đóng xem trước (Esc)"
+            aria-label="Đóng xem trước"
           >
-            <i className="fa-solid fa-xmark text-sm sm:text-base"></i>
+            <i className="fa-solid fa-xmark text-base sm:text-lg font-black"></i>
           </button>
         </div>
 
@@ -440,7 +441,7 @@ export function TemplatePreviewModal({
             {/* Header phòng chat Zalo */}
             <div className="flex items-center justify-between pb-3 border-b border-slate-300/80 px-1">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-linear-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center text-xs font-black shadow-2xs">
+                <div className="w-8 h-8 rounded-full bg-blue-600 bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center text-xs font-black shadow-xs">
                   {groupName.substring(0, 2).toUpperCase()}
                 </div>
                 <div>
@@ -487,7 +488,7 @@ export function TemplatePreviewModal({
 
             {/* Tin nhắn phản hồi từ Zalo Bot */}
             <div className="flex justify-start items-start gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-linear-to-tr from-purple-600 to-indigo-600 text-white flex items-center justify-center text-xs font-bold shadow-xs shrink-0 mt-0.5">
+              <div className="w-8 h-8 rounded-full bg-purple-600 bg-gradient-to-tr from-purple-600 to-indigo-600 text-white flex items-center justify-center text-xs font-bold shadow-xs shrink-0 mt-0.5">
                 <i className="fa-solid fa-robot"></i>
               </div>
 
@@ -576,7 +577,7 @@ export function TemplatePreviewModal({
           <button
             type="button"
             onClick={onClose}
-            className="w-full sm:w-auto px-6 py-2.5 bg-linear-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 active:scale-[0.98] text-white rounded-xl text-xs sm:text-sm font-bold transition shadow-sm cursor-pointer flex items-center justify-center gap-2 shrink-0"
+            className="w-full sm:w-auto px-6 py-2.5 bg-purple-600 hover:bg-purple-700 bg-gradient-to-r from-purple-600 to-indigo-600 active:scale-[0.98] text-white rounded-xl text-xs sm:text-sm font-black transition shadow-md cursor-pointer flex items-center justify-center gap-2 shrink-0"
           >
             <i className="fa-solid fa-check text-xs"></i>
             <span>Đã hiểu & Đóng</span>

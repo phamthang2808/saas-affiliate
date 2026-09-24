@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 // Từ điển giải nghĩa nguồn gốc và bản chất của từng biến động
 export const VARIABLE_DEFINITIONS = {
@@ -337,51 +337,76 @@ export function TemplatePreviewModal({
     botTime: "09:41"
   };
 
+  // Close modal on Escape key & lock background body scroll
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [onClose]);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/70 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="relative w-full max-w-3xl max-h-[92vh] flex flex-col bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden">
+    <div 
+      className="fixed inset-0 z-[100] flex items-center justify-center p-2.5 sm:p-4 bg-slate-900/80 backdrop-blur-xs animate-in fade-in duration-200"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div 
+        className="relative w-full max-w-3xl max-h-[88dvh] sm:max-h-[90vh] flex flex-col bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-200 overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Modal Header */}
-        <div className="px-5 py-4 bg-linear-to-r from-purple-700 via-indigo-700 to-purple-800 text-white flex items-center justify-between shadow-xs">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center text-lg shadow-inner">
+        <div className="shrink-0 px-4 py-3 sm:px-5 sm:py-4 bg-linear-to-r from-purple-700 via-indigo-700 to-purple-800 text-white flex items-center justify-between shadow-xs">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center text-base sm:text-lg shadow-inner shrink-0">
               <i className={templateMeta?.icon || "fa-solid fa-message"}></i>
             </div>
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="text-sm sm:text-base font-black font-display tracking-tight text-white">
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                <h3 className="text-sm sm:text-base font-black font-display tracking-tight text-white truncate">
                   Mô Phỏng Tin Nhắn Zalo Thực Tế
                 </h3>
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-white/20 text-purple-100 border border-white/20">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/20 text-purple-100 border border-white/20">
                   {templateMeta?.title?.split(".")[0] || "Mẫu"}
                 </span>
               </div>
-              <p className="text-xs text-purple-200/90 font-medium line-clamp-1 mt-0.5">
+              <p className="text-[11px] sm:text-xs text-purple-200/90 font-medium truncate mt-0.5">
                 {templateMeta?.title || templateKey}
               </p>
             </div>
           </div>
 
           <button
+            type="button"
             onClick={onClose}
-            className="w-9 h-9 rounded-2xl bg-white/10 hover:bg-white/20 text-white/90 hover:text-white flex items-center justify-center transition cursor-pointer"
+            className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl sm:rounded-2xl bg-white/10 hover:bg-white/25 active:scale-95 text-white flex items-center justify-center transition cursor-pointer shrink-0 ml-2"
             title="Đóng xem trước"
           >
-            <i className="fa-solid fa-xmark text-base"></i>
+            <i className="fa-solid fa-xmark text-sm sm:text-base"></i>
           </button>
         </div>
 
         {/* Modal Sub-Header: Command & Tips */}
-        <div className="px-5 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between flex-wrap gap-2 text-xs">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-slate-500">Lệnh kích hoạt:</span>
-            <span className="font-mono font-bold text-purple-700 bg-purple-100/70 border border-purple-200 px-2 py-0.5 rounded-lg text-[11px]">
+        <div className="shrink-0 px-4 py-2 sm:px-5 sm:py-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between flex-wrap gap-2 text-xs">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <span className="font-bold text-slate-500 text-[11px] sm:text-xs">Lệnh kích hoạt:</span>
+            <span className="font-mono font-bold text-purple-700 bg-purple-100/70 border border-purple-200 px-2 py-0.5 rounded-lg text-[10px] sm:text-[11px]">
               {templateMeta?.command || templateMeta?.badge || "Tự động phản hồi"}
             </span>
           </div>
 
           {templateKey === "template_wallet" && (
-            <div className="flex items-center gap-1.5 bg-white border border-slate-200 px-2.5 py-1 rounded-xl shadow-2xs">
-              <span className="text-[11px] font-bold text-slate-600">Thử số ngày giữ:</span>
+            <div className="flex items-center gap-1 sm:gap-1.5 bg-white border border-slate-200 px-2 sm:px-2.5 py-1 rounded-xl shadow-2xs">
+              <span className="text-[10px] sm:text-[11px] font-bold text-slate-600">Thử số ngày giữ:</span>
               <button
                 type="button"
                 onClick={() => setTestHoldingDays(0)}
@@ -409,7 +434,7 @@ export function TemplatePreviewModal({
         </div>
 
         {/* Modal Content Scrollable Area */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto overscroll-contain p-3.5 sm:p-6 space-y-4 sm:space-y-6 pb-6">
           {/* 1. GIAO DIỆN MÔ PHỎNG ZALO CHAT THỰC TẾ */}
           <div className="bg-[#E4E8F0] rounded-3xl p-4 sm:p-5 border border-slate-300 shadow-inner flex flex-col space-y-4">
             {/* Header phòng chat Zalo */}
@@ -544,15 +569,16 @@ export function TemplatePreviewModal({
         </div>
 
         {/* Modal Footer */}
-        <div className="px-5 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between flex-wrap gap-2">
-          <div className="text-xs text-slate-500 font-medium">
-            💡 Bạn có thể chỉnh sửa nội dung mẫu ngoài màn hình, bấm <strong className="text-purple-700">Ví dụ thực tế</strong> để xem ngay kết quả.
+        <div className="shrink-0 px-4 py-3 sm:px-5 sm:py-3.5 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-2.5 sm:gap-3">
+          <div className="text-[11px] sm:text-xs text-slate-500 font-medium text-center sm:text-left leading-relaxed">
+            💡 Bạn có thể chỉnh sửa nội dung mẫu ngoài màn hình, bấm <strong className="text-purple-700 font-bold">Ví dụ thực tế</strong> để xem ngay kết quả.
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer flex items-center gap-1.5"
+            className="w-full sm:w-auto px-6 py-2.5 bg-linear-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 active:scale-[0.98] text-white rounded-xl text-xs sm:text-sm font-bold transition shadow-sm cursor-pointer flex items-center justify-center gap-2 shrink-0"
           >
+            <i className="fa-solid fa-check text-xs"></i>
             <span>Đã hiểu & Đóng</span>
           </button>
         </div>

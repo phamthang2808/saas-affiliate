@@ -41,7 +41,7 @@ export function MobileBottomNav({ currentView, setCurrentView, user, onOpenLogin
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-200/90 lg:hidden shadow-[0_-2px_12px_rgba(0,0,0,0.06)] px-1 pb-[max(4px,env(safe-area-inset-bottom))]">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-slate-200/90 lg:hidden shadow-[0_-2px_12px_rgba(0,0,0,0.06)] px-1 pb-[max(4px,env(safe-area-inset-bottom))]">
       <div className="flex items-center justify-around">
         {navItems.map((item) => {
           const isActive = currentView === item.key;

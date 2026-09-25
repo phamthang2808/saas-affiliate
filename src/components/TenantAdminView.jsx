@@ -120,7 +120,7 @@ const getStandardBotTemplates = (tenant) => {
   const groupName = tenant?.name || "Affiliate Cashback";
   const splitRate = tenant?.customerSplitRate || 80;
   return {
-    template_link: `@{ten_zalo} mua qua link này để được hoàn hoa hồng nha 🥰\n🛍️ 1. {ten_san_pham}\n🧧 Hoa hồng dự kiến {tong_hoahong_phantram}% (~{tong_hoahong_tien})\n🔗 {link_mua_sam}\n📌 Lưu ý:\n1. Trước khi mua nên xóa giỏ hàng cũ\n2. Tránh xem Live hoặc Video Shopee trước và trong lúc mua\n3. Nên bấm 2-3 lần vào link trước khi mua\n4. Gõ /donhang hoặc /tracuu để kiểm tra đơn vào 9H hôm sau`,
+    template_link: `@{ten_zalo}, link hoàn tiền hoa hồng đây ạ:\n🛍️ {ten_san_pham}\n📌 Link: {link_mua_sam}\n💰 Hoàn tiền: {tong_hoahong_phantram}% ({tong_hoahong_tien}) [Shopee: {shopee_hoahong_phantram}% | Shop: {shop_hoahong_phantram}%]\n💡 Lưu ý: Hãy mua ngay sau khi click (nên bấm link 2 lần để tăng tỉ lệ chuyển đổi), không xem Video/Live, dọn sạch giỏ trước khi click để được ghi nhận hoàn tiền nhé.`,
     template_link_tiktok: `Hi @{ten_zalo}, link của sếp đây ạ:\n📦 {ten_san_pham}\n💵 Giá tham khảo: {gia_san_pham}\n🔗 Link: {link_mua_sam}\n💵 Tổng hoa hồng: {tong_hoahong_phantram}% ({tong_hoahong_tien})\n💡 Mẹo nhỏ nhận hoa hồng chuẩn 100%: Xóa sp cũ trong giỏ ➔ Bấm link vào App ➔ Mua ngay (không xem Live/Video giữa chừng) nhé sếp ơi!`,
     template_tiktok_not_configured: `@{ten_zalo} Tính năng chuyển đổi link TikTok Shop hiện đang sắp ra mắt! 🚀\nHệ thống hiện tại hỗ trợ chuyển đổi link Shopee, bạn vui lòng gửi link Shopee giúp mình nhé!`,
     template_welcome: `Hi, chào @{ten_zalo}\n🎉 Chào mừng bạn đã tham gia nhóm {ten_nhom}!\n📌 Bạn vui lòng đọc kỹ BÀI GHIM của nhóm hoặc gõ lệnh /help để xem hướng dẫn cách gửi link mua sắm và nhận hoàn {ty_le_hoan}% hoa hồng nhé! 🥰`,
@@ -159,6 +159,10 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
     tiktokApiKey: "",
     tiktokCreatorUsername: "",
     isTiktokEnabled: activeTenant?.isTiktokEnabled ?? false,
+    botReplyDelayMode: "RANGE",
+    botReplyDelayFixed: 2,
+    botReplyDelayMin: 1,
+    botReplyDelayMax: 3,
   });
 
   const isTiktokEnabled = Boolean(activeTenant?.isTiktokEnabled ?? settings.isTiktokEnabled);
@@ -295,6 +299,10 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
           tiktokApiKey: data.tiktokApiKey || "",
           tiktokCreatorUsername: data.tiktokCreatorUsername || "",
           isTiktokEnabled: data.isTiktokEnabled ?? activeTenant?.isTiktokEnabled ?? false,
+          botReplyDelayMode: data.botReplyDelayMode || "RANGE",
+          botReplyDelayFixed: data.botReplyDelayFixed ?? 2,
+          botReplyDelayMin: data.botReplyDelayMin ?? 1,
+          botReplyDelayMax: data.botReplyDelayMax ?? 3,
         });
       }
     } catch (e) {
@@ -2495,12 +2503,28 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                 <div className="text-[10px] text-purple-900/70 font-semibold bg-purple-50 px-2 py-1 rounded-lg mt-1.5">👉 VD: <span className="font-bold text-purple-950">522.500đ</span></div>
               </div>
               <div className="p-2.5 bg-white rounded-xl border border-purple-100 flex flex-col justify-between shadow-2xs">
-                <div><code className="font-bold text-purple-700">{`{tong_hoahong_phantram}`}</code>: % Hoa hồng tích lũy</div>
-                <div className="text-[10px] text-purple-900/70 font-semibold bg-purple-50 px-2 py-1 rounded-lg mt-1.5">👉 VD: <span className="font-bold text-purple-950">7%</span></div>
+                <div><code className="font-bold text-purple-700">{`{tong_hoahong_phantram}`}</code>: % Tổng hoa hồng</div>
+                <div className="text-[10px] text-purple-900/70 font-semibold bg-purple-50 px-2 py-1 rounded-lg mt-1.5">👉 VD: <span className="font-bold text-purple-950">4%</span></div>
               </div>
               <div className="p-2.5 bg-white rounded-xl border border-purple-100 flex flex-col justify-between shadow-2xs">
-                <div><code className="font-bold text-purple-700">{`{tong_hoahong_tien}`}</code>: Tiền hoa hồng (đ)</div>
-                <div className="text-[10px] text-purple-900/70 font-semibold bg-purple-50 px-2 py-1 rounded-lg mt-1.5">👉 VD: <span className="font-bold text-purple-950">36.575đ</span></div>
+                <div><code className="font-bold text-purple-700">{`{tong_hoahong_tien}`}</code>: Tiền tổng hoa hồng (đ)</div>
+                <div className="text-[10px] text-purple-900/70 font-semibold bg-purple-50 px-2 py-1 rounded-lg mt-1.5">👉 VD: <span className="font-bold text-purple-950">đ17.080</span></div>
+              </div>
+              <div className="p-2.5 bg-white rounded-xl border border-purple-100 flex flex-col justify-between shadow-2xs">
+                <div><code className="font-bold text-purple-700">{`{shopee_hoahong_phantram}`}</code>: % Hoa hồng Shopee sàn</div>
+                <div className="text-[10px] text-purple-900/70 font-semibold bg-purple-50 px-2 py-1 rounded-lg mt-1.5">👉 VD: <span className="font-bold text-purple-950">4%</span></div>
+              </div>
+              <div className="p-2.5 bg-white rounded-xl border border-purple-100 flex flex-col justify-between shadow-2xs">
+                <div><code className="font-bold text-purple-700">{`{shopee_hoahong_tien}`}</code>: Tiền hoa hồng Shopee (đ)</div>
+                <div className="text-[10px] text-purple-900/70 font-semibold bg-purple-50 px-2 py-1 rounded-lg mt-1.5">👉 VD: <span className="font-bold text-purple-950">đ17.080</span></div>
+              </div>
+              <div className="p-2.5 bg-white rounded-xl border border-purple-100 flex flex-col justify-between shadow-2xs">
+                <div><code className="font-bold text-purple-700">{`{shop_hoahong_phantram}`}</code>: % Hoa hồng Shop bán</div>
+                <div className="text-[10px] text-purple-900/70 font-semibold bg-purple-50 px-2 py-1 rounded-lg mt-1.5">👉 VD: <span className="font-bold text-purple-950">2.5%</span></div>
+              </div>
+              <div className="p-2.5 bg-white rounded-xl border border-purple-100 flex flex-col justify-between shadow-2xs">
+                <div><code className="font-bold text-purple-700">{`{shop_hoahong_tien}`}</code>: Tiền hoa hồng Shop bán (đ)</div>
+                <div className="text-[10px] text-purple-900/70 font-semibold bg-purple-50 px-2 py-1 rounded-lg mt-1.5">👉 VD: <span className="font-bold text-purple-950">đ10.000</span></div>
               </div>
               <div className="p-2.5 bg-white rounded-xl border border-purple-100 flex flex-col justify-between shadow-2xs">
                 <div><code className="font-bold text-purple-700">{`{ma_don_hang}`}</code>: Mã đơn hàng</div>
@@ -2691,6 +2715,119 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                 className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-orange-500 transition"
               />
               <span className="text-[11px] text-slate-400 mt-1 block">Mã ID tiếp thị Shopee Affiliate của Trưởng Nhóm dùng để gắn vào link tạo hoa hồng.</span>
+            </div>
+
+            {/* CẤU HÌNH THỜI GIAN PHẢN HỒI BOT (DELAY TRẢ LỜI TIN NHẮN) */}
+            <div className="md:col-span-2 pt-2 border-t border-slate-100">
+              <div className="p-5 bg-gradient-to-br from-purple-50/70 via-indigo-50/40 to-white rounded-3xl border border-purple-200/90 space-y-4 shadow-2xs">
+                <div className="flex items-start justify-between flex-wrap gap-2">
+                  <div>
+                    <h4 className="text-xs font-black uppercase text-purple-900 tracking-wider flex items-center gap-2">
+                      <i className="fa-solid fa-stopwatch text-purple-600"></i>
+                      <span>Thời Gian Bot Trả Lời Tin Nhắn (Delay Phản Hồi)</span>
+                    </h4>
+                    <p className="text-[11px] text-purple-800/80 font-medium mt-1">
+                      Tùy chỉnh tốc độ Bot Zalo trả lời tin nhắn tạo link hoàn tiền và câu lệnh theo nhu cầu (nhanh hoặc chậm tự nhiên).
+                    </p>
+                  </div>
+                  <span className="px-3 py-1 bg-purple-100 text-purple-900 rounded-xl text-[10px] font-black border border-purple-200 shadow-2xs flex items-center gap-1.5">
+                    <span className="text-rose-500">❤️</span> Tự động thả tim tin nhắn Shopee
+                  </span>
+                </div>
+
+                <div className="bg-white/90 backdrop-blur-xs p-4 rounded-2xl border border-purple-100 space-y-3 shadow-2xs">
+                  <div className="flex items-center gap-4 flex-wrap">
+                    <label className="text-xs font-bold text-slate-700">Kiểu cài đặt thời gian:</label>
+                    <div className="flex items-center gap-4">
+                      <label className="flex items-center gap-2 text-xs font-bold text-slate-800 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="botReplyDelayMode"
+                          value="FIXED"
+                          checked={settings.botReplyDelayMode === "FIXED"}
+                          onChange={() => setSettings({ ...settings, botReplyDelayMode: "FIXED" })}
+                          className="accent-purple-600 w-4 h-4 cursor-pointer"
+                        />
+                        <span>🎯 Cố định (Fixed)</span>
+                      </label>
+                      <label className="flex items-center gap-2 text-xs font-bold text-slate-800 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="botReplyDelayMode"
+                          value="RANGE"
+                          checked={settings.botReplyDelayMode === "RANGE"}
+                          onChange={() => setSettings({ ...settings, botReplyDelayMode: "RANGE" })}
+                          className="accent-purple-600 w-4 h-4 cursor-pointer"
+                        />
+                        <span>🎲 Trong khoảng (Ngẫu nhiên Min - Max)</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {settings.botReplyDelayMode === "FIXED" ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Thời gian Bot chờ trước khi trả lời (giây):</label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            min="0"
+                            max="60"
+                            value={settings.botReplyDelayFixed}
+                            onChange={(e) => setSettings({ ...settings, botReplyDelayFixed: e.target.value })}
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-purple-500"
+                          />
+                          <span className="absolute right-3 top-2 text-xs font-bold text-slate-400">giây</span>
+                        </div>
+                        <span className="text-[10px] text-slate-400 mt-1 block">Ví dụ: 1s, 2s, 3s... (Khách thích phản hồi nhanh hoặc chậm cố định).</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Thời gian tối thiểu (giây):</label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            min="0"
+                            max="60"
+                            value={settings.botReplyDelayMin}
+                            onChange={(e) => setSettings({ ...settings, botReplyDelayMin: e.target.value })}
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-purple-500"
+                          />
+                          <span className="absolute right-3 top-2 text-xs font-bold text-slate-400">giây</span>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Thời gian tối đa (giây):</label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            min="0"
+                            max="60"
+                            value={settings.botReplyDelayMax}
+                            onChange={(e) => setSettings({ ...settings, botReplyDelayMax: e.target.value })}
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-purple-500"
+                          />
+                          <span className="absolute right-3 top-2 text-xs font-bold text-slate-400">giây</span>
+                        </div>
+                      </div>
+                      <div className="sm:col-span-2">
+                        <span className="text-[10px] text-slate-500 block">
+                          💡 Bot sẽ chọn ngẫu nhiên từ <strong>{settings.botReplyDelayMin || 1}s</strong> đến <strong>{settings.botReplyDelayMax || 3}s</strong> trước khi gửi tin nhắn, tạo độ trễ tự nhiên như người thật đang gõ phím.
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="p-3 bg-purple-50/70 border border-purple-200/60 rounded-xl text-[11px] text-purple-900 flex items-center gap-2">
+                    <span className="text-base">💡</span>
+                    <span>
+                      <strong>Cơ chế tự động:</strong> Khi thành viên gửi link Shopee vào nhóm, Bot sẽ ngay lập tức <strong>thả tim ❤️</strong> tin nhắn đó, sau đó chờ đúng khoảng thời gian cài đặt ở trên rồi mới trả lời link hoàn tiền.
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {isTiktokEnabled && (

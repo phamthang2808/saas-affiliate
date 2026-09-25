@@ -34,15 +34,39 @@ export const VARIABLE_DEFINITIONS = {
   },
   tong_hoahong_phantram: {
     name: "{tong_hoahong_phantram}",
-    example: "7.0%",
-    desc: "Tỷ lệ phần trăm hoa hồng tiếp thị của sản phẩm.",
+    example: "4%",
+    desc: "Tỷ lệ phần trăm tổng hoa hồng tiếp thị của sản phẩm.",
     source: "Tỷ lệ hoa hồng do Shopee/TikTok công bố"
   },
   tong_hoahong_tien: {
     name: "{tong_hoahong_tien}",
-    example: "36.575đ",
-    desc: "Số tiền hoa hồng dự kiến nhận được khi mua sản phẩm này.",
+    example: "đ17.080",
+    desc: "Số tiền tổng hoa hồng dự kiến nhận được khi mua sản phẩm này.",
     source: "Tính tự động: Giá sản phẩm × % hoa hồng"
+  },
+  shopee_hoahong_phantram: {
+    name: "{shopee_hoahong_phantram}",
+    example: "4%",
+    desc: "Tỷ lệ % hoa hồng riêng của sàn Shopee chi trả.",
+    source: "Shopee Affiliate Platform"
+  },
+  shopee_hoahong_tien: {
+    name: "{shopee_hoahong_tien}",
+    example: "đ17.080",
+    desc: "Số tiền hoa hồng riêng do sàn Shopee chi trả.",
+    source: "Tính tự động theo tỷ lệ sàn Shopee"
+  },
+  shop_hoahong_phantram: {
+    name: "{shop_hoahong_phantram}",
+    example: "2.5%",
+    desc: "Tỷ lệ % hoa hồng riêng do Shop / Người bán tài trợ thêm.",
+    source: "Hoa hồng Extra Shop bán Shopee"
+  },
+  shop_hoahong_tien: {
+    name: "{shop_hoahong_tien}",
+    example: "đ10.000",
+    desc: "Số tiền hoa hồng riêng do Shop / Người bán chi trả.",
+    source: "Tính tự động theo tỷ lệ Shop bán"
   },
   link_mua_sam: {
     name: "{link_mua_sam}",
@@ -266,16 +290,24 @@ export function TemplatePreviewModal({
     ten_kenh: groupName,
     ty_le_hoan: `${splitRate}%`,
     split_rate: `${splitRate}%`,
-    ten_san_pham: "Giày Bóng Chuyền Cao Cấp Hỏa Trâu 2026",
-    product_name: "Giày Bóng Chuyền Cao Cấp Hỏa Trâu 2026",
-    gia_san_pham: "522.500đ",
-    price: "522.500đ",
-    tong_hoahong_phantram: "7.0%",
-    commission_rate: "7.0%",
-    tong_hoahong_tien: "36.575đ",
-    commission_amount: "36.575đ",
-    link_mua_sam: "https://s.shopee.vn/8A1B2C3D4E",
-    affiliate_link: "https://s.shopee.vn/8A1B2C3D4E",
+    ten_san_pham: "Gấu Bông gối ôm hình thú , gối dài gối ngủ đáng yêu",
+    product_name: "Gấu Bông gối ôm hình thú , gối dài gối ngủ đáng yêu",
+    gia_san_pham: "đ135.800",
+    price: "đ135.800",
+    tong_hoahong_phantram: "6",
+    commission_rate: "6",
+    tong_hoahong_tien: "đ8,148",
+    commission_amount: "đ8,148",
+    shopee_hoahong_phantram: "4",
+    shopee_rate: "4",
+    shopee_hoahong_tien: "đ5,432",
+    shopee_commission: "đ5,432",
+    shop_hoahong_phantram: "2",
+    shop_rate: "2",
+    shop_hoahong_tien: "đ2,716",
+    shop_commission: "đ2,716",
+    link_mua_sam: "https://s.shopee.vn/an_redir?origin_link=https%3A%2F%2Fshopee.vn%2Fproduct%2F78513158%2F29153753715&affiliate_id=17322520644&sub_id=PhamThang&deep_and_deferred=1",
+    affiliate_link: "https://s.shopee.vn/an_redir?origin_link=https%3A%2F%2Fshopee.vn%2Fproduct%2F78513158%2F29153753715&affiliate_id=17322520644&sub_id=PhamThang&deep_and_deferred=1",
     link_tra_cuu: lookupUrl,
     link: lookupUrl,
     so_du_vi: testHoldingDays > 0 ? "37.824đ" : "62.824đ",
@@ -319,6 +351,7 @@ export function TemplatePreviewModal({
     simulatedText = simulatedText.replace(regexTag, `@${val}`);
     simulatedText = simulatedText.replace(regexPlain, val);
   });
+  simulatedText = simulatedText.replace(/%%/g, "%");
 
   // Tìm danh sách các biến động có mặt trong mẫu này
   const foundPlaceholders = [];

@@ -7,6 +7,7 @@ import { LandingIntroView } from "./components/LandingIntroView";
 import { MobileBottomNav } from "./components/MobileBottomNav";
 import { PricingContactView } from "./components/PricingContactView";
 import { PublicLookupView } from "./components/PublicLookupView";
+import { ShortLinkRedirectView } from "./components/ShortLinkRedirectView";
 import { Sidebar } from "./components/Sidebar";
 import { SuperAdminView } from "./components/SuperAdminView";
 import { TenantAdminView } from "./components/TenantAdminView";
@@ -15,10 +16,32 @@ import { API_URL_ROOT, APP_CONFIG } from "./config/api";
 import { isZaloBrowser, isAndroidDevice, openExternalBrowser } from "./utils/browserDetect";
 
 export default function App() {
-  // Views: 'gioi-thieu' | 'tra-cuu' | 'huong-dan' | 'bao-gia' | 'tenant-admin' | 'super-admin'
-  const [currentView, setCurrentView] = useState(() => {
-    // 1. Kiểm tra URL hash (VD: #tenant-admin hoặc #super-admin)
+  const [shortCodeToResolve, setShortCodeToResolve] = useState(() => {
+    const cleanPath = window.location.pathname.replace(/^\/+|\/+$/g, "");
     const cleanHash = window.location.hash.replace(/^#\/?/, "");
+    const pathToCheck = cleanPath || cleanHash;
+    if (pathToCheck) {
+      const segments = pathToCheck.split("/").filter(Boolean);
+      if (segments[0].toLowerCase() === "s" && segments[1]) {
+        return segments[1];
+      }
+    }
+    return null;
+  });
+
+  // Views: 'gioi-thieu' | 'tra-cuu' | 'huong-dan' | 'bao-gia' | 'tenant-admin' | 'super-admin' | 'short-link'
+  const [currentView, setCurrentView] = useState(() => {
+    const cleanPath = window.location.pathname.replace(/^\/+|\/+$/g, "");
+    const cleanHash = window.location.hash.replace(/^#\/?/, "");
+    const pathToCheck = cleanPath || cleanHash;
+    if (pathToCheck) {
+      const segments = pathToCheck.split("/").filter(Boolean);
+      if (segments[0].toLowerCase() === "s" && segments[1]) {
+        return "short-link";
+      }
+    }
+
+    // 1. Kiểm tra URL hash (VD: #tenant-admin hoặc #super-admin)
     if (cleanHash && ["tenant-admin", "super-admin", "tra-cuu", "bao-gia", "huong-dan", "gioi-thieu"].includes(cleanHash)) {
       return cleanHash;
     }
@@ -185,6 +208,13 @@ export default function App() {
             const segments = pathToCheck.split("/").filter(Boolean);
             const firstSegment = segments[0];
             const secondSegment = segments[1];
+
+            // Direct short link route: /s/{code}
+            if (firstSegment.toLowerCase() === "s" && secondSegment) {
+              setShortCodeToResolve(secondSegment);
+              setCurrentView("short-link");
+              return;
+            }
 
             const matched = tenants.find((t) => t.slug.toLowerCase() === firstSegment.toLowerCase());
             if (matched) {
@@ -465,6 +495,14 @@ export default function App() {
                 onLogout={handleLogout}
               />
             )
+          )}
+
+          {/* 7. Short Link Redirect Router */}
+          {currentView === "short-link" && (
+            <ShortLinkRedirectView
+              shortCode={shortCodeToResolve}
+              onNavigateHome={() => setCurrentView("gioi-thieu")}
+            />
           )}
         </main>
 

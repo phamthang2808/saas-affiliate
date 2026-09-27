@@ -159,6 +159,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
     tiktokApiKey: "",
     tiktokCreatorUsername: "",
     isTiktokEnabled: activeTenant?.isTiktokEnabled ?? false,
+    useShortLink: activeTenant?.useShortLink ?? true,
     botReplyDelayMode: "RANGE",
     botReplyDelayFixed: 2,
     botReplyDelayMin: 1,
@@ -299,6 +300,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
           tiktokApiKey: data.tiktokApiKey || "",
           tiktokCreatorUsername: data.tiktokCreatorUsername || "",
           isTiktokEnabled: data.isTiktokEnabled ?? activeTenant?.isTiktokEnabled ?? false,
+          useShortLink: data.useShortLink ?? activeTenant?.useShortLink ?? true,
           botReplyDelayMode: data.botReplyDelayMode || "RANGE",
           botReplyDelayFixed: data.botReplyDelayFixed ?? 2,
           botReplyDelayMin: data.botReplyDelayMin ?? 1,
@@ -2715,6 +2717,91 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                 className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-orange-500 transition"
               />
               <span className="text-[11px] text-slate-400 mt-1 block">Mã ID tiếp thị Shopee Affiliate của Trưởng Nhóm dùng để gắn vào link tạo hoa hồng.</span>
+            </div>
+
+            {/* CẤU HÌNH ĐỊNH DẠNG LINK TIẾP THỊ (RÚT GỌN / NGUYÊN BẢN) */}
+            <div className="md:col-span-2 pt-2 border-t border-slate-100">
+              <div className="p-5 bg-gradient-to-br from-blue-50/70 via-sky-50/40 to-white rounded-3xl border border-blue-200/90 space-y-4 shadow-2xs">
+                <div className="flex items-start justify-between flex-wrap gap-2">
+                  <div>
+                    <h4 className="text-xs font-black uppercase text-blue-900 tracking-wider flex items-center gap-2">
+                      <i className="fa-solid fa-link text-blue-600"></i>
+                      <span>Cấu Hình Link Tiếp Thị Mua Sắm (Link Ngắn / Link Dài Shopee)</span>
+                    </h4>
+                    <p className="text-[11px] text-blue-800/80 font-medium mt-1">
+                      Lựa chọn định dạng link trả về cho thành viên khi chuyển đổi link tiếp thị Shopee trong nhóm Zalo.
+                    </p>
+                  </div>
+                  <span className={`px-3 py-1 rounded-xl text-[10px] font-black border shadow-2xs flex items-center gap-1.5 ${
+                    settings.useShortLink
+                      ? "bg-emerald-100 text-emerald-900 border-emerald-200"
+                      : "bg-amber-100 text-amber-900 border-amber-200"
+                  }`}>
+                    {settings.useShortLink ? "⚡ Đang dùng Link Ngắn (Rút gọn)" : "🔗 Đang dùng Link Dài Mặc Định (Shopee)"}
+                  </span>
+                </div>
+
+                <div className="bg-white/90 backdrop-blur-xs p-4 rounded-2xl border border-blue-100 space-y-3 shadow-2xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <label
+                      onClick={() => setSettings({ ...settings, useShortLink: true })}
+                      className={`p-4 rounded-2xl border-2 transition-all cursor-pointer select-none flex items-start gap-3 ${
+                        settings.useShortLink
+                          ? "bg-blue-50/90 border-blue-500 text-blue-950 shadow-sm"
+                          : "bg-slate-50 border-slate-200 text-slate-700 hover:border-slate-300"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="useShortLink"
+                        checked={settings.useShortLink === true}
+                        onChange={() => setSettings({ ...settings, useShortLink: true })}
+                        className="accent-blue-600 mt-1 cursor-pointer"
+                      />
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-black text-slate-900">🔗 Link Rút Gọn (Link Ngắn)</span>
+                          <span className="px-2 py-0.5 bg-blue-100 text-blue-800 text-[9px] font-bold rounded-md">Mặc định</span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                          Tự động rút gọn link tiếp thị sang tên miền thương hiệu của Kênh.
+                        </p>
+                        <div className="mt-2 text-[10px] font-mono bg-blue-100/60 text-blue-900 px-2 py-1 rounded-lg break-all">
+                          https://www.28affihub.store/s/MNx5TJ4
+                        </div>
+                      </div>
+                    </label>
+
+                    <label
+                      onClick={() => setSettings({ ...settings, useShortLink: false })}
+                      className={`p-4 rounded-2xl border-2 transition-all cursor-pointer select-none flex items-start gap-3 ${
+                        !settings.useShortLink
+                          ? "bg-blue-50/90 border-blue-500 text-blue-950 shadow-sm"
+                          : "bg-slate-50 border-slate-200 text-slate-700 hover:border-slate-300"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="useShortLink"
+                        checked={settings.useShortLink === false}
+                        onChange={() => setSettings({ ...settings, useShortLink: false })}
+                        className="accent-blue-600 mt-1 cursor-pointer"
+                      />
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-black text-slate-900">🌐 Link Dài Mặc Định Shopee</span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                          Sử dụng trực tiếp link tiếp thị dài gốc từ Shopee Affiliate.
+                        </p>
+                        <div className="mt-2 text-[10px] font-mono bg-slate-100 text-slate-700 px-2 py-1 rounded-lg break-all">
+                          https://s.shopee.vn/an_redir?origin_link=...
+                        </div>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* CẤU HÌNH THỜI GIAN PHẢN HỒI BOT (DELAY TRẢ LỜI TIN NHẮN) */}

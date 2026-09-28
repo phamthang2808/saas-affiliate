@@ -1870,6 +1870,9 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                 activeTenant={activeTenant}
                 formatMoney={formatMoney}
                 formatDate={formatDate}
+                authHeaders={authHeaders}
+                onOrdersUpdated={fetchTenantData}
+                showNotification={showNotification}
               />
             )}
           </div>

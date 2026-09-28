@@ -2646,17 +2646,17 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
 
             {/* FLOATING ACTION BAR FOR SELECTED ORDERS (ĐỐI CHIẾU APP SCRIPT) */}
             {selectedOrderIds.size > 0 && (
-              <div className="sticky bottom-4 z-40 bg-slate-900/95 backdrop-blur-md text-white rounded-2xl p-3.5 px-4 shadow-2xl border border-slate-700/80 flex items-center justify-between gap-4 flex-wrap animate-fade-in-up mt-3">
+              <div className="sticky bottom-4 z-40 bg-white/95 backdrop-blur-md text-slate-800 rounded-3xl p-3.5 px-5 shadow-2xl border-2 border-orange-200/90 flex items-center justify-between gap-4 flex-wrap animate-fade-in-up mt-3">
                 <div className="flex items-center gap-3">
-                  <span className="w-8 h-8 rounded-xl bg-orange-500 text-white flex items-center justify-center font-black text-xs shadow-xs">
+                  <span className="w-8 h-8 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 text-white flex items-center justify-center font-black text-xs shadow-sm">
                     {selectedOrderIds.size}
                   </span>
                   <div>
-                    <div className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                    <div className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
                       <span>Khách nhận (đang chọn):</span>
-                      <strong className="text-orange-400 font-mono text-sm">{formatMoney(selectedUserFinalSum)}</strong>
+                      <strong className="text-orange-600 font-black font-mono text-base">{formatMoney(selectedUserFinalSum)}</strong>
                     </div>
-                    <div className="text-[10px] text-slate-400 font-mono">
+                    <div className="text-[11px] text-slate-400 font-mono font-medium">
                       Tổng thô Shopee: {formatMoney(selectedRawSum)}
                     </div>
                   </div>
@@ -2666,7 +2666,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                   <button
                     type="button"
                     onClick={() => handleMarkPaid("PAID")}
-                    className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition cursor-pointer flex items-center gap-1.5 shadow-xs"
+                    className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-black rounded-2xl text-xs transition cursor-pointer flex items-center gap-1.5 shadow-md shadow-emerald-500/20"
                     title="Đánh dấu tất cả đơn đang chọn là Đã thanh toán"
                   >
                     <i className="fa-solid fa-check"></i> Đánh dấu ĐÃ THANH TOÁN
@@ -2675,7 +2675,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                   <button
                     type="button"
                     onClick={() => handleMarkPaid("UNPAID")}
-                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs transition cursor-pointer flex items-center gap-1.5 border border-slate-600 shadow-xs"
+                    className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl text-xs transition cursor-pointer flex items-center gap-1.5 border border-slate-200"
                     title="Bỏ đánh dấu thanh toán (chuyển về Chưa thanh toán)"
                   >
                     <i className="fa-solid fa-rotate-left text-[11px]"></i> Chưa thanh toán
@@ -2684,7 +2684,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                   <button
                     type="button"
                     onClick={() => setSelectedOrderIds(new Set())}
-                    className="px-2.5 py-1.5 text-slate-400 hover:text-white rounded-xl transition cursor-pointer text-xs"
+                    className="px-3 py-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-2xl transition cursor-pointer text-xs font-bold"
                     title="Bỏ chọn tất cả"
                   >
                     <i className="fa-solid fa-xmark text-sm"></i> Bỏ chọn

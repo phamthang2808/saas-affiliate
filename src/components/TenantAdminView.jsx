@@ -198,15 +198,21 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
   const [adminOrderSearchId, setAdminOrderSearchId] = useState("");
   const [adminOrderSearchProduct, setAdminOrderSearchProduct] = useState("");
   const [adminOrderFilterStatus, setAdminOrderFilterStatus] = useState("Tất cả");
+  const [adminOrderFilterPayment, setAdminOrderFilterPayment] = useState("Tất cả"); // Tất cả | PAID | UNPAID
   const [adminOrderDateFrom, setAdminOrderDateFrom] = useState("");
   const [adminOrderDateTo, setAdminOrderDateTo] = useState("");
   const [adminOrderPage, setAdminOrderPage] = useState(1);
   const [showMultiIdBox, setShowMultiIdBox] = useState(false);
 
+  // Checkbox đánh dấu đã thanh toán cho đối chiếu App Script
+  const [selectedOrderIds, setSelectedOrderIds] = useState(new Set());
+
   // Members Tab State (Lỳ-style)
   const [memberSearch, setMemberSearch] = useState("");
   const [memberPage, setMemberPage] = useState(1);
   const [selectedMember, setSelectedMember] = useState(null);
+  const [editingMemberBank, setEditingMemberBank] = useState(null); // { zaloId, zaloName, bankName, accountNumber, accountName }
+  const [isUpdatingBank, setIsUpdatingBank] = useState(false);
 
   // Modal Gán / Liên kết đơn hàng
   const [selectedOrderToAssign, setSelectedOrderToAssign] = useState(null);
@@ -816,6 +822,102 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
     }
   };
 
+  // === ĐỐI CHIẾU APP SCRIPT: Đánh dấu đã thanh toán hàng loạt cho đơn hàng ===
+  const handleMarkPaid = async (action = "PAID") => {
+    if (!activeTenant?.slug) return;
+    if (selectedOrderIds.size === 0) {
+      showNotification("⚠️ Vui lòng tích chọn ít nhất 1 đơn hàng!", "error");
+      return;
+    }
+    const confirmMsg = action === "PAID"
+      ? `Đánh dấu ${selectedOrderIds.size} đơn hàng là ĐÃ THANH TOÁN?`
+      : `Bỏ đánh dấu thanh toán cho ${selectedOrderIds.size} đơn hàng?`;
+    if (!window.confirm(confirmMsg)) return;
+
+    try {
+      const res = await fetch(`${apiRoot}/api/saas/admin/${activeTenant.slug}/orders/mark-paid`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", ...authHeaders },
+        body: JSON.stringify({ orderIds: Array.from(selectedOrderIds), action }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showNotification(data.message || "Thành công!", "success");
+        setSelectedOrderIds(new Set());
+        fetchTenantData();
+      } else {
+        showNotification("❌ " + (data.message || "Lỗi"), "error");
+      }
+    } catch (err) {
+      showNotification("❌ Lỗi máy chủ: " + err.message, "error");
+    }
+  };
+
+  // Toggle chọn/bỏ 1 đơn
+  const toggleSelectOrder = (orderId) => {
+    setSelectedOrderIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(orderId)) next.delete(orderId);
+      else next.add(orderId);
+      return next;
+    });
+  };
+
+  // Chọn/bỏ tất cả đơn đang hiển thị (theo bộ lọc + trang hiện tại)
+  const toggleSelectAllOrders = (currentPageOrders) => {
+    const allIds = currentPageOrders.map((o) => o.id);
+    const allSelected = allIds.every((id) => selectedOrderIds.has(id));
+    if (allSelected) {
+      setSelectedOrderIds((prev) => {
+        const next = new Set(prev);
+        allIds.forEach((id) => next.delete(id));
+        return next;
+      });
+    } else {
+      setSelectedOrderIds((prev) => {
+        const next = new Set(prev);
+        allIds.forEach((id) => next.add(id));
+        return next;
+      });
+    }
+  };
+
+  // Chọn tất cả đơn đang lọc (đối chiếu App Script toàn bộ)
+  const toggleSelectAllFiltered = (allFilteredOrders) => {
+    const allIds = allFilteredOrders.map((o) => o.id);
+    const allSelected = allIds.length > 0 && allIds.every((id) => selectedOrderIds.has(id));
+    if (allSelected) {
+      setSelectedOrderIds(new Set());
+    } else {
+      setSelectedOrderIds(new Set(allIds));
+    }
+  };
+
+  // === SỬA STK THÀNH VIÊN ===
+  const handleUpdateMemberBank = async (zaloId, bankName, accountNumber, accountName) => {
+    if (!activeTenant?.slug || !zaloId) return;
+    setIsUpdatingBank(true);
+    try {
+      const res = await fetch(`${apiRoot}/api/saas/admin/${activeTenant.slug}/members/${zaloId}/bank-info`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", ...authHeaders },
+        body: JSON.stringify({ bankName, accountNumber, accountName }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showNotification(data.message || "✅ Đã cập nhật STK thành công!", "success");
+        setEditingMemberBank(null);
+        fetchTenantData();
+      } else {
+        showNotification("❌ " + (data.message || "Lỗi cập nhật STK"), "error");
+      }
+    } catch (err) {
+      showNotification("❌ Lỗi máy chủ: " + err.message, "error");
+    } finally {
+      setIsUpdatingBank(false);
+    }
+  };
+
   const groupDisplayName = stats?.tenant?.name || activeTenant?.name || "Nhóm Đối Tác";
   const pendingPayouts = payouts.filter((p) => p.status === "PENDING");
   const totalPendingAmount = pendingPayouts.reduce((sum, p) => sum + Number(p.amount || 0), 0);
@@ -896,6 +998,13 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
       }
     }
 
+    // Filter by Payment Status (Đối chiếu App Script)
+    if (adminOrderFilterPayment && adminOrderFilterPayment !== "Tất cả") {
+      const isPaid = String(o.paymentStatus || "").toUpperCase() === "PAID";
+      if (adminOrderFilterPayment === "PAID" && !isPaid) return false;
+      if (adminOrderFilterPayment === "UNPAID" && isPaid) return false;
+    }
+
     return true;
   });
 
@@ -952,6 +1061,16 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
     return sum + Math.round(afterTax * (customerSplitRate / 100));
   }, 0);
   const totalAdminProfitSum = Math.max(0, totalAfterTaxSum - totalUserFinalSum);
+
+  // Tính tổng hoa hồng cho các đơn hàng đang được tích chọn (đối chiếu App Script)
+  const selectedOrdersList = orders.filter((o) => selectedOrderIds.has(o.id));
+  const selectedUserFinalSum = selectedOrdersList.reduce((sum, o) => {
+    const raw = Math.round(Number(o.rawCommission || o.finalCommission || 0));
+    const tax = Math.round(raw * (taxRate / 100));
+    const afterTax = Math.max(0, raw - tax);
+    return sum + Math.round(afterTax * (customerSplitRate / 100));
+  }, 0);
+  const selectedRawSum = selectedOrdersList.reduce((sum, o) => sum + Math.round(Number(o.rawCommission || o.finalCommission || 0)), 0);
 
   const handleExportOrdersExcel = (platform = "Shopee") => {
     if (!filteredOrders || filteredOrders.length === 0) {
@@ -1547,23 +1666,39 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                                 </code>
                               </td>
                               <td className="px-4 py-3.5">
-                                {bankN ? (
-                                  <div>
-                                    <div className="font-bold text-slate-800 text-xs flex items-center gap-1.5 flex-wrap">
-                                      <span>{bankN}</span>
-                                      {accName && (
-                                        <span className="text-[10px] text-orange-600 bg-orange-50 px-1.5 py-0.2 rounded font-extrabold uppercase">
-                                          {accName}
-                                        </span>
+                                <div className="flex items-center justify-between gap-2">
+                                  {bankN ? (
+                                    <div>
+                                      <div className="font-bold text-slate-800 text-xs flex items-center gap-1.5 flex-wrap">
+                                        <span>{bankN}</span>
+                                        {accName && (
+                                          <span className="text-[10px] text-orange-600 bg-orange-50 px-1.5 py-0.2 rounded font-extrabold uppercase">
+                                            {accName}
+                                          </span>
+                                        )}
+                                      </div>
+                                      {accNum && (
+                                        <div className="text-[10px] font-mono text-slate-400 mt-0.5">STK: {accNum}</div>
                                       )}
                                     </div>
-                                    {accNum && (
-                                      <div className="text-[10px] font-mono text-slate-400 mt-0.5">STK: {accNum}</div>
-                                    )}
-                                  </div>
-                                ) : (
-                                  <span className="text-slate-400 italic text-[11px]">Chưa lưu STK</span>
-                                )}
+                                  ) : (
+                                    <span className="text-slate-400 italic text-[11px]">Chưa lưu STK</span>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditingMemberBank({
+                                      zaloId: u.zaloId || u.zalo_id,
+                                      zaloName: u.zaloName || u.zalo_name || u.name,
+                                      bankName: bankN,
+                                      accountNumber: accNum,
+                                      accountName: accName
+                                    })}
+                                    className="p-1.5 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition cursor-pointer"
+                                    title="Sửa thông tin STK"
+                                  >
+                                    <i className="fa-solid fa-pen text-[11px]"></i>
+                                  </button>
+                                </div>
                               </td>
                               <td className="px-4 py-3.5 text-right font-mono font-bold text-amber-600 whitespace-nowrap">
                                 {formatMoney(wallet.pendingCommission)}
@@ -1579,6 +1714,20 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                               </td>
                               <td className="px-4 py-3.5 text-center whitespace-nowrap">
                                 <div className="flex items-center justify-center gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditingMemberBank({
+                                      zaloId: u.zaloId || u.zalo_id,
+                                      zaloName: u.zaloName || u.zalo_name || u.name,
+                                      bankName: bankN,
+                                      accountNumber: accNum,
+                                      accountName: accName
+                                    })}
+                                    className="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 border border-blue-200/80 rounded-xl text-[11px] font-bold transition shadow-2xs cursor-pointer inline-flex items-center gap-1"
+                                    title="Sửa thông tin STK nhận tiền"
+                                  >
+                                    <i className="fa-solid fa-pen-to-square text-[10px]"></i> Sửa STK
+                                  </button>
                                   <button
                                     type="button"
                                     onClick={() => setSelectedMember(u)}
@@ -2011,6 +2160,24 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                   <option value="Đã hủy">Đã hủy</option>
                 </select>
               </div>
+
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">
+                  Thanh toán (App Script)
+                </label>
+                <select
+                  value={adminOrderFilterPayment}
+                  onChange={(e) => {
+                    setAdminOrderFilterPayment(e.target.value);
+                    setAdminOrderPage(1);
+                  }}
+                  className="w-full h-10 bg-slate-50 border border-slate-200 rounded-2xl px-3.5 text-xs font-bold text-slate-800 outline-none focus:border-orange-500 transition cursor-pointer"
+                >
+                  <option value="Tất cả">Tất cả thanh toán</option>
+                  <option value="PAID">✅ Đã thanh toán</option>
+                  <option value="UNPAID">⏳ Chưa thanh toán</option>
+                </select>
+              </div>
             </div>
 
             {/* Expandable Multi-ID Textarea */}
@@ -2063,6 +2230,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                   setAdminOrderSearchId("");
                   setAdminOrderSearchProduct("");
                   setAdminOrderFilterStatus("Tất cả");
+                  setAdminOrderFilterPayment("Tất cả");
                   setAdminOrderDateFrom("");
                   setAdminOrderDateTo("");
                 }}
@@ -2075,13 +2243,28 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
 
           {/* RESULTS CONTROL HEADER */}
           <div className="flex items-center justify-between flex-wrap gap-2 px-1">
-            <p className="text-xs text-slate-500 font-medium">
-              Hiển thị{" "}
-              <span className="font-bold text-slate-800">
-                {filteredOrders.length > 0 ? (adminOrderPage - 1) * 50 + 1 : 0} - {Math.min(adminOrderPage * 50, filteredOrders.length)}
-              </span>{" "}
-              / Kết quả {activeTab === "tiktok" ? "TikTok" : "Shopee"}: <strong className="text-orange-600">{filteredOrders.length} đơn</strong>
-            </p>
+            <div className="flex items-center gap-3 flex-wrap">
+              <p className="text-xs text-slate-500 font-medium">
+                Hiển thị{" "}
+                <span className="font-bold text-slate-800">
+                  {filteredOrders.length > 0 ? (adminOrderPage - 1) * 50 + 1 : 0} - {Math.min(adminOrderPage * 50, filteredOrders.length)}
+                </span>{" "}
+                / Kết quả {activeTab === "tiktok" ? "TikTok" : "Shopee"}: <strong className="text-orange-600">{filteredOrders.length} đơn</strong>
+              </p>
+
+              {filteredOrders.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => toggleSelectAllFiltered(filteredOrders)}
+                  className="text-xs font-bold text-orange-600 hover:text-orange-700 bg-orange-50 hover:bg-orange-100 border border-orange-200 px-3 py-1 rounded-xl transition cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                >
+                  <i className="fa-solid fa-list-check text-xs"></i>
+                  {filteredOrders.every((o) => selectedOrderIds.has(o.id))
+                    ? "Bỏ chọn tất cả"
+                    : `Chọn tất cả ${filteredOrders.length} đơn đang lọc`}
+                </button>
+              )}
+            </div>
 
             <button
               onClick={() => handleExportOrdersExcel(activeTab === "tiktok" ? "TikTok" : "Shopee")}
@@ -2112,10 +2295,20 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
               <table className="w-full min-w-[780px] sm:min-w-[900px] text-left border-collapse text-xs sm:text-xs">
                 <thead>
                   <tr className="bg-slate-100/90 text-slate-600 text-xs font-black uppercase tracking-wider border-b border-slate-200">
+                    <th className="p-2 sm:p-3 text-center w-10">
+                      <input
+                        type="checkbox"
+                        className="w-4 h-4 accent-orange-500 cursor-pointer"
+                        checked={filteredOrders.length > 0 && filteredOrders.slice((adminOrderPage - 1) * 50, adminOrderPage * 50).every((o) => selectedOrderIds.has(o.id))}
+                        onChange={() => toggleSelectAllOrders(filteredOrders.slice((adminOrderPage - 1) * 50, adminOrderPage * 50))}
+                        title="Chọn tất cả đơn trang này"
+                      />
+                    </th>
                     <th className="p-3.5 sm:p-4 whitespace-nowrap">Ngày đơn</th>
                     <th className="p-3.5 sm:p-4">Sản phẩm / Mã đơn</th>
                     <th className="p-3.5 sm:p-4 whitespace-nowrap">Người mua</th>
                     <th className="p-3.5 sm:p-4 whitespace-nowrap">Trạng thái</th>
+                    <th className="p-2 sm:p-3 text-center whitespace-nowrap" title="Đã thanh toán (đối chiếu App Script)">Đã TT</th>
                     <th className="p-3.5 sm:p-4 text-right whitespace-nowrap">Thô (Shopee)</th>
                     <th className="p-3.5 sm:p-4 text-right whitespace-nowrap">Thuế ({taxRate}%)</th>
                     <th className="p-3.5 sm:p-4 text-right whitespace-nowrap">Sau thuế</th>
@@ -2126,7 +2319,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                 <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
                   {filteredOrders.length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="p-12 text-center text-slate-400 font-bold">
+                      <td colSpan={11} className="p-12 text-center text-slate-400 font-bold">
                         <i className="fa-solid fa-folder-open text-2xl text-slate-300 mb-2 block"></i>
                         Không tìm thấy đơn hàng nào khớp với bộ lọc
                       </td>
@@ -2200,7 +2393,15 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                         const buyer = getOrderBuyerInfo(o);
 
                         return (
-                          <tr key={o.id} className="hover:bg-slate-50/80 transition">
+                          <tr key={o.id} className={`hover:bg-slate-50/80 transition ${selectedOrderIds.has(o.id) ? "bg-orange-50/60" : ""}`}>
+                            <td className="p-2 sm:p-3 text-center">
+                              <input
+                                type="checkbox"
+                                className="w-4 h-4 accent-orange-500 cursor-pointer"
+                                checked={selectedOrderIds.has(o.id)}
+                                onChange={() => toggleSelectOrder(o.id)}
+                              />
+                            </td>
                             <td className="p-3.5 sm:p-4 text-slate-600 font-bold whitespace-nowrap text-xs sm:text-xs">
                               {o.orderDate ? new Date(o.orderDate).toLocaleDateString("vi-VN") : "—"}
                             </td>
@@ -2286,6 +2487,34 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                                 );
                               })()}
                             </td>
+                            {/* CỘT ĐÃ THANH TOÁN (ĐỐI CHIẾU APP SCRIPT) */}
+                            <td className="p-2 sm:p-3 text-center whitespace-nowrap">
+                              {o.paymentStatus === "PAID" ? (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedOrderIds(new Set([o.id]));
+                                    handleMarkPaid("UNPAID");
+                                  }}
+                                  className="inline-flex items-center gap-1 text-[11px] font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-200 shadow-2xs transition cursor-pointer"
+                                  title="Đã thanh toán (bấm để đổi thành Chưa thanh toán)"
+                                >
+                                  <i className="fa-solid fa-check text-[10px]"></i> Đã TT
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedOrderIds(new Set([o.id]));
+                                    handleMarkPaid("PAID");
+                                  }}
+                                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-400 bg-slate-100 hover:bg-orange-50 hover:text-orange-600 hover:border-orange-200 px-2 py-0.5 rounded-full border border-slate-200 shadow-2xs transition cursor-pointer"
+                                  title="Chưa thanh toán (bấm để đánh dấu Đã thanh toán)"
+                                >
+                                  Chưa TT
+                                </button>
+                              )}
+                            </td>
                             <td className="p-3.5 sm:p-4 text-right font-mono font-bold text-slate-700 text-xs sm:text-xs whitespace-nowrap">{formatMoney(rawVal)}</td>
                             <td className="p-3.5 sm:p-4 text-right font-mono font-bold text-rose-500 text-xs sm:text-xs whitespace-nowrap">{formatMoney(taxVal)}</td>
                             <td className="p-3.5 sm:p-4 text-right font-mono font-bold text-slate-800 text-xs sm:text-xs whitespace-nowrap">{formatMoney(afterTaxVal)}</td>
@@ -2299,7 +2528,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                 {filteredOrders.length > 0 && (
                   <tfoot className="bg-slate-100/90 font-bold border-t-2 border-slate-200 text-xs sm:text-xs">
                     <tr>
-                      <td colSpan={4} className="p-3.5 sm:p-4 font-black text-slate-800 whitespace-nowrap">
+                      <td colSpan={6} className="p-3.5 sm:p-4 font-black text-slate-800 whitespace-nowrap">
                         📊 TỔNG CỘNG ({filteredOrders.length} đơn {activeTab === "tiktok" ? "TikTok" : "Shopee"} đang lọc)
                       </td>
                       <td className="p-3.5 sm:p-4 text-right font-mono font-black text-slate-800 whitespace-nowrap">
@@ -2414,6 +2643,55 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                 </div>
               );
             })()}
+
+            {/* FLOATING ACTION BAR FOR SELECTED ORDERS (ĐỐI CHIẾU APP SCRIPT) */}
+            {selectedOrderIds.size > 0 && (
+              <div className="sticky bottom-4 z-40 bg-slate-900/95 backdrop-blur-md text-white rounded-2xl p-3.5 px-4 shadow-2xl border border-slate-700/80 flex items-center justify-between gap-4 flex-wrap animate-fade-in-up mt-3">
+                <div className="flex items-center gap-3">
+                  <span className="w-8 h-8 rounded-xl bg-orange-500 text-white flex items-center justify-center font-black text-xs shadow-xs">
+                    {selectedOrderIds.size}
+                  </span>
+                  <div>
+                    <div className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                      <span>Khách nhận (đang chọn):</span>
+                      <strong className="text-orange-400 font-mono text-sm">{formatMoney(selectedUserFinalSum)}</strong>
+                    </div>
+                    <div className="text-[10px] text-slate-400 font-mono">
+                      Tổng thô Shopee: {formatMoney(selectedRawSum)}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => handleMarkPaid("PAID")}
+                    className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition cursor-pointer flex items-center gap-1.5 shadow-xs"
+                    title="Đánh dấu tất cả đơn đang chọn là Đã thanh toán"
+                  >
+                    <i className="fa-solid fa-check"></i> Đánh dấu ĐÃ THANH TOÁN
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleMarkPaid("UNPAID")}
+                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs transition cursor-pointer flex items-center gap-1.5 border border-slate-600 shadow-xs"
+                    title="Bỏ đánh dấu thanh toán (chuyển về Chưa thanh toán)"
+                  >
+                    <i className="fa-solid fa-rotate-left text-[11px]"></i> Chưa thanh toán
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setSelectedOrderIds(new Set())}
+                    className="px-2.5 py-1.5 text-slate-400 hover:text-white rounded-xl transition cursor-pointer text-xs"
+                    title="Bỏ chọn tất cả"
+                  >
+                    <i className="fa-solid fa-xmark text-sm"></i> Bỏ chọn
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -3025,6 +3303,123 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                 Đóng
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL SỬA STK THÀNH VIÊN */}
+      {editingMemberBank && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-100 animate-scale-up">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                  <i className="fa-solid fa-building-columns text-orange-500"></i>
+                  <span>Cập Nhật Tài Khoản Ngân Hàng</span>
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Thành viên: <strong className="text-slate-800">{editingMemberBank.zaloName || editingMemberBank.zaloId}</strong> (Zalo ID: <span className="font-mono text-blue-600">{editingMemberBank.zaloId}</span>)
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingMemberBank(null)}
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg transition"
+              >
+                <i className="fa-solid fa-xmark text-lg"></i>
+              </button>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleUpdateMemberBank(
+                  editingMemberBank.zaloId,
+                  editingMemberBank.bankName,
+                  editingMemberBank.accountNumber,
+                  editingMemberBank.accountName
+                );
+              }}
+              className="space-y-3.5"
+            >
+              <div>
+                <label className="block text-xs font-black text-slate-700 mb-1">
+                  Tên Ngân Hàng:
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editingMemberBank.bankName || ""}
+                  onChange={(e) => setEditingMemberBank({ ...editingMemberBank, bankName: e.target.value })}
+                  placeholder="VD: MBBank, Vietcombank, Techcombank, VPBank, ACB..."
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs font-bold text-slate-800 outline-none focus:border-orange-500 focus:bg-white transition"
+                />
+                <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                  {["MBBank", "Vietcombank", "Techcombank", "VPBank", "ACB", "BIDV", "TPBank"].map((b) => (
+                    <button
+                      key={b}
+                      type="button"
+                      onClick={() => setEditingMemberBank({ ...editingMemberBank, bankName: b })}
+                      className="text-[10px] font-bold text-slate-600 bg-slate-100 hover:bg-orange-50 hover:text-orange-600 px-2 py-0.5 rounded-md transition cursor-pointer"
+                    >
+                      {b}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-black text-slate-700 mb-1">
+                  Số Tài Khoản (STK):
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editingMemberBank.accountNumber || ""}
+                  onChange={(e) => setEditingMemberBank({ ...editingMemberBank, accountNumber: e.target.value })}
+                  placeholder="Nhập số tài khoản ngân hàng..."
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs font-mono font-bold text-slate-800 outline-none focus:border-orange-500 focus:bg-white transition"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-black text-slate-700 mb-1">
+                  Tên Chủ Tài Khoản:
+                </label>
+                <input
+                  type="text"
+                  value={editingMemberBank.accountName || ""}
+                  onChange={(e) => setEditingMemberBank({ ...editingMemberBank, accountName: e.target.value.toUpperCase() })}
+                  placeholder="VD: NGUYEN VAN A (không dấu, viết hoa)"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs font-bold text-slate-800 uppercase outline-none focus:border-orange-500 focus:bg-white transition"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setEditingMemberBank(null)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl cursor-pointer transition"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={isUpdatingBank}
+                  className="px-5 py-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white text-xs font-black rounded-xl shadow-md cursor-pointer transition flex items-center gap-1.5"
+                >
+                  {isUpdatingBank ? (
+                    <>
+                      <i className="fa-solid fa-spinner fa-spin"></i> Đang lưu...
+                    </>
+                  ) : (
+                    <>
+                      <i className="fa-solid fa-floppy-disk"></i> Lưu STK
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

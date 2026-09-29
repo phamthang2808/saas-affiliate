@@ -37,10 +37,23 @@ export function MemberDetailModal({
   const initialAccountName = member.accountName || member.account_name || "";
 
   const tenantSlug = activeTenant?.slug || "system";
-  const customerSplitRate = activeTenant?.customerSplitRate || 80;
-  const taxRate = activeTenant?.taxRate !== undefined ? Number(activeTenant.taxRate) : 10;
-  const holdingDays = activeTenant?.holdingDays !== undefined ? Number(activeTenant.holdingDays) : 0;
-  const adminSplitRate = 100 - customerSplitRate;
+  // Tỷ lệ chia, thuế và ngày giữ động: ưu tiên liveData từ DB -> activeTenant từ cấu hình -> mặc định 80/10/0
+  const customerSplitRate = Number(
+    liveData?.tenant?.customerSplitRate ??
+    activeTenant?.customerSplitRate ??
+    80
+  );
+  const taxRate = Number(
+    liveData?.tenant?.taxRate !== undefined && liveData?.tenant?.taxRate !== null
+      ? liveData.tenant.taxRate
+      : (activeTenant?.taxRate !== undefined && activeTenant?.taxRate !== null ? activeTenant.taxRate : 10)
+  );
+  const holdingDays = Number(
+    liveData?.tenant?.holdingDays !== undefined && liveData?.tenant?.holdingDays !== null
+      ? liveData.tenant.holdingDays
+      : (activeTenant?.holdingDays !== undefined && activeTenant?.holdingDays !== null ? activeTenant.holdingDays : 0)
+  );
+  const adminSplitRate = Math.max(0, 100 - customerSplitRate);
 
   // Tải dữ liệu ví và đơn hàng thực tế từ API public lookup (cùng API với trang Tra Cứu)
   useEffect(() => {
@@ -540,8 +553,10 @@ export function MemberDetailModal({
                   <span className="text-amber-600 font-bold">
                     (Đang chờ duyệt: {formatMoney(pendingWithdrawn)})
                   </span>
-                ) : (
+                ) : holdingDays === 0 ? (
                   `(Chia ${customerSplitRate}-${adminSplitRate})`
+                ) : (
+                  `(Sau ${holdingDays} ngày • Chia ${customerSplitRate}-${adminSplitRate})`
                 )}
               </p>
             </div>

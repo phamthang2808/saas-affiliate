@@ -19,6 +19,7 @@ const CANONICAL_TEMPLATE_KEYS = [
   "template_withdraw_success",
   "template_withdraw_zero",
   "template_approve_payout",
+  "template_payout_approved",
   "template_help",
   "template_invalid_command"
 ];
@@ -97,10 +98,15 @@ const TEMPLATE_META = {
     desc: "Tin nhắn thông báo khi số dư khả dụng của thành viên chưa đạt hạn mức tối thiểu để lập lệnh rút."
   },
   template_approve_payout: {
-    title: "13. Mẫu tin nhắn Thông Báo Duyệt Rút Tiền Thành Công",
+    title: "13. Mẫu tin nhắn Thông Báo Duyệt Rút Tiền Trong Nhóm",
     command: "/duyet_[MÃ_ID] (Chỉ Trưởng Nhóm)",
     icon: "fa-solid fa-circle-check text-purple-600",
     desc: "Tin nhắn thông báo trong nhóm Zalo khi Trưởng Nhóm thực hiện lệnh duyệt tiền thành công cho thành viên."
+  },
+  template_payout_approved: {
+    title: "14. Mẫu tin nhắn Riêng Chuyển Tiền Thành Công (Gửi Private cho Khách)",
+    icon: "fa-solid fa-money-bill-transfer text-emerald-600",
+    desc: "Tin nhắn riêng Bot gửi tự động cho từng khách hàng khi Trưởng Nhóm bấm ĐÃ DUYỆT trên hệ thống web — thay thế việc nhắn tay. Biến: {ten_zalo}, {so_tien}, {ngan_hang}, {so_tai_khoan}, {ma_giao_dich}."
   },
   template_help: {
     title: "14. Mẫu tin nhắn Trợ Giúp & Danh Sách Các Câu Lệnh",
@@ -133,6 +139,7 @@ const getStandardBotTemplates = (tenant) => {
     template_withdraw_success: `@{ten_zalo} 🎉 ĐÃ TẠO YÊU CẦU RÚT TIỀN THÀNH CÔNG!\n\n💸 Số tiền rút: {so_tien_rut}đ\n🏦 Về tài khoản: {ngan_hang} - {so_tai_khoan} ({chu_tai_khoan})\n⏳ Trạng thái: Đang chờ Admin {ten_nhom} duyệt giao dịch.`,
     template_withdraw_zero: `@{ten_zalo} ⚠️ Số dư khả dụng của bạn hiện là {so_du_vi}đ (chưa đủ hạn mức rút tối thiểu 10.000đ).\n💡 Bạn hãy gõ /tracuu để kiểm tra chi tiết trạng thái ví nhé!`,
     template_approve_payout: `@{ten_zalo} Đã duyệt và hoàn thành rút tiền cho giao dịch {ma_giao_dich}! Thành viên @{ten_thanh_vien} đã nhận tiền thành công.`,
+    template_payout_approved: `✅ @{ten_zalo} ơi!\n\n💸 ${groupName} đã chuyển tiền thành công cho bạn:\n💰 Số tiền: {so_tien}\n🏦 Tài khoản: {ngan_hang} - {so_tai_khoan}\n\n🎉 Cảm ơn bạn đã đồng hành cùng ${groupName}! Hẹn gặp lại bạn ở những đơn tiếp theo nhé!`,
     template_help: `@{ten_zalo} 🤖 CÁC LỆNH BOT HỖ TRỢ SĂN SALE & HOÀN TIỀN:\n\n💳 /vitien hoặc #vitien — Xem ví tiền & hoa hồng hiện có\n🛒 /donhang hoặc #donhang — Xem danh sách các đơn đã đặt\n🔍 /tracuu hoặc #tracuu — Link tra cứu chi tiết bảo mật cá nhân\n🏦 /stk_[NGÂN_HÀNG]_[STK] — Lưu STK nhận tiền (VD: /stk_MB_0888728256)\n💸 /ruttien hoặc /rut — Yêu cầu rút toàn bộ hoa hồng khả dụng\n⚡ /duyet_[MÃ_ID] — Lệnh duyệt tiền (Chỉ Trưởng Nhóm)\n\n💡 Mẹo: Bạn chỉ cần gửi LINK sản phẩm Shopee/TikTok vào nhóm, bot sẽ tự động tạo link hoàn tiền ngay! 🥰`,
     template_invalid_command: `@{ten_zalo} ❓ Lệnh "{lenh_sai}" không hợp lệ.\n👉 Bạn có thể gõ /help để xem danh sách các lệnh được hỗ trợ nhé!`
   };
@@ -312,6 +319,15 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
           botReplyDelayMin: data.botReplyDelayMin ?? 1,
           botReplyDelayMax: data.botReplyDelayMax ?? 3,
         });
+        if (onSelectTenant && activeTenant) {
+          onSelectTenant({
+            ...activeTenant,
+            customerSplitRate: data.customerSplitRate ?? 80,
+            taxRate: data.taxRate ?? 10,
+            holdingDays: data.holdingDays ?? 0,
+            name: data.name || activeTenant.name,
+          });
+        }
       }
     } catch (e) {
       console.error("Fetch settings error:", e);
@@ -337,6 +353,9 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
         setSettingsSaveMessage("✅ Đã lưu cấu hình điều kiện rút tiền & tỷ lệ chia thành công!");
         showNotification("✅ Đã lưu cấu hình điều kiện rút tiền & tỷ lệ chia thành công!", "success");
         setTimeout(() => setSettingsSaveMessage(""), 4000);
+        if (onSelectTenant && activeTenant) {
+          onSelectTenant({ ...activeTenant, ...settings });
+        }
         fetchTenantData();
       } else {
         showNotification("❌ " + (data.message || "Lỗi lưu cấu hình"), "error");
@@ -791,6 +810,47 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
     }
   };
 
+  const [isDeletingAllOrders, setIsDeletingAllOrders] = useState(false);
+
+  const handleDeleteAllOrders = async (platform = "shopee") => {
+    if (!activeTenant?.slug) {
+      showNotification("❌ Chưa xác định được Kênh Trưởng Nhóm!", "error");
+      return;
+    }
+    const platformLabel = platform === "tiktok" ? "TikTok" : "Shopee";
+    const confirmed = window.confirm(
+      `⚠️ BẠN CÓ CHẮC CHẮN MUỐN XÓA TOÀN BỘ đơn hàng ${platformLabel} của Kênh "${activeTenant?.name || ""}"?\n\nTHAO TÁC NÀY KHÔNG THỂ HOÀN TÁC và sẽ xóa toàn bộ đơn, hoa hồng liên quan!`
+    );
+    if (!confirmed) return;
+
+    setIsDeletingAllOrders(true);
+    try {
+      const res = await fetch(
+        `${apiRoot}/api/saas/admin/${activeTenant.slug}/orders/delete-all?platform=${platform}`,
+        {
+          method: "DELETE",
+          headers: authHeaders,
+        }
+      );
+      const data = await res.json();
+      if (res.ok) {
+        showNotification(
+          `🗑️ ${data.message || `Đã xóa toàn bộ đơn ${platformLabel} thành công!`}`,
+          "success"
+        );
+        setImportResult(null);
+        setImportFile(null);
+        fetchTenantData();
+      } else {
+        showNotification("❌ " + (data.message || `Lỗi khi xóa đơn ${platformLabel}`), "error");
+      }
+    } catch (err) {
+      showNotification("❌ Lỗi kết nối máy chủ: " + err.message, "error");
+    } finally {
+      setIsDeletingAllOrders(false);
+    }
+  };
+
   const handleAssignOrder = async (e, unassign = false) => {
     if (e) e.preventDefault();
     if (!unassign && (!selectedOrderToAssign || !assignZaloId)) {
@@ -921,10 +981,23 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
   const groupDisplayName = stats?.tenant?.name || activeTenant?.name || "Nhóm Đối Tác";
   const pendingPayouts = payouts.filter((p) => p.status === "PENDING");
   const totalPendingAmount = pendingPayouts.reduce((sum, p) => sum + Number(p.amount || 0), 0);
-  const customerSplitRate = stats?.tenant?.customerSplitRate ?? activeTenant?.customerSplitRate ?? 80;
-  const taxRate = stats?.tenant?.taxRate ?? activeTenant?.taxRate ?? 10;
-  const holdingDays = settings.holdingDays !== undefined ? Number(settings.holdingDays) : (stats?.tenant?.holdingDays ?? activeTenant?.holdingDays ?? 0);
-  const adminSplitRate = 100 - customerSplitRate;
+  const customerSplitRate = Number(
+    settings.customerSplitRate ??
+    stats?.tenant?.customerSplitRate ??
+    activeTenant?.customerSplitRate ??
+    80
+  );
+  const taxRate = Number(
+    settings.taxRate !== undefined && settings.taxRate !== null
+      ? settings.taxRate
+      : (stats?.tenant?.taxRate ?? activeTenant?.taxRate ?? 10)
+  );
+  const holdingDays = Number(
+    settings.holdingDays !== undefined && settings.holdingDays !== null
+      ? settings.holdingDays
+      : (stats?.tenant?.holdingDays ?? activeTenant?.holdingDays ?? 0)
+  );
+  const adminSplitRate = Math.max(0, 100 - customerSplitRate);
 
   // Split platform orders
   const shopeeOrders = orders.filter((o) => !o.platform || o.platform.toLowerCase().includes("shopee"));
@@ -1867,7 +1940,12 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                 onClose={() => setSelectedMember(null)}
                 onDelete={() => handleDeleteMember(selectedMember)}
                 apiRoot={apiRoot}
-                activeTenant={activeTenant}
+                activeTenant={{
+                  ...activeTenant,
+                  customerSplitRate,
+                  taxRate,
+                  holdingDays,
+                }}
                 formatMoney={formatMoney}
                 formatDate={formatDate}
                 authHeaders={authHeaders}
@@ -2018,6 +2096,19 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                 <i className="fa-solid fa-file-import text-orange-500"></i>
                 <span>IMPORT BÁO CÁO ĐỐI SOÁT {activeTab === "tiktok" ? "TIKTOK SHOP" : "SHOPEE"} (CSV/EXCEL)</span>
               </h3>
+              <button
+                type="button"
+                onClick={() => handleDeleteAllOrders(activeTab === "tiktok" ? "tiktok" : "shopee")}
+                disabled={isDeletingAllOrders}
+                className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 hover:border-rose-300 text-[11px] font-black rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                title={`Xóa toàn bộ đơn hàng ${activeTab === "tiktok" ? "TikTok" : "Shopee"} (dùng khi import nhầm file)`}
+              >
+                {isDeletingAllOrders ? (
+                  <><i className="fa-solid fa-spinner fa-spin"></i> Đang xóa...</>
+                ) : (
+                  <><i className="fa-solid fa-trash-can"></i> Xóa Tất Cả Đơn</>
+                )}
+              </button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -414,9 +414,17 @@ export function PublicLookupView({
     return st.includes("hoàn thành") || st.includes("completed") || st.includes("thành công") || st.includes("duyệt") || st.includes("thanh toán");
   });
 
-  const customerSplitRate = currentTenant?.customerSplitRate || 80;
-  const currentTaxRate = currentTenant?.taxRate !== undefined && currentTenant?.taxRate !== null ? Number(currentTenant.taxRate) : 10;
-  const adminSplitRate = 100 - customerSplitRate;
+  const customerSplitRate = Number(
+    lookupData?.tenant?.customerSplitRate ??
+    currentTenant?.customerSplitRate ??
+    80
+  );
+  const currentTaxRate = Number(
+    lookupData?.tenant?.taxRate !== undefined && lookupData?.tenant?.taxRate !== null
+      ? lookupData.tenant.taxRate
+      : (currentTenant?.taxRate !== undefined && currentTenant?.taxRate !== null ? currentTenant.taxRate : 10)
+  );
+  const adminSplitRate = Math.max(0, 100 - customerSplitRate);
 
   const getOrderUserCommission = (o) => {
     if (!o) return 0;

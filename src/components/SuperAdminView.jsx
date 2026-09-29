@@ -401,8 +401,12 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
   const totalYearRevenue = monthSummaries.reduce((sum, item) => sum + item.totalRevenue, 0);
   const totalYearPaidSlots = monthSummaries.reduce((sum, item) => sum + item.paidCount, 0);
 
-  // Filter Users
-  const filteredUsers = users.filter((u) => {
+  // Filter Users (Lọc bỏ các tài khoản Khách Zalo sinh ngầm khi tra cứu để bảng Quản lý Tài khoản Hệ thống SuperAdmin luôn sạch sẽ)
+  const systemUsers = users.filter(
+    (u) => !(u.email && u.email.startsWith("zalo_") && u.name && u.name.startsWith("Khách Zalo"))
+  );
+
+  const filteredUsers = systemUsers.filter((u) => {
     const q = userSearchQuery.toLowerCase();
     const matchQuery =
       !q ||
@@ -937,9 +941,7 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
                           >
                             <p className="text-[11px] font-black text-slate-900 font-display leading-tight">
                               {ms.totalRevenue > 0
-                                ? ms.totalRevenue >= 1000000
-                                  ? `${(ms.totalRevenue / 1000000).toFixed(1)}Tr`
-                                  : formatMoney(ms.totalRevenue)
+                                ? formatMoney(ms.totalRevenue)
                                 : "0đ"}
                             </p>
                             <p className="text-[9px] text-slate-500 font-semibold mt-0.5">
@@ -1238,7 +1240,7 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
                     : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                 }`}
               >
-                Tất cả ({users.length})
+                Tất cả ({systemUsers.length})
               </button>
               <button
                 onClick={() => setUserRoleFilter("SUPER_ADMIN")}
@@ -1248,7 +1250,7 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
                     : "bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200"
                 }`}
               >
-                👑 Super Admin ({users.filter((u) => u.role === "SUPER_ADMIN").length})
+                👑 Super Admin ({systemUsers.filter((u) => u.role === "SUPER_ADMIN").length})
               </button>
               <button
                 onClick={() => setUserRoleFilter("TENANT_ADMIN")}
@@ -1258,18 +1260,20 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
                     : "bg-purple-50 text-purple-800 hover:bg-purple-100 border border-purple-200"
                 }`}
               >
-                👔 Trưởng Nhóm ({users.filter((u) => u.role === "TENANT_ADMIN").length})
+                👔 Trưởng Nhóm ({systemUsers.filter((u) => u.role === "TENANT_ADMIN").length})
               </button>
-              <button
-                onClick={() => setUserRoleFilter("BUYER")}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition whitespace-nowrap shrink-0 ${
-                  userRoleFilter === "BUYER"
-                    ? "bg-slate-700 text-white shadow-2xs"
-                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                }`}
-              >
-                🛍️ Thành Viên ({users.filter((u) => !u.role || u.role === "BUYER").length})
-              </button>
+              {systemUsers.some((u) => !u.role || u.role === "BUYER") && (
+                <button
+                  onClick={() => setUserRoleFilter("BUYER")}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition whitespace-nowrap shrink-0 ${
+                    userRoleFilter === "BUYER"
+                      ? "bg-slate-700 text-white shadow-2xs"
+                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                  }`}
+                >
+                  🛍️ Thành Viên ({systemUsers.filter((u) => !u.role || u.role === "BUYER").length})
+                </button>
+              )}
             </div>
           </div>
 

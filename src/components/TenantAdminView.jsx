@@ -1712,7 +1712,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                         <tr className="bg-slate-50 border-b-2 border-slate-200">
                           <th className="px-4 py-3.5 font-black text-slate-700 whitespace-nowrap">Tên thành viên</th>
                           <th className="px-4 py-3.5 font-black text-slate-700 whitespace-nowrap">Zalo ID</th>
-                          <th className="px-4 py-3.5 font-black text-slate-700 whitespace-nowrap">Tài khoản nhận tiền</th>
+                          <th className="px-4 py-3.5 font-black text-slate-700 whitespace-nowrap min-w-[200px]">Tài khoản nhận tiền</th>
                           <th className="px-4 py-3.5 font-black text-slate-700 whitespace-nowrap text-right">Chờ xử lý</th>
                           <th className="px-4 py-3.5 font-black text-slate-700 whitespace-nowrap text-right">Tích lũy hoàn thành</th>
                           <th className="px-4 py-3.5 font-black text-slate-700 whitespace-nowrap text-right">Khả dụng rút</th>
@@ -1738,24 +1738,27 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                                   {u.zaloId || u.zalo_id || "—"}
                                 </code>
                               </td>
-                              <td className="px-4 py-3.5">
-                                <div className="flex items-center justify-between gap-2">
+                              <td className="px-4 py-3.5 whitespace-nowrap min-w-[200px]">
+                                <div className="flex items-center justify-between gap-2 whitespace-nowrap">
                                   {bankN ? (
-                                    <div>
-                                      <div className="font-bold text-slate-800 text-xs flex items-center gap-1.5 flex-wrap">
-                                        <span>{bankN}</span>
+                                    <div className="min-w-0">
+                                      <div className="flex items-center gap-1.5 whitespace-nowrap">
+                                        <span className="font-black text-slate-800 text-xs">{bankN}</span>
                                         {accName && (
-                                          <span className="text-[10px] text-orange-600 bg-orange-50 px-1.5 py-0.2 rounded font-extrabold uppercase">
+                                          <span className="text-[10px] text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded font-extrabold uppercase whitespace-nowrap tracking-wide border border-orange-100">
                                             {accName}
                                           </span>
                                         )}
                                       </div>
                                       {accNum && (
-                                        <div className="text-[10px] font-mono text-slate-400 mt-0.5">STK: {accNum}</div>
+                                        <div className="text-[11px] font-mono text-slate-600 font-bold mt-0.5 whitespace-nowrap flex items-center gap-1">
+                                          <span className="text-slate-400 font-normal">STK:</span>
+                                          <span>{accNum}</span>
+                                        </div>
                                       )}
                                     </div>
                                   ) : (
-                                    <span className="text-slate-400 italic text-[11px]">Chưa lưu STK</span>
+                                    <span className="text-slate-400 italic text-[11px] whitespace-nowrap">Chưa lưu STK</span>
                                   )}
                                   <button
                                     type="button"
@@ -1766,7 +1769,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                                       accountNumber: accNum,
                                       accountName: accName
                                     })}
-                                    className="p-1.5 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition cursor-pointer"
+                                    className="p-1.5 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition cursor-pointer shrink-0"
                                     title="Sửa thông tin STK"
                                   >
                                     <i className="fa-solid fa-pen text-[11px]"></i>
@@ -2403,7 +2406,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                     <th className="p-3.5 sm:p-4 whitespace-nowrap">Người mua</th>
                     <th className="p-3.5 sm:p-4 whitespace-nowrap">Trạng thái</th>
                     <th className="p-2 sm:p-3 text-center whitespace-nowrap" title="Đã thanh toán (đối chiếu App Script)">Đã TT</th>
-                    <th className="p-3.5 sm:p-4 text-right whitespace-nowrap">Thô (Shopee)</th>
+                    <th className="p-3.5 sm:p-4 text-right whitespace-nowrap">Thô ({activeTab === "tiktok" ? "TikTok" : "Shopee"})</th>
                     <th className="p-3.5 sm:p-4 text-right whitespace-nowrap">Thuế ({taxRate}%)</th>
                     <th className="p-3.5 sm:p-4 text-right whitespace-nowrap">Sau thuế</th>
                     <th className="p-3.5 sm:p-4 text-right text-orange-600 whitespace-nowrap">Khách ({customerSplitRate}%)</th>
@@ -2751,7 +2754,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                       <strong className="text-orange-600 font-black font-mono text-base">{formatMoney(selectedUserFinalSum)}</strong>
                     </div>
                     <div className="text-[11px] text-slate-400 font-mono font-medium">
-                      Tổng thô Shopee: {formatMoney(selectedRawSum)}
+                      Tổng thô {activeTab === "tiktok" ? "TikTok" : "Shopee"}: {formatMoney(selectedRawSum)}
                     </div>
                   </div>
                 </div>

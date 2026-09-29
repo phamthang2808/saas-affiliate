@@ -30,7 +30,7 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
   const [formData, setFormData] = useState({
     slug: "",
     name: "",
-    monthlyFee: "500000",
+    monthlyFee: "0",
     billingCycleDay: "15",
     subscriptionStatus: "PAID",
     isTiktokEnabled: false,
@@ -132,7 +132,7 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
     setFormData({
       slug: "",
       name: "",
-      monthlyFee: "500000",
+      monthlyFee: "0",
       billingCycleDay: "15",
       subscriptionStatus: "PAID",
       isTiktokEnabled: false,
@@ -146,7 +146,7 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
     setFormData({
       slug: t.slug || "",
       name: t.name || "",
-      monthlyFee: t.monthlyFee !== undefined ? String(t.monthlyFee) : "500000",
+      monthlyFee: (t.monthlyFee !== undefined && t.monthlyFee !== null) ? String(t.monthlyFee) : "0",
       billingCycleDay: t.billingCycleDay !== undefined ? String(t.billingCycleDay) : "15",
       subscriptionStatus: t.subscriptionStatus || "PAID",
       isTiktokEnabled: Boolean(t.isTiktokEnabled),
@@ -175,7 +175,13 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
           "Content-Type": "application/json",
           ...authHeaders,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          monthlyFee: (formData.monthlyFee !== "" && formData.monthlyFee !== undefined && formData.monthlyFee !== null)
+            ? Number(formData.monthlyFee)
+            : 0,
+          billingCycleDay: formData.billingCycleDay ? parseInt(formData.billingCycleDay, 10) : 15,
+        }),
       });
 
       const data = await res.json();
@@ -384,7 +390,7 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
       const paid = getPaidMonths(t);
       if (paid.has(monthKey)) {
         paidCount++;
-        totalRevenue += Number(t.monthlyFee || 500000);
+        totalRevenue += (t.monthlyFee !== undefined && t.monthlyFee !== null) ? Number(t.monthlyFee) : 0;
       }
     });
     return {
@@ -589,7 +595,7 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
                 </div>
               </div>
               <div className="text-xl md:text-2xl font-black text-slate-900 mt-2 font-display truncate">
-                {formatMoney(stats?.totalMonthlyRentalFee || 0)}
+                {formatMoney(stats?.totalMonthlyRentalFee ?? tenants.reduce((acc, t) => acc + ((t.monthlyFee !== undefined && t.monthlyFee !== null) ? Number(t.monthlyFee) : 0), 0))}
               </div>
               <p className="text-[11px] text-slate-400 mt-1">Từ {tenants.length} Trưởng Nhóm</p>
             </div>
@@ -815,7 +821,7 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
                     ) : (
                       filteredTenants.map((t) => {
                         const paidSet = getPaidMonths(t);
-                        const fee = Number(t.monthlyFee || 500000);
+                        const fee = (t.monthlyFee !== undefined && t.monthlyFee !== null) ? Number(t.monthlyFee) : 0;
                         let paidCountThisYear = 0;
 
                         return (
@@ -1055,7 +1061,7 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
                           <div className="flex items-center justify-between gap-2">
                             <span className="text-slate-400 font-medium text-[11px] shrink-0">Tiền thuê / tháng:</span>
                             <span className="font-bold text-slate-900 font-display text-xs">
-                              {formatMoney(t.monthlyFee || 500000)}
+                              {formatMoney((t.monthlyFee !== undefined && t.monthlyFee !== null) ? Number(t.monthlyFee) : 0)}
                               <span className="text-[10px] font-normal text-slate-400 ml-1">
                                 (Ngày {t.billingCycleDay || 15})
                               </span>
@@ -1162,7 +1168,7 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
                               </td>
 
                               <td className="py-3.5 px-4 font-bold text-slate-900 font-display">
-                                {formatMoney(t.monthlyFee || 500000)}
+                                {formatMoney((t.monthlyFee !== undefined && t.monthlyFee !== null) ? Number(t.monthlyFee) : 0)}
                                 <span className="text-[10px] font-normal text-slate-400 block">
                                   Ngày {t.billingCycleDay || 15} hàng tháng
                                 </span>
@@ -1741,8 +1747,11 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
                     <label className="block text-[11px] font-bold text-slate-700 mb-1">Tiền Thuê Mỗi Tháng (VNĐ)</label>
                     <input
                       type="number"
+                      min="0"
+                      step="10000"
                       value={formData.monthlyFee}
                       onChange={(e) => setFormData({ ...formData, monthlyFee: e.target.value })}
+                      placeholder="0"
                       className="w-full bg-white border border-orange-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-900 outline-none"
                     />
                   </div>

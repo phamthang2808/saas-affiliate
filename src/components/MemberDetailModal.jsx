@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 
 export function MemberDetailModal({
   member,
@@ -205,11 +205,40 @@ export function MemberDetailModal({
   // Live vs Fallback data
   const memberOrders = liveData?.orders != null ? liveData.orders : fallbackOrders;
   const memberPayoutsList = liveData?.payouts != null ? liveData.payouts : fallbackPayouts;
-  const pendingCommission = liveData?.pendingCommission != null ? Number(liveData.pendingCommission) : fallbackPendingCommission;
-  const completedCommission = liveData?.completedCommission != null ? Number(liveData.completedCommission) : fallbackCompletedCommission;
-  const availableBalance = liveData?.availableBalance != null ? Number(liveData.availableBalance) : fallbackAvailableBalance;
-  const totalWithdrawn = liveData?.totalWithdrawn != null ? Number(liveData.totalWithdrawn) : fallbackTotalWithdrawn;
-  const pendingWithdrawn = liveData?.pendingWithdrawn != null ? Number(liveData.pendingWithdrawn) : fallbackPendingWithdrawn;
+
+  const memberCompletedOrders = memberOrders.filter(isOrderCompleted);
+  const memberPendingOrders = memberOrders.filter((o) => !isOrderCompleted(o) && !isOrderCancelled(o));
+
+  const pendingCommission = memberPendingOrders.reduce((sum, o) => sum + calculateUserComm(o), 0);
+  const completedCommission = memberCompletedOrders.reduce((sum, o) => sum + calculateUserComm(o), 0);
+  const rawCompletedCommission = memberCompletedOrders.reduce((sum, o) => sum + Number(o.rawCommission || 0), 0);
+
+  let eligibleCompletedCommission = 0;
+  let paidOrdersCommission = 0;
+  memberCompletedOrders.forEach((o) => {
+    const comm = calculateUserComm(o);
+    if (isOrderEligible(o)) {
+      eligibleCompletedCommission += comm;
+    }
+    if (String(o.paymentStatus || "").toUpperCase() === "PAID") {
+      paidOrdersCommission += comm;
+    }
+  });
+
+  const approvedPayouts = memberPayoutsList.filter((p) => {
+    const st = String(p.status || "").toUpperCase();
+    return st === "COMPLETED" || st === "APPROVED";
+  });
+  const pendingPayoutsList = memberPayoutsList.filter((p) => {
+    const st = String(p.status || "").toUpperCase();
+    return st === "PENDING";
+  });
+
+  const totalPayoutsWithdrawn = approvedPayouts.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+  const pendingWithdrawn = pendingPayoutsList.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+  const totalWithdrawn = Math.max(totalPayoutsWithdrawn, paidOrdersCommission);
+
+  const availableBalance = Math.max(0, eligibleCompletedCommission - totalWithdrawn - pendingWithdrawn);
 
   const zaloName = liveData?.zaloName || liveData?.user?.name || initialZaloName;
   const bankName = liveData?.bankName || liveData?.user?.bankName || initialBankName;

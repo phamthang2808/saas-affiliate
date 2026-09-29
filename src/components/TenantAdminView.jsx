@@ -1616,10 +1616,14 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
           const completedCommission = completedOrders.reduce((sum, o) => sum + calculateComm(o), 0);
 
           let eligibleCommission = 0;
+          let paidOrdersCommission = 0;
           completedOrders.forEach((o) => {
             const comm = calculateComm(o);
             if (isEligible(o)) {
               eligibleCommission += comm;
+            }
+            if (String(o.paymentStatus || "").toUpperCase() === "PAID") {
+              paidOrdersCommission += comm;
             }
           });
 
@@ -1632,8 +1636,9 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
             return st === "PENDING";
           });
 
-          const totalWithdrawn = approvedPayouts.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+          const totalPayoutsWithdrawn = approvedPayouts.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
           const pendingWithdrawn = pendingPayoutsList.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+          const totalWithdrawn = Math.max(totalPayoutsWithdrawn, paidOrdersCommission);
           const availableBalance = Math.max(0, eligibleCommission - totalWithdrawn - pendingWithdrawn);
 
           return {

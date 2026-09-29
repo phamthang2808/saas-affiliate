@@ -466,6 +466,7 @@ export function PublicLookupView({
 
   let eligibleCompletedCommission = 0;
   let holdingCompletedCommission = 0;
+  let paidOrdersCommission = 0;
 
   completedOrders.forEach((o) => {
     const finalComm = getOrderUserCommission(o);
@@ -474,17 +475,22 @@ export function PublicLookupView({
     } else {
       holdingCompletedCommission += finalComm;
     }
+    if (String(o.paymentStatus || "").toUpperCase() === "PAID") {
+      paidOrdersCommission += finalComm;
+    }
   });
 
   const completedPayouts = payouts.filter((p) => (p.status || "").toUpperCase() === "COMPLETED");
   const pendingPayoutsList = payouts.filter((p) => (p.status || "").toUpperCase() === "PENDING");
 
-  const totalWithdrawn = completedPayouts.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+  const totalPayoutsWithdrawn = completedPayouts.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+  const totalWithdrawn = Math.max(totalPayoutsWithdrawn, paidOrdersCommission);
+
   const pendingPayoutAmount = lookupData?.pendingWithdrawn !== undefined
     ? Number(lookupData.pendingWithdrawn)
     : pendingPayoutsList.reduce((sum, p) => sum + Number(p.amount || 0), 0);
 
-  // Số dư khả dụng = Tổng hoa hồng đủ điều kiện rút - Đã rút - Đang chờ duyệt
+  // Số dư khả dụng = Tổng hoa hồng đủ điều kiện rút - Đã rút (bao gồm đơn đã TT) - Đang chờ duyệt
   const availableBalance = Math.max(0, eligibleCompletedCommission - totalWithdrawn - pendingPayoutAmount);
 
   // Lọc danh sách đơn hàng

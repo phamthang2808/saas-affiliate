@@ -1131,11 +1131,21 @@ export function PublicLookupView({
                             </span>
                           )}
                         </div>
-                        <div className="text-right ml-auto">
-                          <span className="text-[11px] font-semibold text-slate-500 mr-1">Hoa hồng:</span>
-                          <span className="text-sm sm:text-base font-black text-orange-600 font-outfit">
-                            {formatMoney(order.rawCommission && Number(order.rawCommission) > 0 ? order.rawCommission : getOrderUserCommission(order))}
-                          </span>
+                        <div className="text-right ml-auto space-y-0.5">
+                          <div>
+                            <span className="text-[11px] font-semibold text-slate-400 mr-1">Hoa hồng:</span>
+                            <span className="text-sm font-black text-slate-600 font-outfit">
+                              {formatMoney(order.rawCommission && Number(order.rawCommission) > 0 ? order.rawCommission : getOrderUserCommission(order))}
+                            </span>
+                          </div>
+                          {order.rawCommission && Number(order.rawCommission) > 0 && (
+                            <div>
+                              <span className="text-[11px] font-semibold text-slate-500 mr-1">Thực nhận:</span>
+                              <span className="text-sm sm:text-base font-black text-orange-600 font-outfit">
+                                {formatMoney(getOrderUserCommission(order))}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>

@@ -11,6 +11,7 @@ import { ShortLinkRedirectView } from "./components/ShortLinkRedirectView";
 import { Sidebar } from "./components/Sidebar";
 import { SuperAdminView } from "./components/SuperAdminView";
 import { TenantAdminView } from "./components/TenantAdminView";
+import { AnnouncementModal } from "./components/AnnouncementModal";
 import { TopBar } from "./components/TopBar";
 import { API_URL_ROOT, APP_CONFIG } from "./config/api";
 import { isZaloBrowser, isAndroidDevice, openExternalBrowser } from "./utils/browserDetect";
@@ -453,16 +454,19 @@ export default function App() {
                 onNavigateHome={() => setCurrentView("gioi-thieu")}
               />
             ) : (
-              <TenantAdminView
-                apiRoot={API_URL_ROOT}
-                currentTenant={currentTenant}
-                availableTenants={availableTenants}
-                onSelectTenant={setCurrentTenant}
-                user={user}
-                token={token}
-                onOpenLogin={handleOpenLogin}
-                onLogout={handleLogout}
-              />
+              <>
+                <TenantAdminView
+                  apiRoot={API_URL_ROOT}
+                  currentTenant={currentTenant}
+                  availableTenants={availableTenants}
+                  onSelectTenant={setCurrentTenant}
+                  user={user}
+                  token={token}
+                  onOpenLogin={handleOpenLogin}
+                  onLogout={handleLogout}
+                />
+                <AnnouncementModal apiRoot={API_URL_ROOT} />
+              </>
             )
           )}
 

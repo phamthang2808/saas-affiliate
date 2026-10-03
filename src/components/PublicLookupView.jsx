@@ -262,7 +262,7 @@ export function PublicLookupView({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            query: queryInput.trim() || lookupData?.zaloId || lookupData?.query,
+            query: lookupData?.zaloId || lookupData?.query || queryInput.trim(),
             bankName: finalBank,
             accountNumber: accountNumber.trim(),
             accountName: accountName.trim().toUpperCase(),
@@ -404,14 +404,16 @@ export function PublicLookupView({
   const holdingDays = Number(lookupData?.holdingDays ?? lookupData?.tenant?.holdingDays ?? currentTenant?.holdingDays ?? 0);
   const minWithdrawAmount = Number(lookupData?.tenant?.minWithdrawAmount ?? currentTenant?.minWithdrawAmount ?? 10000);
 
-  const pendingOrders = orders.filter((o) => {
-    const st = (o.status || "").toLowerCase();
-    return st.includes("chờ") || st.includes("pending") || st.includes("vận chuyển") || st.includes("xử lý");
-  });
-
   const completedOrders = orders.filter((o) => {
     const st = (o.status || "").toLowerCase();
     return st.includes("hoàn thành") || st.includes("completed") || st.includes("thành công") || st.includes("duyệt") || st.includes("thanh toán");
+  });
+
+  const pendingOrders = orders.filter((o) => {
+    const st = (o.status || "").toLowerCase();
+    const isCompleted = st.includes("hoàn thành") || st.includes("completed") || st.includes("thành công") || st.includes("duyệt") || st.includes("thanh toán");
+    if (isCompleted) return false;
+    return st.includes("chờ") || st.includes("pending") || st.includes("vận chuyển") || st.includes("xử lý");
   });
 
   const customerSplitRate = Number(

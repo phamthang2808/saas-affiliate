@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { formatMoney, formatDate } from "../utils/formatters";
+import { AdminAnnouncementTab } from "./AdminAnnouncementTab";
 
 export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) {
   const [adminSubTab, setAdminSubTab] = useState("tenants"); // 'tenants' | 'users'
@@ -575,6 +576,21 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
         >
           <i className="fa-solid fa-users-gear text-xs text-purple-500"></i>
           <span className="truncate">Tài Khoản ({users.length})</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setAdminSubTab("announcement");
+          }}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2 sm:px-4 rounded-xl text-xs font-black transition-all cursor-pointer ${
+            adminSubTab === "announcement"
+              ? "bg-white text-slate-900 shadow-sm border border-slate-200/60"
+              : "text-slate-600 hover:text-slate-900"
+          }`}
+        >
+          <i className="fa-solid fa-bullhorn text-xs text-rose-500"></i>
+          <span className="truncate">Thông Báo</span>
         </button>
       </div>
 
@@ -1529,6 +1545,13 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
             </div>
           </div>
         </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB 3: CẤU HÌNH THÔNG BÁO POPUP (DÀNH CHO TRƯỞNG NHÓM)                    */}
+      {/* ========================================================================= */}
+      {adminSubTab === "announcement" && (
+        <AdminAnnouncementTab token={authToken} apiRoot={apiRoot} />
       )}
 
       {/* ===================== MODAL EDIT USER ROLE ===================== */}

@@ -1754,17 +1754,12 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                                   {u.zaloId || u.zalo_id || "—"}
                                 </code>
                               </td>
-                              <td className="px-4 py-3.5 whitespace-nowrap min-w-[200px]">
-                                <div className="flex items-center justify-between gap-2 whitespace-nowrap">
+                              <td className="px-4 py-3 whitespace-nowrap min-w-[130px]">
+                                <div className="flex items-center justify-between gap-2">
                                   {bankN ? (
                                     <div className="min-w-0">
-                                      <div className="flex items-center gap-1.5 whitespace-nowrap">
-                                        <span className="font-black text-slate-800 text-xs">{bankN}</span>
-                                        {accName && (
-                                          <span className="text-[10px] text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded font-extrabold uppercase whitespace-nowrap tracking-wide border border-orange-100">
-                                            {accName}
-                                          </span>
-                                        )}
+                                      <div className="font-black text-slate-800 text-xs">
+                                        {bankN}
                                       </div>
                                       {accNum && (
                                         <div className="text-[11px] font-mono text-slate-600 font-bold mt-0.5 whitespace-nowrap flex items-center gap-1">
@@ -1772,9 +1767,16 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                                           <span>{accNum}</span>
                                         </div>
                                       )}
+                                      {accName && (
+                                        <div className="mt-0.5">
+                                          <span className="text-[10px] text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded font-extrabold uppercase whitespace-nowrap tracking-wide border border-orange-100 inline-block">
+                                            {accName}
+                                          </span>
+                                        </div>
+                                      )}
                                     </div>
                                   ) : (
-                                    <span className="text-slate-400 italic text-[11px] whitespace-nowrap">Chưa lưu STK</span>
+                                    <span className="text-slate-400 italic text-[11px]">Chưa lưu STK</span>
                                   )}
                                   <button
                                     type="button"

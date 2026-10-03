@@ -322,11 +322,11 @@ export function AdminAnnouncementTab({ token, apiRoot }) {
             </div>
 
             {imageUrl && (
-              <div className="relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-50 max-h-48 flex items-center justify-center p-2">
+              <div className="relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-100/60 max-h-72 flex items-center justify-center p-2">
                 <img
                   src={getFullImgUrl(imageUrl)}
                   alt="Banner preview"
-                  className="max-h-44 object-contain rounded-xl"
+                  className="max-h-68 object-contain rounded-xl"
                   onError={(e) => {
                     e.target.style.display = "none";
                   }}

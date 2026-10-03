@@ -173,31 +173,31 @@ export function AnnouncementModal({ apiRoot, previewData = null, onClose = null 
       <div className="absolute inset-0" onClick={handleClose}></div>
 
       {/* Modal Card */}
-      <div className="relative z-10 w-full max-w-[480px] max-h-[92vh] bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-[scaleUp_0.25s_ease-out] border border-slate-100">
+      <div className="relative z-10 w-full max-w-[540px] sm:max-w-[580px] max-h-[94vh] bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-[scaleUp_0.25s_ease-out] border border-slate-100">
         {/* Floating Close Button (X) */}
         <button
           onClick={handleClose}
           type="button"
           aria-label="Đóng"
-          className="absolute top-3 right-3 z-20 w-8 h-8 rounded-full bg-white/90 hover:bg-white text-slate-700 hover:text-rose-600 shadow-md flex items-center justify-center transition cursor-pointer backdrop-blur-sm border border-slate-200/50"
+          className="absolute top-3.5 right-3.5 z-20 w-8 h-8 rounded-full bg-white/90 hover:bg-white text-slate-700 hover:text-rose-600 shadow-md flex items-center justify-center transition cursor-pointer backdrop-blur-sm border border-slate-200/50"
         >
           <i className="fa-solid fa-xmark text-sm font-bold"></i>
         </button>
 
         {/* Banner Image */}
         {bannerImg && (
-          <div className="w-full relative bg-slate-50 overflow-hidden select-none border-b border-slate-100">
+          <div className="w-full relative bg-slate-100/70 overflow-hidden select-none border-b border-slate-100 flex items-center justify-center">
             {announcement.targetUrl ? (
               <a
                 href={announcement.targetUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block cursor-pointer group"
+                className="block w-full cursor-pointer group"
               >
                 <img
                   src={bannerImg}
                   alt={announcement.title || "Banner thông báo"}
-                  className="w-full max-h-56 object-cover object-center group-hover:opacity-95 transition"
+                  className="w-full h-auto max-h-[380px] sm:max-h-[440px] object-contain sm:object-cover object-center group-hover:opacity-95 transition"
                   onError={(e) => {
                     e.target.style.display = "none";
                   }}
@@ -207,7 +207,7 @@ export function AnnouncementModal({ apiRoot, previewData = null, onClose = null 
               <img
                 src={bannerImg}
                 alt={announcement.title || "Banner thông báo"}
-                className="w-full max-h-56 object-cover object-center"
+                className="w-full h-auto max-h-[380px] sm:max-h-[440px] object-contain sm:object-cover object-center"
                 onError={(e) => {
                   e.target.style.display = "none";
                 }}

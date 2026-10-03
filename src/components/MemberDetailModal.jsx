@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 
 export function MemberDetailModal({
   member,
@@ -16,6 +16,10 @@ export function MemberDetailModal({
 }) {
   if (!member) return null;
 
+  // Tabs: 'orders' | 'payouts'
+  const [activeTab, setActiveTab] = useState("orders");
+
+  // Orders table filters & state
   const [platformFilter, setPlatformFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [paymentFilter, setPaymentFilter] = useState("ALL");
@@ -24,6 +28,16 @@ export function MemberDetailModal({
   const [selectedOrderIds, setSelectedOrderIds] = useState(new Set());
   const [isMarkingPaid, setIsMarkingPaid] = useState(false);
   const pageSize = 10;
+
+  // Manual Payout state
+  const [showManualPayoutForm, setShowManualPayoutForm] = useState(false);
+  const [manualAmount, setManualAmount] = useState("");
+  const [manualBankName, setManualBankName] = useState("");
+  const [manualAccountNumber, setManualAccountNumber] = useState("");
+  const [manualAccountName, setManualAccountName] = useState("");
+  const [manualNote, setManualNote] = useState("");
+  const [isCreatingPayout, setIsCreatingPayout] = useState(false);
+  const [processingPayoutId, setProcessingPayoutId] = useState(null);
 
   // Live lookup state (100% đồng bộ với trang Tra Cứu)
   const [liveData, setLiveData] = useState(null);
@@ -55,35 +69,30 @@ export function MemberDetailModal({
   );
   const adminSplitRate = Math.max(0, 100 - customerSplitRate);
 
-  // Tải dữ liệu ví và đơn hàng thực tế từ API public lookup (cùng API với trang Tra Cứu)
-  useEffect(() => {
+  // Tải & làm mới dữ liệu ví, đơn hàng và lịch sử rút từ API public lookup
+  const refreshLiveData = useCallback(async () => {
     if (!zaloId) {
       setIsLoadingLive(false);
       return;
     }
-
-    let isMounted = true;
-    setIsLoadingLive(true);
-
-    const queryKey = encodeURIComponent(zaloId.trim());
-    fetch(`${apiRoot}/api/saas/public/${tenantSlug}/lookup?query=${queryKey}`)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (isMounted && data) {
-          setLiveData(data);
-        }
-      })
-      .catch((err) => {
-        console.warn("Không thể tải live lookup data:", err);
-      })
-      .finally(() => {
-        if (isMounted) setIsLoadingLive(false);
-      });
-
-    return () => {
-      isMounted = false;
-    };
+    try {
+      const queryKey = encodeURIComponent(zaloId.trim());
+      const res = await fetch(`${apiRoot}/api/saas/public/${tenantSlug}/lookup?query=${queryKey}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data) setLiveData(data);
+      }
+    } catch (err) {
+      console.warn("Không thể tải live lookup data:", err);
+    } finally {
+      setIsLoadingLive(false);
+    }
   }, [zaloId, apiRoot, tenantSlug]);
+
+  useEffect(() => {
+    setIsLoadingLive(true);
+    refreshLiveData();
+  }, [refreshLiveData]);
 
   // Fallback Matching if liveData is not loaded
   const mZaloId = zaloId.toLowerCase();
@@ -376,12 +385,31 @@ export function MemberDetailModal({
           "Content-Type": "application/json",
           ...(authHeaders || {}),
         },
-        body: JSON.stringify({ orderIds: targetKeys, action }),
+        body: JSON.stringify({
+          orderIds: targetKeys,
+          action,
+          zaloId: zaloId || undefined,
+          userId: member?.id || undefined,
+          bankName: initialBankName || undefined,
+          accountNumber: initialAccountNumber || undefined,
+          accountName: initialAccountName || undefined,
+        }),
       });
       const data = await res.json();
       if (res.ok) {
         const msg = data.message || `Đã chuyển ${targetKeys.length} đơn sang ${actionText}!`;
         if (showNotification) showNotification(msg, "success");
+
+        // Tải lại live lookup để đồng bộ ngay lập tức 4 thẻ số dư và danh sách lệnh rút
+        if (zaloId) {
+          const queryKey = encodeURIComponent(zaloId.trim());
+          fetch(`${apiRoot}/api/saas/public/${tenantSlug}/lookup?query=${queryKey}`)
+            .then((r) => (r.ok ? r.json() : null))
+            .then((d) => {
+              if (d) setLiveData(d);
+            })
+            .catch(() => {});
+        }
 
         // Cập nhật ngay trong state liveData để giao diện phản hồi lập tức
         setLiveData((prev) => {
@@ -426,6 +454,126 @@ export function MemberDetailModal({
       else alert("❌ Lỗi: " + err.message);
     } finally {
       setIsMarkingPaid(false);
+    }
+  };
+
+  // API Duyệt yêu cầu rút tiền
+  const handleApprovePayout = async (payoutId) => {
+    if (!tenantSlug) return;
+    if (!window.confirm(`Xác nhận ĐÃ CHUYỂN TIỀN thành công cho yêu cầu rút #${payoutId}?`)) return;
+
+    setProcessingPayoutId(payoutId);
+    try {
+      const res = await fetch(`${apiRoot}/api/saas/admin/${tenantSlug}/payouts/${payoutId}/approve`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...(authHeaders || {}),
+        },
+      });
+      const data = await res.json();
+      if (res.ok) {
+        const msg = data.message || `Đã duyệt yêu cầu rút tiền #${payoutId} thành công!`;
+        if (showNotification) showNotification("✅ " + msg, "success");
+        else alert("✅ " + msg);
+        await refreshLiveData();
+        if (onOrdersUpdated) onOrdersUpdated();
+      } else {
+        const errMsg = data.message || "Lỗi khi duyệt yêu cầu rút tiền";
+        if (showNotification) showNotification("❌ " + errMsg, "error");
+        else alert("❌ " + errMsg);
+      }
+    } catch (err) {
+      if (showNotification) showNotification("❌ Lỗi máy chủ: " + err.message, "error");
+      else alert("❌ Lỗi: " + err.message);
+    } finally {
+      setProcessingPayoutId(null);
+    }
+  };
+
+  // API Từ chối yêu cầu rút tiền
+  const handleRejectPayout = async (payoutId) => {
+    if (!tenantSlug) return;
+    const note = prompt("Nhập lý do từ chối yêu cầu rút tiền này:", "Thông tin ngân hàng không hợp lệ / Chưa đủ điều kiện");
+    if (note === null) return;
+
+    setProcessingPayoutId(payoutId);
+    try {
+      const res = await fetch(`${apiRoot}/api/saas/admin/${tenantSlug}/payouts/${payoutId}/reject`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...(authHeaders || {}),
+        },
+        body: JSON.stringify({ note }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        const msg = data.message || `Đã từ chối yêu cầu rút #${payoutId}`;
+        if (showNotification) showNotification("✅ " + msg, "success");
+        else alert("✅ " + msg);
+        await refreshLiveData();
+        if (onOrdersUpdated) onOrdersUpdated();
+      } else {
+        const errMsg = data.message || "Lỗi khi từ chối yêu cầu";
+        if (showNotification) showNotification("❌ " + errMsg, "error");
+        else alert("❌ " + errMsg);
+      }
+    } catch (err) {
+      if (showNotification) showNotification("❌ Lỗi máy chủ: " + err.message, "error");
+      else alert("❌ Lỗi: " + err.message);
+    } finally {
+      setProcessingPayoutId(null);
+    }
+  };
+
+  // API Tạo & Duyệt lệnh rút tiền thủ công (Admin tự chi trả)
+  const handleCreateManualPayout = async (e) => {
+    e.preventDefault();
+    if (!tenantSlug) return;
+
+    const amountNum = Number(String(manualAmount || "").replace(/[^0-9]/g, ""));
+    if (!amountNum || amountNum <= 0) {
+      if (showNotification) showNotification("⚠️ Vui lòng nhập số tiền rút hợp lệ (> 0đ)!", "error");
+      else alert("Vui lòng nhập số tiền rút hợp lệ!");
+      return;
+    }
+
+    setIsCreatingPayout(true);
+    try {
+      const res = await fetch(`${apiRoot}/api/saas/admin/${tenantSlug}/payouts/create-manual`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(authHeaders || {}),
+        },
+        body: JSON.stringify({
+          zaloId: zaloId || undefined,
+          amount: amountNum,
+          bankName: manualBankName || bankName || undefined,
+          accountNumber: manualAccountNumber || accountNumber || undefined,
+          accountName: manualAccountName || accountName || undefined,
+          note: manualNote.trim() || `Admin tạo & duyệt rút tiền thủ công cho ${zaloName}`,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        if (showNotification) showNotification("🎉 Đã tạo và hoàn tất lệnh rút tiền thành công!", "success");
+        else alert("🎉 Đã tạo và hoàn tất lệnh rút tiền thành công!");
+        setShowManualPayoutForm(false);
+        setManualAmount("");
+        await refreshLiveData();
+        if (onOrdersUpdated) onOrdersUpdated();
+      } else {
+        const errMsg = data.message || "Lỗi tạo lệnh rút tiền";
+        if (showNotification) showNotification("❌ " + errMsg, "error");
+        else alert("❌ " + errMsg);
+      }
+    } catch (err) {
+      if (showNotification) showNotification("❌ Lỗi máy chủ: " + err.message, "error");
+      else alert("❌ Lỗi: " + err.message);
+    } finally {
+      setIsCreatingPayout(false);
     }
   };
 
@@ -533,10 +681,23 @@ export function MemberDetailModal({
         {/* 4 Wallet Cards — Giống 100% trang Tra Cứu */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {/* Chờ xử lý */}
-          <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-xs border border-slate-200 flex flex-col justify-between transition hover:shadow-md">
+          <div
+            onClick={() => {
+              setActiveTab("orders");
+              setStatusFilter("PENDING");
+              setCurrentPage(1);
+            }}
+            className="bg-white hover:bg-amber-50/40 rounded-3xl p-4 sm:p-5 shadow-xs border border-slate-200 hover:border-amber-300 flex flex-col justify-between transition hover:shadow-md cursor-pointer group"
+            title="Bấm để lọc các đơn Đang Chờ Xử Lý"
+          >
             <div>
-              <div className="w-9 h-9 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-sm font-bold mb-3">
-                <i className="fa-solid fa-clock-rotate-left"></i>
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-9 h-9 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-sm font-bold">
+                  <i className="fa-solid fa-clock-rotate-left"></i>
+                </div>
+                <span className="text-[10px] font-bold text-amber-600 opacity-0 group-hover:opacity-100 transition">
+                  Lọc đơn ➔
+                </span>
               </div>
               <p className="text-[10px] sm:text-xs font-black uppercase tracking-wide text-slate-500">
                 ĐANG CHỜ XỬ LÝ
@@ -551,10 +712,23 @@ export function MemberDetailModal({
           </div>
 
           {/* Đã hoàn thành */}
-          <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-xs border border-slate-200 flex flex-col justify-between transition hover:shadow-md">
+          <div
+            onClick={() => {
+              setActiveTab("orders");
+              setStatusFilter("COMPLETED");
+              setCurrentPage(1);
+            }}
+            className="bg-white hover:bg-emerald-50/40 rounded-3xl p-4 sm:p-5 shadow-xs border border-slate-200 hover:border-emerald-300 flex flex-col justify-between transition hover:shadow-md cursor-pointer group"
+            title="Bấm để lọc các đơn Đã Hoàn Thành"
+          >
             <div>
-              <div className="w-9 h-9 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-sm font-bold mb-3">
-                <i className="fa-solid fa-circle-check"></i>
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-9 h-9 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-sm font-bold">
+                  <i className="fa-solid fa-circle-check"></i>
+                </div>
+                <span className="text-[10px] font-bold text-emerald-600 opacity-0 group-hover:opacity-100 transition">
+                  Lọc đơn ➔
+                </span>
               </div>
               <p className="text-[10px] sm:text-xs font-black uppercase tracking-wide text-slate-500">
                 ĐÃ HOÀN THÀNH
@@ -569,10 +743,22 @@ export function MemberDetailModal({
           </div>
 
           {/* Số dư khả dụng */}
-          <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-xs border border-slate-200 flex flex-col justify-between transition hover:shadow-md">
+          <div
+            onClick={() => {
+              setActiveTab("orders");
+              setStatusFilter("ALL");
+            }}
+            className="bg-white hover:bg-orange-50/40 rounded-3xl p-4 sm:p-5 shadow-xs border border-slate-200 hover:border-orange-300 flex flex-col justify-between transition hover:shadow-md cursor-pointer group"
+            title="Số dư hoa hồng khả dụng có thể rút"
+          >
             <div>
-              <div className="w-9 h-9 rounded-2xl bg-orange-100 text-orange-600 flex items-center justify-center text-sm font-bold mb-3">
-                <i className="fa-solid fa-wallet"></i>
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-9 h-9 rounded-2xl bg-orange-100 text-orange-600 flex items-center justify-center text-sm font-bold">
+                  <i className="fa-solid fa-wallet"></i>
+                </div>
+                <span className="text-[10px] font-bold text-orange-600 opacity-0 group-hover:opacity-100 transition">
+                  Xem đơn ➔
+                </span>
               </div>
               <p className="text-[10px] sm:text-xs font-black uppercase tracking-wide text-slate-500">
                 SỐ DƯ KHẢ DỤNG
@@ -594,11 +780,24 @@ export function MemberDetailModal({
             </div>
           </div>
 
-          {/* Đã nhận */}
-          <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-xs border border-slate-200 flex flex-col justify-between transition hover:shadow-md">
+          {/* Đã nhận (Đã rút) — Bấm để chuyển ngay sang Tab Lịch Sử Rút Tiền */}
+          <div
+            onClick={() => setActiveTab("payouts")}
+            className={`rounded-3xl p-4 sm:p-5 shadow-xs border flex flex-col justify-between transition hover:shadow-md cursor-pointer group ${
+              activeTab === "payouts"
+                ? "bg-purple-50/80 border-purple-400 ring-2 ring-purple-300"
+                : "bg-white hover:bg-purple-50/40 border-slate-200 hover:border-purple-300"
+            }`}
+            title="Bấm để xem chi tiết Lịch Sử Rút Tiền"
+          >
             <div>
-              <div className="w-9 h-9 rounded-2xl bg-purple-100 text-purple-600 flex items-center justify-center text-sm font-bold mb-3">
-                <i className="fa-solid fa-money-bill-transfer"></i>
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-9 h-9 rounded-2xl bg-purple-100 text-purple-600 flex items-center justify-center text-sm font-bold">
+                  <i className="fa-solid fa-money-bill-transfer"></i>
+                </div>
+                <span className="text-[10px] font-bold text-purple-600 bg-purple-100/70 px-2 py-0.5 rounded-full group-hover:bg-purple-600 group-hover:text-white transition">
+                  Xem LS rút ➔
+                </span>
               </div>
               <p className="text-[10px] sm:text-xs font-black uppercase tracking-wide text-slate-500">
                 ĐÃ NHẬN (ĐÃ RÚT)
@@ -649,15 +848,86 @@ export function MemberDetailModal({
           </div>
         </div>
 
-        {/* Orders Table — Dạng bảng Admin */}
-        <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-xs border border-slate-200 space-y-4">
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <h3 className="font-black text-slate-900 text-sm sm:text-base flex items-center gap-2 font-display">
-              <i className="fa-solid fa-boxes-stacked text-orange-600"></i>
-              Đơn Hàng Thành Viên ({memberOrders.length} đơn)
-            </h3>
+        {/* ===================== NAVIGATION TABS ===================== */}
+        <div className="flex items-center justify-between border-b border-slate-200 pb-2 gap-3 flex-wrap">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setActiveTab("orders")}
+              className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-black transition cursor-pointer flex items-center gap-2 ${
+                activeTab === "orders"
+                  ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md shadow-orange-500/20"
+                  : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+              }`}
+            >
+              <i className="fa-solid fa-boxes-stacked"></i>
+              <span>Đơn Hàng Thành Viên</span>
+              <span
+                className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                  activeTab === "orders" ? "bg-white/20 text-white" : "bg-white text-slate-600 border border-slate-200"
+                }`}
+              >
+                {memberOrders.length}
+              </span>
+            </button>
 
-            <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={() => setActiveTab("payouts")}
+              className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-black transition cursor-pointer flex items-center gap-2 ${
+                activeTab === "payouts"
+                  ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-600/20"
+                  : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+              }`}
+            >
+              <i className="fa-solid fa-money-bill-transfer"></i>
+              <span>Lịch Sử Rút Tiền</span>
+              <span
+                className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                  activeTab === "payouts" ? "bg-white/20 text-white" : "bg-white text-slate-600 border border-slate-200"
+                }`}
+              >
+                {memberPayoutsList.length}
+              </span>
+              {pendingPayoutsList.length > 0 && (
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-black bg-amber-400 text-amber-950 animate-pulse">
+                  {pendingPayoutsList.length} chờ
+                </span>
+              )}
+            </button>
+          </div>
+
+          {activeTab === "payouts" && (
+            <button
+              type="button"
+              onClick={() => {
+                setShowManualPayoutForm(!showManualPayoutForm);
+                if (!showManualPayoutForm) {
+                  setManualAmount(availableBalance > 0 ? String(availableBalance) : "");
+                  setManualBankName(bankName || "");
+                  setManualAccountNumber(accountNumber || "");
+                  setManualAccountName(accountName || "");
+                  setManualNote(`Admin tạo & duyệt quyết toán hoa hồng cho ${zaloName}`);
+                }
+              }}
+              className="px-3.5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-black rounded-xl transition cursor-pointer flex items-center gap-1.5 shadow-sm shadow-purple-500/20"
+            >
+              <i className={`fa-solid ${showManualPayoutForm ? "fa-xmark" : "fa-plus"}`}></i>
+              <span>{showManualPayoutForm ? "Đóng Form Tạo Lệnh" : "+ Tạo Lệnh Rút Thủ Công"}</span>
+            </button>
+          )}
+        </div>
+
+        {/* ===================== TAB 1: ĐƠN HÀNG (ORDERS) ===================== */}
+        {activeTab === "orders" && (
+          <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-xs border border-slate-200 space-y-4">
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <h3 className="font-black text-slate-900 text-sm sm:text-base flex items-center gap-2 font-display">
+                <i className="fa-solid fa-boxes-stacked text-orange-600"></i>
+                Đơn Hàng Thành Viên ({memberOrders.length} đơn)
+              </h3>
+
+              <div className="flex items-center gap-2 flex-wrap">
               {/* Search */}
               <div className="relative">
                 <input
@@ -1000,55 +1270,353 @@ export function MemberDetailModal({
             </div>
           )}
         </div>
+        )}
 
-        {/* Payouts Table — Lịch sử rút tiền của thành viên (nếu có) */}
-        {memberPayoutsList.length > 0 && (
-          <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-xs border border-slate-200 space-y-3">
-            <h3 className="font-black text-slate-900 text-sm sm:text-base flex items-center gap-2 font-display">
-              <i className="fa-solid fa-money-bill-transfer text-purple-600"></i>
-              Lịch Sử Yêu Cầu Rút Tiền ({memberPayoutsList.length} lệnh)
-            </h3>
-            <div className="overflow-x-auto rounded-2xl border border-slate-200">
-              <table className="w-full text-left text-xs">
-                <thead>
-                  <tr className="bg-slate-50 border-b-2 border-slate-200">
-                    <th className="px-3 py-2.5 font-black text-slate-700 text-center">Mã lệnh</th>
-                    <th className="px-3 py-2.5 font-black text-slate-700 text-right">Số tiền</th>
-                    <th className="px-3 py-2.5 font-black text-slate-700">Tài khoản nhận</th>
-                    <th className="px-3 py-2.5 font-black text-slate-700">Ngày yêu cầu</th>
-                    <th className="px-3 py-2.5 font-black text-slate-700 text-center">Trạng thái</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {memberPayoutsList.map((p) => (
-                    <tr key={p.id} className="hover:bg-slate-50/70 transition">
-                      <td className="px-3 py-2 text-center font-mono font-bold text-purple-700">
-                        #{p.id}
-                      </td>
-                      <td className="px-3 py-2 text-right font-mono font-black text-rose-600">
-                        {formatMoney(p.amount)}
-                      </td>
-                      <td className="px-3 py-2 font-mono text-[11px] text-slate-600">
-                        {p.bankName ? `${p.bankName} - ${p.accountNumber} (${p.accountName || ""})` : "—"}
-                      </td>
-                      <td className="px-3 py-2 font-mono text-[11px] text-slate-500">
-                        {formatDateTime(p.createdAt)}
-                      </td>
-                      <td className="px-3 py-2 text-center">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
-                          p.status === "COMPLETED"
-                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                            : p.status === "REJECTED"
-                            ? "bg-rose-50 text-rose-700 border border-rose-200"
-                            : "bg-amber-50 text-amber-700 border border-amber-200"
-                        }`}>
-                          {p.status === "COMPLETED" ? "Đã duyệt" : p.status === "REJECTED" ? "Từ chối" : "Chờ duyệt"}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        {/* ===================== TAB 2: LỊCH SỬ RÚT TIỀN (PAYOUTS) ===================== */}
+        {activeTab === "payouts" && (
+          <div className="space-y-4">
+            {/* Form tạo lệnh rút tiền thủ công */}
+            {showManualPayoutForm && (
+              <div className="bg-gradient-to-br from-purple-50 via-indigo-50/50 to-white rounded-3xl p-5 sm:p-6 border-2 border-purple-300 shadow-md space-y-4 animate-[fadeIn_0.15s_ease-out]">
+                <div className="flex items-center justify-between border-b border-purple-100 pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-purple-600 text-white flex items-center justify-center text-xs shadow-sm">
+                      <i className="fa-solid fa-plus"></i>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-black text-slate-900 font-display">
+                        Tạo Lệnh Rút & Quyết Toán Hoa Hồng Thủ Công
+                      </h4>
+                      <p className="text-[11px] text-slate-500 font-medium">
+                        Tự động duyệt thành công (COMPLETED) & cấn trừ các đơn hoàn thành cũ trước (FIFO)
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowManualPayoutForm(false)}
+                    className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center text-xs cursor-pointer"
+                  >
+                    <i className="fa-solid fa-xmark"></i>
+                  </button>
+                </div>
+
+                <form onSubmit={handleCreateManualPayout} className="space-y-3.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-black text-slate-700 mb-1">
+                        Số Tiền Rút (VNĐ): <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="number"
+                        min="1000"
+                        step="1000"
+                        required
+                        value={manualAmount}
+                        onChange={(e) => setManualAmount(e.target.value)}
+                        placeholder="VD: 50000"
+                        className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-sm font-mono font-bold text-slate-900 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 shadow-2xs"
+                      />
+                      {/* Gợi ý số tiền nhanh */}
+                      <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                        {availableBalance > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => setManualAmount(String(availableBalance))}
+                            className="text-[10px] font-bold text-purple-700 bg-purple-100 hover:bg-purple-200 px-2 py-0.5 rounded-md transition cursor-pointer"
+                          >
+                            Toàn bộ khả dụng ({formatMoney(availableBalance)})
+                          </button>
+                        )}
+                        {[50000, 100000, 200000, 500000].map((amt) => (
+                          <button
+                            key={amt}
+                            type="button"
+                            onClick={() => setManualAmount(String(amt))}
+                            className="text-[10px] font-bold text-slate-600 bg-white border border-slate-200 hover:bg-purple-50 hover:text-purple-700 px-2 py-0.5 rounded-md transition cursor-pointer"
+                          >
+                            {formatMoney(amt)}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-black text-slate-700 mb-1">
+                        Ghi Chú Giao Dịch:
+                      </label>
+                      <input
+                        type="text"
+                        value={manualNote}
+                        onChange={(e) => setManualNote(e.target.value)}
+                        placeholder="VD: Chuyển tiếp thanh toán Web cũ sang Web mới..."
+                        className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-800 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 shadow-2xs"
+                      />
+                      <span className="text-[10px] text-slate-400 mt-1 block">
+                        Ghi chú nội dung chuyển khoản để đối soát sau này.
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Thông tin ngân hàng nhận */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-600 mb-1">Ngân hàng:</label>
+                      <input
+                        type="text"
+                        value={manualBankName}
+                        onChange={(e) => setManualBankName(e.target.value)}
+                        placeholder="VD: MBBank, VCB..."
+                        className="w-full bg-white border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 outline-none focus:border-purple-500 shadow-2xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-600 mb-1">Số tài khoản:</label>
+                      <input
+                        type="text"
+                        value={manualAccountNumber}
+                        onChange={(e) => setManualAccountNumber(e.target.value)}
+                        placeholder="VD: 0987654321..."
+                        className="w-full bg-white border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-mono font-bold text-slate-800 outline-none focus:border-purple-500 shadow-2xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-600 mb-1">Chủ tài khoản:</label>
+                      <input
+                        type="text"
+                        value={manualAccountName}
+                        onChange={(e) => setManualAccountName(e.target.value.toUpperCase())}
+                        placeholder="VD: NGUYEN VAN A..."
+                        className="w-full bg-white border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 uppercase outline-none focus:border-purple-500 shadow-2xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2 pt-2 border-t border-purple-100">
+                    <button
+                      type="button"
+                      onClick={() => setShowManualPayoutForm(false)}
+                      className="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold rounded-xl border border-slate-200 cursor-pointer transition"
+                    >
+                      Hủy
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isCreatingPayout}
+                      className="px-5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-black rounded-xl shadow-md cursor-pointer transition flex items-center gap-1.5 disabled:opacity-50"
+                    >
+                      {isCreatingPayout ? (
+                        <>
+                          <i className="fa-solid fa-spinner fa-spin"></i> Đang tạo lệnh...
+                        </>
+                      ) : (
+                        <>
+                          <i className="fa-solid fa-check"></i> Xác Nhận Tạo & Duyệt Ngay
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {/* Mini Stats Bar */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-2xl p-3.5 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-sm font-bold shrink-0">
+                  <i className="fa-solid fa-circle-check"></i>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-black uppercase text-emerald-800 tracking-wide">
+                    Đã chuyển thành công
+                  </p>
+                  <p className="text-base font-black text-emerald-700 font-mono">
+                    {formatMoney(totalPayoutsWithdrawn)}
+                  </p>
+                  <p className="text-[10px] text-emerald-600 font-semibold">
+                    {approvedPayouts.length} giao dịch hoàn tất
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-amber-50/70 border border-amber-200/80 rounded-2xl p-3.5 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-sm font-bold shrink-0">
+                  <i className="fa-solid fa-clock-rotate-left"></i>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-black uppercase text-amber-800 tracking-wide">
+                    Đang chờ duyệt
+                  </p>
+                  <p className="text-base font-black text-amber-700 font-mono">
+                    {formatMoney(pendingWithdrawn)}
+                  </p>
+                  <p className="text-[10px] text-amber-600 font-semibold">
+                    {pendingPayoutsList.length} yêu cầu đang chờ
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-purple-50/70 border border-purple-200/80 rounded-2xl p-3.5 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center text-sm font-bold shrink-0">
+                  <i className="fa-solid fa-wallet"></i>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-black uppercase text-purple-800 tracking-wide">
+                    Số dư khả dụng hiện tại
+                  </p>
+                  <p className="text-base font-black text-purple-700 font-mono">
+                    {formatMoney(availableBalance)}
+                  </p>
+                  <p className="text-[10px] text-purple-600 font-semibold">
+                    Có thể tạo lệnh rút ngay
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Payouts Table */}
+            <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-xs border border-slate-200 space-y-3">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <h3 className="font-black text-slate-900 text-sm sm:text-base flex items-center gap-2 font-display">
+                  <i className="fa-solid fa-money-bill-transfer text-purple-600"></i>
+                  <span>Lịch Sử Yêu Cầu Rút Tiền ({memberPayoutsList.length} giao dịch)</span>
+                </h3>
+              </div>
+
+              {memberPayoutsList.length === 0 ? (
+                <div className="py-12 px-4 text-center rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50">
+                  <div className="w-14 h-14 rounded-3xl bg-purple-100 text-purple-600 flex items-center justify-center text-2xl mx-auto mb-3 shadow-2xs">
+                    <i className="fa-solid fa-money-bill-transfer"></i>
+                  </div>
+                  <h4 className="text-sm font-black text-slate-800 mb-1">
+                    Chưa có lịch sử rút tiền nào
+                  </h4>
+                  <p className="text-xs text-slate-500 max-w-md mx-auto mb-4">
+                    Thành viên chưa gửi yêu cầu rút tiền hoặc chưa có giao dịch chi trả thủ công nào.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowManualPayoutForm(true);
+                      setManualAmount(availableBalance > 0 ? String(availableBalance) : "");
+                      setManualBankName(bankName || "");
+                      setManualAccountNumber(accountNumber || "");
+                      setManualAccountName(accountName || "");
+                      setManualNote(`Admin tạo & duyệt quyết toán hoa hồng cho ${zaloName}`);
+                    }}
+                    className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-black rounded-xl shadow-md cursor-pointer transition inline-flex items-center gap-2"
+                  >
+                    <i className="fa-solid fa-plus"></i>
+                    <span>Tạo Lệnh Rút Tiền Thủ Công</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="overflow-x-auto rounded-2xl border border-slate-200">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="bg-slate-50 border-b-2 border-slate-200">
+                        <th className="px-3.5 py-3 font-black text-slate-700 text-center whitespace-nowrap">Mã GD</th>
+                        <th className="px-3.5 py-3 font-black text-slate-700 text-right whitespace-nowrap">Số tiền rút</th>
+                        <th className="px-3.5 py-3 font-black text-slate-700 whitespace-nowrap">Tài khoản nhận</th>
+                        <th className="px-3.5 py-3 font-black text-slate-700">Ghi chú</th>
+                        <th className="px-3.5 py-3 font-black text-slate-700 whitespace-nowrap">Thời gian</th>
+                        <th className="px-3.5 py-3 font-black text-slate-700 text-center whitespace-nowrap">Trạng thái</th>
+                        <th className="px-3.5 py-3 font-black text-slate-700 text-right whitespace-nowrap">Thao tác</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {memberPayoutsList.map((p) => {
+                        const isPending = p.status === "PENDING";
+                        const isCompleted = p.status === "COMPLETED" || p.status === "APPROVED";
+                        const isRejected = p.status === "REJECTED";
+                        const isProcessing = processingPayoutId === p.id;
+
+                        return (
+                          <tr key={p.id} className="hover:bg-slate-50/70 transition">
+                            <td className="px-3.5 py-3 text-center whitespace-nowrap">
+                              <span className="px-2.5 py-1 bg-purple-100 text-purple-900 font-mono font-black rounded-xl text-xs border border-purple-200 inline-block shadow-2xs">
+                                #{p.id}
+                              </span>
+                            </td>
+                            <td className="px-3.5 py-3 text-right whitespace-nowrap font-mono font-black text-rose-600 text-sm">
+                              {formatMoney(p.amount)}
+                            </td>
+                            <td className="px-3.5 py-3 whitespace-nowrap font-mono">
+                              <p className="font-bold text-slate-900">
+                                {p.bankName ? `${p.bankName} - ${p.accountNumber}` : "—"}
+                              </p>
+                              {p.accountName && (
+                                <p className="text-[11px] font-bold text-orange-600 uppercase">
+                                  {p.accountName}
+                                </p>
+                              )}
+                            </td>
+                            <td className="px-3.5 py-3 max-w-[200px]">
+                              <span className="text-[11px] text-slate-600 block truncate" title={p.note || ""}>
+                                {p.note || "—"}
+                              </span>
+                            </td>
+                            <td className="px-3.5 py-3 whitespace-nowrap text-[11px] font-mono text-slate-500">
+                              <div>Tạo: {formatDateTime(p.createdAt)}</div>
+                              {p.completedAt && (
+                                <div className="text-[10px] text-emerald-600 font-semibold">
+                                  ✓ Xong: {formatDateTime(p.completedAt)}
+                                </div>
+                              )}
+                            </td>
+                            <td className="px-3.5 py-3 text-center whitespace-nowrap">
+                              <span
+                                className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold ${
+                                  isCompleted
+                                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                    : isRejected
+                                    ? "bg-rose-50 text-rose-700 border border-rose-200"
+                                    : "bg-amber-50 text-amber-700 border border-amber-200 animate-pulse"
+                                }`}
+                              >
+                                {isCompleted ? "Đã duyệt" : isRejected ? "Từ chối" : "Chờ duyệt"}
+                              </span>
+                            </td>
+                            <td className="px-3.5 py-3 text-right whitespace-nowrap">
+                              {isPending ? (
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <button
+                                    type="button"
+                                    disabled={isProcessing}
+                                    onClick={() => handleApprovePayout(p.id)}
+                                    className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-black text-xs cursor-pointer shadow-2xs transition disabled:opacity-50 flex items-center gap-1"
+                                    title="Xác nhận Đã Chuyển Tiền"
+                                  >
+                                    <i className="fa-solid fa-check text-[10px]"></i>
+                                    <span>Duyệt CK</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={isProcessing}
+                                    onClick={() => handleRejectPayout(p.id)}
+                                    className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg font-bold text-xs border border-rose-200 cursor-pointer transition disabled:opacity-50"
+                                    title="Từ chối yêu cầu rút tiền"
+                                  >
+                                    Từ chối
+                                  </button>
+                                </div>
+                              ) : isCompleted ? (
+                                <span className="text-[11px] font-bold text-emerald-600 inline-flex items-center gap-1">
+                                  <i className="fa-solid fa-check-double text-[10px]"></i> Đã CK
+                                </span>
+                              ) : (
+                                <span className="text-[11px] font-bold text-rose-500">
+                                  Đã hủy
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
         )}

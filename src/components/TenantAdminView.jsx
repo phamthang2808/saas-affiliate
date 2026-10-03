@@ -2119,63 +2119,115 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="border-2 border-dashed border-orange-200 bg-orange-50/40 hover:bg-orange-50/70 rounded-2xl p-4 transition cursor-pointer flex flex-col items-center justify-center relative overflow-hidden min-h-[110px]">
+            {!importFile ? (
+              <div className="relative border-2 border-dashed border-orange-200 hover:border-orange-400 bg-orange-50/30 hover:bg-orange-50/60 rounded-2xl p-5 sm:p-6 transition cursor-pointer group flex flex-col items-center justify-center text-center">
                 <input
                   type="file"
                   accept=".csv,.xlsx,.xls"
                   onChange={(e) => {
-                    setImportFile(e.target.files[0]);
-                    setImportResult(null);
+                    if (e.target.files && e.target.files[0]) {
+                      setImportFile(e.target.files[0]);
+                      setImportResult(null);
+                    }
                   }}
-                  className="absolute inset-0 opacity-0 cursor-pointer"
+                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
                 />
 
-                {importFile ? (
-                  <div className="flex flex-col items-center text-center space-y-1">
-                    <div className="w-9 h-9 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center text-base shadow-xs">
-                      <i className="fa-solid fa-file-excel"></i>
-                    </div>
-                    <span className="text-xs font-black text-slate-800 truncate max-w-[220px]">{importFile.name}</span>
-                    <span className="text-[10px] text-slate-400 font-medium">{(importFile.size / 1024).toFixed(1)} KB — Bấm để đổi file</span>
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pointer-events-none">
+                  <div className="w-12 h-12 rounded-2xl bg-orange-100 text-orange-600 flex items-center justify-center text-xl shrink-0 group-hover:scale-105 transition shadow-xs">
+                    <i className="fa-solid fa-cloud-arrow-up"></i>
                   </div>
-                ) : (
-                  <div className="flex flex-col items-center text-center space-y-1">
-                    <div className="w-9 h-9 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center text-base shadow-xs">
-                      <i className="fa-solid fa-cloud-arrow-up"></i>
+                  <div className="space-y-1 text-center sm:text-left">
+                    <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap">
+                      <span className="text-sm font-black text-slate-800">
+                        Chọn hoặc kéo thả file báo cáo đối soát {activeTab === "tiktok" ? "TikTok Shop" : "Shopee"}
+                      </span>
+                      <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-[10px] font-black rounded-md">
+                        .csv, .xlsx, .xls
+                      </span>
                     </div>
-                    <span className="text-xs font-black text-slate-800">Chọn hoặc kéo thả file báo cáo</span>
-                    <span className="text-[10px] text-slate-400 font-medium">Hỗ trợ .csv, .xlsx, .xls từ Shopee & TikTok</span>
+                    <p className="text-xs text-slate-500 leading-relaxed font-medium">
+                      Hệ thống sẽ tự động quét cột <strong>Mã đơn hàng</strong> và <strong>Sub ID / Mã phụ</strong> để liên kết chính xác hoa hồng cho Kênh {groupDisplayName}.
+                    </p>
                   </div>
-                )}
+                </div>
               </div>
+            ) : (
+              <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-orange-50/80 via-amber-50/50 to-orange-50/80 border border-orange-200/90 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 shadow-2xs">
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center text-xl shrink-0 shadow-md shadow-emerald-500/20">
+                    <i className="fa-solid fa-file-excel"></i>
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100/90 px-2 py-0.5 rounded-md shrink-0">
+                        File đã sẵn sàng
+                      </span>
+                      <span className="text-xs text-slate-500 font-mono">
+                        {(importFile.size / 1024).toFixed(1)} KB
+                      </span>
+                    </div>
+                    <p className="text-sm font-black text-slate-900 truncate mt-0.5" title={importFile.name}>
+                      {importFile.name}
+                    </p>
+                  </div>
+                </div>
 
-              <div className="flex flex-col justify-center space-y-3">
-                <p className="text-xs text-slate-500 leading-relaxed font-medium">
-                  Hệ thống sẽ tự động quét cột <strong>Mã đơn hàng</strong> và <strong>Sub ID / Mã phụ</strong> chứa thông tin định danh thành viên để liên kết chính xác hoa hồng cho Kênh {groupDisplayName}.
-                </p>
+                <div className="flex items-center gap-2.5 shrink-0 flex-wrap sm:flex-nowrap">
+                  <label className="px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow-2xs">
+                    <i className="fa-solid fa-arrow-rotate-right text-slate-400"></i>
+                    <span>Đổi file</span>
+                    <input
+                      type="file"
+                      accept=".csv,.xlsx,.xls"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          setImportFile(e.target.files[0]);
+                          setImportResult(null);
+                        }
+                      }}
+                      className="hidden"
+                    />
+                  </label>
 
-                <button
-                  onClick={handleUploadExcel}
-                  disabled={isImporting || !importFile}
-                  className={`w-full py-3 px-4 rounded-2xl text-xs font-black transition flex items-center justify-center gap-2 shadow-md cursor-pointer ${
-                    isImporting || !importFile
-                      ? "bg-slate-200 text-slate-400 cursor-not-allowed shadow-none"
-                      : "bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-orange-500/20"
-                  }`}
-                >
-                  {isImporting ? (
-                    <>
-                      <i className="fa-solid fa-spinner fa-spin"></i> Đang nạp dữ liệu đơn hàng...
-                    </>
-                  ) : (
-                    <>
-                      <i className="fa-solid fa-upload"></i> Bắt đầu Import File
-                    </>
-                  )}
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setImportFile(null);
+                      setImportResult(null);
+                    }}
+                    disabled={isImporting}
+                    className="p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 text-slate-400 text-xs transition cursor-pointer disabled:opacity-50"
+                    title="Hủy chọn file này"
+                  >
+                    <i className="fa-solid fa-xmark"></i>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleUploadExcel}
+                    disabled={isImporting}
+                    className={`px-5 py-2.5 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 shadow-md cursor-pointer ${
+                      isImporting
+                        ? "bg-orange-300 text-white cursor-not-allowed shadow-none"
+                        : "bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-orange-500/25 active:scale-[0.98]"
+                    }`}
+                  >
+                    {isImporting ? (
+                      <>
+                        <i className="fa-solid fa-spinner fa-spin"></i>
+                        <span>Đang nạp dữ liệu...</span>
+                      </>
+                    ) : (
+                      <>
+                        <i className="fa-solid fa-file-import"></i>
+                        <span>Bắt đầu Import File Ngay</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
 
             {importResult && (
               <div className={`p-3.5 rounded-2xl text-xs font-bold flex items-center gap-2.5 ${importResult.success ? "bg-emerald-50 text-emerald-800 border border-emerald-200" : "bg-rose-50 text-rose-800 border border-rose-200"}`}>

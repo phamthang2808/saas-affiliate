@@ -1545,6 +1545,17 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
             if (mId && (oUserId === mId || oSubId === `u${mId}` || (mSlug && oSubId === `${mSlug}_u${mId}`))) {
               return true;
             }
+
+            // SO KHỚP TÊN KHÔNG DẤU (dành cho các đơn cũ có Sub ID là tên chữ không dấu)
+            const mNormName = removeAccents(member.zaloName || member.zalo_name || member.name).replace(/[^a-z0-9]/g, "");
+            const mNormAcc = removeAccents(member.accountName).replace(/[^a-z0-9]/g, "");
+            const cleanSub = oSubId.replace(/^(phamnga|ly|tranhuyen|lecuong|mailan|th)[_-]/i, "");
+            const cleanSubNorm = removeAccents(cleanSub).replace(/[^a-z0-9]/g, "");
+            if (cleanSubNorm && cleanSubNorm.length >= 2 && !/^\d+$/.test(cleanSubNorm)) {
+              if (mNormName && (cleanSubNorm === mNormName || mNormName === cleanSubNorm)) return true;
+              if (mNormAcc && (cleanSubNorm === mNormAcc || mNormAcc === cleanSubNorm)) return true;
+            }
+
             return false;
           });
         };
@@ -2518,6 +2529,35 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                               const resolvedName = zName || zAccName;
                               if (resolvedName && !resolvedName.toLowerCase().startsWith("zalo id") && !resolvedName.toLowerCase().startsWith("sub id")) {
                                 return { name: resolvedName, isAssigned: true, isZaloName: true, zaloId: zUser.zaloId || lookupKey };
+                              }
+                            }
+
+                            // TỰ ĐỘNG SO KHỚP TÊN KHÔNG DẤU (dành cho đơn mang Sub ID là tên chữ từ hệ thống cũ)
+                            const normalizeStr = (str) =>
+                              String(str || "")
+                                .normalize("NFD")
+                                .replace(/[\u0300-\u036f]/g, "")
+                                .replace(/đ/g, "d")
+                                .replace(/Đ/g, "D")
+                                .toLowerCase()
+                                .replace(/[^a-z0-9]/g, "");
+
+                            const normSub = normalizeStr(cleanSub || rawSubId);
+                            if (normSub && normSub.length >= 2 && !/^\d+$/.test(normSub)) {
+                              const zUserByName = zaloUsers.find((z) => {
+                                if (!z) return false;
+                                const normName = normalizeStr(z.zaloName || z.zalo_name || z.name);
+                                const normAcc = normalizeStr(z.accountName);
+                                return (normName && (normName === normSub || normSub === normName)) ||
+                                       (normAcc && (normAcc === normSub || normSub === normAcc));
+                              });
+                              if (zUserByName) {
+                                const zName = (zUserByName.zaloName || zUserByName.zalo_name || zUserByName.name || "").trim();
+                                const zAccName = (zUserByName.accountName || "").trim();
+                                const resolvedName = zName || zAccName;
+                                if (resolvedName && !resolvedName.toLowerCase().startsWith("zalo id") && !resolvedName.toLowerCase().startsWith("sub id")) {
+                                  return { name: resolvedName, isAssigned: true, isZaloName: true, zaloId: zUserByName.zaloId || lookupKey };
+                                }
                               }
                             }
                           }

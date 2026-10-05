@@ -208,13 +208,13 @@ export const VARIABLE_DEFINITIONS = {
   },
   don_hang: {
     name: "[don_hang]...[/don_hang]",
-    example: "{stt}. 🛍️ {ten_san_pham}\n🏷️ ID: {ma_don_hang}\n💰 Hoa hồng: {hoa_hong} {icon_trang_thai}\n📊 Trạng thái: {trang_thai}\n───────────────────",
+    example: "{stt}. 🛍️ {ten_san_pham}\n🏷️ ID: {ma_don_hang}\n💰 Hoa hồng: {hoa_hong} {icon_trang_thai}\n📊 Trạng thái: {trang_thai}\n─────────────",
     desc: "Khối lặp mẫu từng đơn hàng. Bot sẽ lặp lại cấu trúc bên trong khối này cho mỗi đơn hàng của khách. Bạn có thể tự do thêm/bớt dòng ID hoặc icon tùy thích.",
     source: "Cấu trúc lặp linh hoạt theo từng đơn hàng"
   },
   danh_sach_don: {
     name: "{danh_sach_don}",
-    example: "01. 🛍️ Túi đeo chéo nam nữ thời...\n🏷️ ID: 261003M536RGS8\n💰 Hoa hồng: 13.513đ ⌛\n📊 Trạng thái: Đang xử lý\n───────────────────\n02. 🛍️ Bông tẩy trang LXSOFT 100...\n🏷️ ID: 261002JA0KJSDB\n💰 Hoa hồng: 2.162đ ✅\n📊 Trạng thái: Hoàn thành",
+    example: "01. 🛍️ Túi đeo chéo nam nữ...\n🏷️ ID: 261003M536RGS8\n💰 Hoa hồng: 13.513đ ⌛\n📊 Trạng thái: Đang xử lý\n─────────────\n02. 🛍️ Bông tẩy trang LXSO...\n🏷️ ID: 261002JA0KJSDB\n💰 Hoa hồng: 2.162đ ✅\n📊 Trạng thái: Hoàn thành",
     desc: "Tự động chèn danh sách các đơn hàng đã mua của thành viên (gồm STT, Tên SP, Mã ID, Hoa hồng và Trạng thái). Nếu muốn chỉnh sửa chi tiết từng dòng, bạn dùng khối [don_hang]...[/don_hang].",
     source: "Hệ thống tự động đồng bộ từ đơn hàng thực tế Shopee / TikTok Shop theo từng trang"
   },
@@ -520,7 +520,7 @@ export function TemplatePreviewModal({
     stt: "01",
     so_thu_tu: "01",
     stt_don: "1",
-    ten_san_pham: "Túi đeo chéo nam nữ thời trang...",
+    ten_san_pham: "Túi đeo chéo nam nữ...",
     hoa_hong: "13.513đ",
     tien_hoa_hong: "13.513đ",
     hoa_hong_so: "13.513",
@@ -528,9 +528,9 @@ export function TemplatePreviewModal({
     icon_trang_thai: "⌛",
     san_thuong_mai: "Shopee",
     san: "Shopee",
-    danh_sach_don: `01. 🛍️ Túi đeo chéo nam nữ thời...\n🏷️ ID: 261003M536RGS8\n💰 Hoa hồng: 13.513đ ⌛\n📊 Trạng thái: Đang xử lý\n───────────────────\n02. 🛍️ Bông tẩy trang LXSOFT 100...\n🏷️ ID: 261002JA0KJSDB\n💰 Hoa hồng: 2.162đ ✅\n📊 Trạng thái: Hoàn thành\n───────────────────\n03. 🛍️ ( BEST SELLER) ÁO LONG SL...\n🏷️ ID: 261002K0RG34F3\n💰 Hoa hồng: 23.429đ ⌛\n📊 Trạng thái: Đang xử lý`,
-    danh_sach_don_hang: `01. 🛍️ Túi đeo chéo nam nữ thời...\n🏷️ ID: 261003M536RGS8\n💰 Hoa hồng: 13.513đ ⌛\n📊 Trạng thái: Đang xử lý\n───────────────────\n02. 🛍️ Bông tẩy trang LXSOFT 100...\n🏷️ ID: 261002JA0KJSDB\n💰 Hoa hồng: 2.162đ ✅\n📊 Trạng thái: Hoàn thành\n───────────────────\n03. 🛍️ ( BEST SELLER) ÁO LONG SL...\n🏷️ ID: 261002K0RG34F3\n💰 Hoa hồng: 23.429đ ⌛\n📊 Trạng thái: Đang xử lý`,
-    orders_list: `01. 🛍️ Túi đeo chéo nam nữ thời...\n🏷️ ID: 261003M536RGS8\n💰 Hoa hồng: 13.513đ ⌛\n📊 Trạng thái: Đang xử lý\n───────────────────\n02. 🛍️ Bông tẩy trang LXSOFT 100...\n🏷️ ID: 261002JA0KJSDB\n💰 Hoa hồng: 2.162đ ✅\n📊 Trạng thái: Hoàn thành\n───────────────────\n03. 🛍️ ( BEST SELLER) ÁO LONG SL...\n🏷️ ID: 261002K0RG34F3\n💰 Hoa hồng: 23.429đ ⌛\n📊 Trạng thái: Đang xử lý`,
+    danh_sach_don: `01. 🛍️ Túi đeo chéo nam nữ...\n🏷️ ID: 261003M536RGS8\n💰 Hoa hồng: 13.513đ ⌛\n📊 Trạng thái: Đang xử lý\n─────────────\n02. 🛍️ Bông tẩy trang LXSO...\n🏷️ ID: 261002JA0KJSDB\n💰 Hoa hồng: 2.162đ ✅\n📊 Trạng thái: Hoàn thành\n─────────────\n03. 🛍️ Áo thun Boxy trơn...\n🏷️ ID: 261002K0RG34F3\n💰 Hoa hồng: 23.429đ ⌛\n📊 Trạng thái: Đang xử lý`,
+    danh_sach_don_hang: `01. 🛍️ Túi đeo chéo nam nữ...\n🏷️ ID: 261003M536RGS8\n💰 Hoa hồng: 13.513đ ⌛\n📊 Trạng thái: Đang xử lý\n─────────────\n02. 🛍️ Bông tẩy trang LXSO...\n🏷️ ID: 261002JA0KJSDB\n💰 Hoa hồng: 2.162đ ✅\n📊 Trạng thái: Hoàn thành\n─────────────\n03. 🛍️ Áo thun Boxy trơn...\n🏷️ ID: 261002K0RG34F3\n💰 Hoa hồng: 23.429đ ⌛\n📊 Trạng thái: Đang xử lý`,
+    orders_list: `01. 🛍️ Túi đeo chéo nam nữ...\n🏷️ ID: 261003M536RGS8\n💰 Hoa hồng: 13.513đ ⌛\n📊 Trạng thái: Đang xử lý\n─────────────\n02. 🛍️ Bông tẩy trang LXSO...\n🏷️ ID: 261002JA0KJSDB\n💰 Hoa hồng: 2.162đ ✅\n📊 Trạng thái: Hoàn thành\n─────────────\n03. 🛍️ Áo thun Boxy trơn...\n🏷️ ID: 261002K0RG34F3\n💰 Hoa hồng: 23.429đ ⌛\n📊 Trạng thái: Đang xử lý`,
     trang: "1",
     tong_trang: "1",
     tong_don: "3"
@@ -544,11 +544,12 @@ export function TemplatePreviewModal({
     const loopRegex = /\[(don_hang|danh_sach_don|item)\]([\s\S]*?)\[\/(?:don_hang|danh_sach_don|item)\]/i;
     const matchLoop = simulatedText.match(loopRegex);
     if (matchLoop) {
-      const itemTpl = matchLoop[2].trim();
+      // Co ngắn dòng kẻ nếu mẫu chứa hơn 13 ký tự để nằm vừa 1 dòng trên điện thoại
+      const itemTpl = matchLoop[2].trim().replace(/─{14,}/g, "─────────────");
       const mockOrders = [
-        { stt: "1", stt2: "01", id: "261003M536RGS8", name: "Túi đeo chéo nam nữ thời...", comm: "13.513đ", commNum: "13.513", status: "Đang xử lý", icon: "⌛" },
-        { stt: "2", stt2: "02", id: "261002JA0KJSDB", name: "Bông tẩy trang LXSOFT 100...", comm: "2.162đ", commNum: "2.162", status: "Hoàn thành", icon: "✅" },
-        { stt: "3", stt2: "03", id: "261002K0RG34F3", name: "( BEST SELLER) ÁO LONG SL...", comm: "23.429đ", commNum: "23.429", status: "Đang xử lý", icon: "⌛" }
+        { stt: "1", stt2: "01", id: "261003M536RGS8", name: "Túi đeo chéo nam nữ...", comm: "13.513đ", commNum: "13.513", status: "Đang xử lý", icon: "⌛" },
+        { stt: "2", stt2: "02", id: "261002JA0KJSDB", name: "Bông tẩy trang LXSO...", comm: "2.162đ", commNum: "2.162", status: "Hoàn thành", icon: "✅" },
+        { stt: "3", stt2: "03", id: "261002K0RG34F3", name: "Áo thun Boxy trơn...", comm: "23.429đ", commNum: "23.429", status: "Đang xử lý", icon: "⌛" }
       ];
       const useTwoDigit = itemTpl.includes("───") || itemTpl.includes("ID:") || itemTpl.includes("{stt_2so}");
       const renderedList = mockOrders.map(o => {
@@ -575,7 +576,7 @@ export function TemplatePreviewModal({
           .replace(/\{icon_trang_thai\}/g, o.icon)
           .replace(/\{san_thuong_mai\}/g, "Shopee")
           .replace(/\{san\}/g, "Shopee");
-      }).join(itemTpl.includes("───") ? "\n" : "\n\n");
+      }).join(itemTpl.includes("───") || itemTpl.includes("─") ? "\n" : "\n\n");
       simulatedText = simulatedText.replace(loopRegex, renderedList);
     } else if (!simulatedText.includes("{danh_sach_don}") && !simulatedText.includes("{danh_sach_don_hang}") && !simulatedText.includes("{orders_list}")) {
       if (simulatedText.includes("(Tự động hiển thị đơn hàng")) {

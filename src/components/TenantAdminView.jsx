@@ -53,7 +53,7 @@ const TEMPLATE_META = {
     title: "5. Mẫu tin nhắn Danh Sách Các Đơn Hàng Đã Mua (Lệnh /donhang)",
     command: "/donhang hoặc /donhang2, /donhang3...",
     icon: "fa-solid fa-box text-blue-600",
-    desc: "Tin nhắn Bot liệt kê danh sách mã đơn hàng, phân trang 5 đơn/trang khi thành viên gõ lệnh /donhang. Các biến hỗ trợ: {ten_zalo}, {danh_sach_don}, {trang}, {tong_trang}, {tong_don}, {link_tra_cuu}."
+    desc: "Tin nhắn Bot liệt kê danh sách đơn hàng khi gõ /donhang. Sửa mẫu hiển thị từng đơn ngay bên trong khối [don_hang]...[/don_hang]. Biến hỗ trợ: {stt}, {ten_san_pham}, {ma_don_hang}, {hoa_hong}, {trang_thai}, {icon_trang_thai}, {trang}, {tong_trang}, {tong_don}, {link_tra_cuu}."
   },
   template_order_not_found: {
     title: "6. Mẫu tin nhắn Báo Chưa Có Đơn Hàng Nào (Khi Chưa Có Đơn)",
@@ -109,13 +109,13 @@ const TEMPLATE_META = {
     desc: "Tin nhắn riêng Bot gửi tự động cho từng khách hàng khi Trưởng Nhóm bấm ĐÃ DUYỆT trên hệ thống web — thay thế việc nhắn tay. Biến: {ten_zalo}, {so_tien}, {ngan_hang}, {so_tai_khoan}, {ma_giao_dich}."
   },
   template_help: {
-    title: "14. Mẫu tin nhắn Trợ Giúp & Danh Sách Các Câu Lệnh",
+    title: "15. Mẫu tin nhắn Trợ Giúp & Danh Sách Các Câu Lệnh",
     command: "/help hoặc #help",
     icon: "fa-solid fa-circle-question text-indigo-600",
     desc: "Danh sách tổng hợp toàn bộ các câu lệnh Bot hỗ trợ để gửi cho thành viên khi họ cần trợ giúp."
   },
   template_invalid_command: {
-    title: "15. Mẫu tin nhắn Phản Hồi Khi Gõ Sai Cú Pháp Lệnh",
+    title: "16. Mẫu tin nhắn Phản Hồi Khi Gõ Sai Cú Pháp Lệnh",
     badge: "Khi người dùng gõ sai lệnh",
     icon: "fa-solid fa-triangle-exclamation text-amber-500",
     desc: "Tin nhắn nhắc nhở kèm gợi ý gõ /help khi người dùng gõ một câu lệnh không có trong hệ thống."
@@ -130,7 +130,7 @@ const getStandardBotTemplates = (tenant) => {
     template_link_tiktok: `Hi @{ten_zalo}, link của sếp đây ạ:\n📦 {ten_san_pham}\n💵 Giá tham khảo: {gia_san_pham}\n🔗 Link: {link_mua_sam}\n💵 Tổng hoa hồng: {tong_hoahong_phantram}% ({tong_hoahong_tien})\n💡 Mẹo nhỏ nhận hoa hồng chuẩn 100%: Xóa sp cũ trong giỏ ➔ Bấm link vào App ➔ Mua ngay (không xem Live/Video giữa chừng) nhé sếp ơi!`,
     template_tiktok_not_configured: `@{ten_zalo} Tính năng chuyển đổi link TikTok Shop hiện đang sắp ra mắt! 🚀\nHệ thống hiện tại hỗ trợ chuyển đổi link Shopee, bạn vui lòng gửi link Shopee giúp mình nhé!`,
     template_welcome: `Hi, chào @{ten_zalo}\n🎉 Chào mừng bạn đã tham gia nhóm {ten_nhom}!\n📌 Bạn vui lòng đọc kỹ BÀI GHIM của nhóm hoặc gõ lệnh /help để xem hướng dẫn cách gửi link mua sắm và nhận hoàn {ty_le_hoan}% hoa hồng nhé! 🥰`,
-    template_order_detail: `@{ten_zalo} 🛒 DANH SÁCH ĐƠN HÀNG (Trang {trang}/{tong_trang} - Tổng {tong_don} đơn):\n\n{danh_sach_don}\n\n👉 Tra cứu chi tiết & rút tiền tại:\n🌐 {link_tra_cuu}`,
+    template_order_detail: `@{ten_zalo} 🛒 DANH SÁCH ĐƠN HÀNG (Trang {trang}/{tong_trang} - Tổng {tong_don} đơn):\n\n[don_hang]\n{stt}. Mã đơn: {ma_don_hang}\n   📦 {ten_san_pham}\n   💰 Hoa hồng: {hoa_hong} | Trạng thái: {trang_thai}\n[/don_hang]\n\n👉 Tra cứu chi tiết & rút tiền tại:\n🌐 {link_tra_cuu}`,
     template_order_not_found: `@{ten_zalo} 🛒 Bạn chưa có đơn hàng nào trên hệ thống!`,
     template_wallet: `@{ten_zalo} 💳 THÔNG TIN VÍ HOÀN TIỀN {brand_name}:\n\n💰 Ví Khả Dụng (có thể rút): {so_du_vi}đ\n🟢 Đã hoàn thành (chưa đủ {so_ngay_giu} ngày): {hoahong_cho_du_ngay}đ\n⌛ Đơn chờ đối soát: {hoahong_cho}đ\n💸 Đã rút thành công: {hoahong_danhan}đ\n\n👉 Tra cứu chi tiết & Rút tiền 1 chạm tại:\n🌐 {link_tra_cuu}`,
     template_lookup: `@{ten_zalo} 🔍 TRA CỨU ĐƠN HÀNG & VÍ HOÀN TIỀN\n👉 Link tra cứu bảo mật (đã mã hóa định danh, click là xem ngay):\n🌐 {link_tra_cuu}\n\n💡 TÍNH NĂNG TRANG TRA CỨU:\n📦 Xem danh sách đơn đã mua & chi tiết hoa hồng từng đơn.\n💳 Quản lý 3 ví tiền: Đang chờ / Đã hoàn thành / Khả dụng.\n💸 Rút tiền hoa hồng & cập nhật tài khoản Ngân hàng 1 chạm.\n📌 Lưu ý: Đơn Hoàn thành sau 3 ngày sẽ tự chuyển xuống ví Khả Dụng để rút.`,
@@ -388,6 +388,8 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
       .replace(/\{balance\}/g, "{so_du_vi}")
       .replace(/\{holding_days\}/g, "{so_ngay_giu}")
       .replace(/\{order_id\}/g, "{ma_don_hang}")
+      .replace(/\{status\}/g, "{trang_thai}")
+      .replace(/\{commission\}/g, "{hoa_hong}")
       .replace(/\{command\}/g, "{lenh_sai}");
   };
 
@@ -409,7 +411,8 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
         Object.keys(rawDefs).forEach((k) => {
           defs[k] = convertEnglishToVietnamesePlaceholders(rawDefs[k]);
         });
-        if (!defs.template_order_detail || String(defs.template_order_detail).includes("(Tự động hiển thị đơn hàng") || !String(defs.template_order_detail).includes("{danh_sach_don}")) {
+        const hasOrderList = (str) => str && (str.includes("[don_hang]") || str.includes("[danh_sach_don]") || str.includes("{danh_sach_don}") || str.includes("{orders_list}"));
+        if (!defs.template_order_detail || String(defs.template_order_detail).includes("(Tự động hiển thị đơn hàng") || !hasOrderList(defs.template_order_detail)) {
           defs.template_order_detail = standard.template_order_detail;
         }
         setDefaultTemplates(defs);
@@ -435,8 +438,8 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
           custom.template_wallet_has_orders = standard.template_wallet;
         }
 
-        // Tự động nâng cấp mẫu cũ "(Tự động hiển thị đơn hàng...)" sang mẫu mặc định chuẩn mới có {danh_sach_don}
-        if (!custom.template_order_detail || String(custom.template_order_detail).includes("(Tự động hiển thị đơn hàng") || !String(custom.template_order_detail).includes("{danh_sach_don}")) {
+        // Tự động nâng cấp mẫu cũ "(Tự động hiển thị đơn hàng...)" sang mẫu mặc định chuẩn mới có [don_hang]
+        if (!custom.template_order_detail || String(custom.template_order_detail).includes("(Tự động hiển thị đơn hàng") || !hasOrderList(custom.template_order_detail)) {
           custom.template_order_detail = standard.template_order_detail;
         }
 
@@ -449,7 +452,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
         if (merged.template_wallet && String(merged.template_wallet).includes("VÍ TIỀN CỦA BẠN")) {
           merged.template_wallet = standard.template_wallet;
         }
-        if (!merged.template_order_detail || String(merged.template_order_detail).includes("(Tự động hiển thị đơn hàng") || !String(merged.template_order_detail).includes("{danh_sach_don}")) {
+        if (!merged.template_order_detail || String(merged.template_order_detail).includes("(Tự động hiển thị đơn hàng") || !hasOrderList(merged.template_order_detail)) {
           merged.template_order_detail = standard.template_order_detail;
         }
         setBotTemplates(merged);
@@ -680,7 +683,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
     if (key === "template_wallet" && (!defVal || String(defVal).includes("VÍ TIỀN CỦA BẠN"))) {
       defVal = std.template_wallet;
     }
-    if (key === "template_order_detail" && (!defVal || String(defVal).includes("(Tự động hiển thị đơn hàng") || !String(defVal).includes("{danh_sach_don}"))) {
+    if (key === "template_order_detail" && (!defVal || String(defVal).includes("(Tự động hiển thị đơn hàng"))) {
       defVal = std.template_order_detail;
     }
     if (defVal) {

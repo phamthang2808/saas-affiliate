@@ -174,7 +174,37 @@ export const VARIABLE_DEFINITIONS = {
     name: "{danh_sach_don}",
     example: "1. Mã đơn: 260918BTYCYTBE\n   📦 Tắm gội 2in1...\n   💰 Hoa hồng: 8.086đ | Trạng thái: Hoàn thành",
     desc: "Danh sách các đơn hàng thực tế của thành viên kèm phân trang tự động.",
-    source: "Hệ thống tự động render danh sách đơn hàng"
+    source: "Hệ thống tự động render danh sách đơn hàng theo mẫu"
+  },
+  stt: {
+    name: "{stt}",
+    example: "01",
+    desc: "Số thứ tự đơn hàng 2 chữ số (01, 02...).",
+    source: "Hệ thống tự động đánh số thứ tự đơn"
+  },
+  hoa_hong: {
+    name: "{hoa_hong}",
+    example: "13.513đ",
+    desc: "Số tiền hoa hồng của đơn hàng.",
+    source: "Tính toán từ đơn hàng thực tế"
+  },
+  trang_thai: {
+    name: "{trang_thai}",
+    example: "Đang xử lý",
+    desc: "Trạng thái đơn hàng (Đang xử lý, Hoàn thành, Đã hủy).",
+    source: "Trạng thái thực tế của đơn hàng"
+  },
+  icon_trang_thai: {
+    name: "{icon_trang_thai}",
+    example: "⌛",
+    desc: "Icon biểu tượng theo trạng thái đơn (⌛ Đang xử lý, ✅ Hoàn thành, ❌ Đã hủy).",
+    source: "Hệ thống tự sinh theo trạng thái"
+  },
+  san_thuong_mai: {
+    name: "{san_thuong_mai}",
+    example: "Shopee",
+    desc: "Sàn thương mại điện tử nơi phát sinh đơn hàng (Shopee / TikTok).",
+    source: "Dữ liệu sàn TMĐT"
   },
   trang: {
     name: "{trang}",
@@ -356,6 +386,17 @@ export function TemplatePreviewModal({
     order_id: "240923SHP8192301",
     ten_thanh_vien: "Phạm Thắng",
     lenh_sai: "/donhangg",
+    stt: "01",
+    so_thu_tu: "01",
+    stt_don: "1",
+    ten_san_pham: "Tắm gội 2in1 Romano Classic...",
+    hoa_hong: "8.086đ",
+    tien_hoa_hong: "8.086đ",
+    hoa_hong_so: "8.086",
+    trang_thai: "Hoàn thành",
+    icon_trang_thai: "✅",
+    san_thuong_mai: "Shopee",
+    san: "Shopee",
     danh_sach_don: `1. Mã đơn: 260918BTYCYTBE\n   📦 [LIVE] [TẶNG Chai 380g] Tắm gội 2in1/ ...\n   💰 Hoa hồng: 8.086đ | Trạng thái: Hoàn thành\n\n2. Mã đơn: 2609154WYEVGA2\n   📦 TPBVSK Vitabiotics FEROGLOBIN B12 Caps...\n   💰 Hoa hồng: 6.521đ | Trạng thái: Hoàn thành\n\n3. Mã đơn: 2609141HW4M4GJ\n   📦 [Combo 4 Hộp] Viên Nhai Bổ Sung Vitami...\n   💰 Hoa hồng: 7.746đ | Trạng thái: Hoàn thành`,
     danh_sach_don_hang: `1. Mã đơn: 260918BTYCYTBE\n   📦 [LIVE] [TẶNG Chai 380g] Tắm gội 2in1/ ...\n   💰 Hoa hồng: 8.086đ | Trạng thái: Hoàn thành\n\n2. Mã đơn: 2609154WYEVGA2\n   📦 TPBVSK Vitabiotics FEROGLOBIN B12 Caps...\n   💰 Hoa hồng: 6.521đ | Trạng thái: Hoàn thành\n\n3. Mã đơn: 2609141HW4M4GJ\n   📦 [Combo 4 Hộp] Viên Nhai Bổ Sung Vitami...\n   💰 Hoa hồng: 7.746đ | Trạng thái: Hoàn thành`,
     orders_list: `1. Mã đơn: 260918BTYCYTBE\n   📦 [LIVE] [TẶNG Chai 380g] Tắm gội 2in1/ ...\n   💰 Hoa hồng: 8.086đ | Trạng thái: Hoàn thành\n\n2. Mã đơn: 2609154WYEVGA2\n   📦 TPBVSK Vitabiotics FEROGLOBIN B12 Caps...\n   💰 Hoa hồng: 6.521đ | Trạng thái: Hoàn thành\n\n3. Mã đơn: 2609141HW4M4GJ\n   📦 [Combo 4 Hộp] Viên Nhai Bổ Sung Vitami...\n   💰 Hoa hồng: 7.746đ | Trạng thái: Hoàn thành`,
@@ -367,9 +408,42 @@ export function TemplatePreviewModal({
   // Tiến hành thay thế biến thực tế
   let simulatedText = templateContent || "";
 
-  // Nếu là mẫu đơn hàng và chưa có placeholder danh sách: tự động thế vào vị trí phù hợp
+  // Nếu là mẫu đơn hàng: xử lý khối lặp [don_hang]...[/don_hang] hoặc thế vào {danh_sach_don}
   if (templateKey === "template_order_detail") {
-    if (!simulatedText.includes("{danh_sach_don}") && !simulatedText.includes("{danh_sach_don_hang}") && !simulatedText.includes("{orders_list}")) {
+    const loopRegex = /\[(don_hang|danh_sach_don|item)\]([\s\S]*?)\[\/(?:don_hang|danh_sach_don|item)\]/i;
+    const matchLoop = simulatedText.match(loopRegex);
+    if (matchLoop) {
+      const itemTpl = matchLoop[2].trim();
+      const mockOrders = [
+        { stt: "1", stt2: "01", id: "260918BTYCYTBE", name: "Tắm gội 2in1 Romano Classic 650g", comm: "8.086đ", commNum: "8.086", status: "Hoàn thành", icon: "✅" },
+        { stt: "2", stt2: "02", id: "2609154WYEVGA2", name: "TPBVSK Vitabiotics FEROGLOBIN B12", comm: "6.521đ", commNum: "6.521", status: "Hoàn thành", icon: "✅" },
+        { stt: "3", stt2: "03", id: "2609141HW4M4GJ", name: "[Combo 4 Hộp] Viên Nhai Bổ Sung", comm: "7.746đ", commNum: "7.746", status: "Đang xử lý", icon: "⌛" }
+      ];
+      const useTwoDigit = itemTpl.includes("───") || itemTpl.includes("ID:") || itemTpl.includes("{stt_2so}");
+      const renderedList = mockOrders.map(o => {
+        return itemTpl
+          .replace(/\{stt_2so\}/g, o.stt2)
+          .replace(/\{stt_don\}/g, o.stt)
+          .replace(/\{stt\}/g, useTwoDigit ? o.stt2 : o.stt)
+          .replace(/\{so_thu_tu\}/g, useTwoDigit ? o.stt2 : o.stt)
+          .replace(/\{ten_san_pham\}/g, o.name)
+          .replace(/\{product_name\}/g, o.name)
+          .replace(/\{ma_don_hang\}/g, o.id)
+          .replace(/\{ma_don\}/g, o.id)
+          .replace(/\{order_id\}/g, o.id)
+          .replace(/\{id\}/g, o.id)
+          .replace(/\{hoa_hong\}/g, o.comm)
+          .replace(/\{tien_hoa_hong\}/g, o.comm)
+          .replace(/\{commission\}/g, o.comm)
+          .replace(/\{hoa_hong_so\}/g, o.commNum)
+          .replace(/\{trang_thai\}/g, o.status)
+          .replace(/\{status\}/g, o.status)
+          .replace(/\{icon_trang_thai\}/g, o.icon)
+          .replace(/\{san_thuong_mai\}/g, "Shopee")
+          .replace(/\{san\}/g, "Shopee");
+      }).join(itemTpl.includes("───") ? "\n" : "\n\n");
+      simulatedText = simulatedText.replace(loopRegex, renderedList);
+    } else if (!simulatedText.includes("{danh_sach_don}") && !simulatedText.includes("{danh_sach_don_hang}") && !simulatedText.includes("{orders_list}")) {
       if (simulatedText.includes("(Tự động hiển thị đơn hàng")) {
         simulatedText = simulatedText.replace(/\(Tự động hiển thị đơn hàng[^)]*\):?/, "(Trang 1/1 - Tổng 3 đơn):\n\n" + mockValues.danh_sach_don + "\n");
       } else if (simulatedText.includes("{link_tra_cuu}")) {

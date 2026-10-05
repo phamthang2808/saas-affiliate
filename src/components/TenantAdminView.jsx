@@ -53,7 +53,7 @@ const TEMPLATE_META = {
     title: "5. Mẫu tin nhắn Danh Sách Các Đơn Hàng Đã Mua (Lệnh /donhang)",
     command: "/donhang hoặc /donhang2, /donhang3...",
     icon: "fa-solid fa-box text-blue-600",
-    desc: "Tin nhắn Bot liệt kê danh sách mã đơn hàng, phân trang 5 đơn/trang và hướng dẫn gõ /donhang2, /donhang3 khi thành viên gõ lệnh /donhang."
+    desc: "Tin nhắn Bot liệt kê danh sách mã đơn hàng, phân trang 5 đơn/trang khi thành viên gõ lệnh /donhang. Các biến hỗ trợ: {ten_zalo}, {danh_sach_don}, {trang}, {tong_trang}, {tong_don}, {link_tra_cuu}."
   },
   template_order_not_found: {
     title: "6. Mẫu tin nhắn Báo Chưa Có Đơn Hàng Nào (Khi Chưa Có Đơn)",
@@ -130,7 +130,7 @@ const getStandardBotTemplates = (tenant) => {
     template_link_tiktok: `Hi @{ten_zalo}, link của sếp đây ạ:\n📦 {ten_san_pham}\n💵 Giá tham khảo: {gia_san_pham}\n🔗 Link: {link_mua_sam}\n💵 Tổng hoa hồng: {tong_hoahong_phantram}% ({tong_hoahong_tien})\n💡 Mẹo nhỏ nhận hoa hồng chuẩn 100%: Xóa sp cũ trong giỏ ➔ Bấm link vào App ➔ Mua ngay (không xem Live/Video giữa chừng) nhé sếp ơi!`,
     template_tiktok_not_configured: `@{ten_zalo} Tính năng chuyển đổi link TikTok Shop hiện đang sắp ra mắt! 🚀\nHệ thống hiện tại hỗ trợ chuyển đổi link Shopee, bạn vui lòng gửi link Shopee giúp mình nhé!`,
     template_welcome: `Hi, chào @{ten_zalo}\n🎉 Chào mừng bạn đã tham gia nhóm {ten_nhom}!\n📌 Bạn vui lòng đọc kỹ BÀI GHIM của nhóm hoặc gõ lệnh /help để xem hướng dẫn cách gửi link mua sắm và nhận hoàn {ty_le_hoan}% hoa hồng nhé! 🥰`,
-    template_order_detail: `@{ten_zalo} 🛒 DANH SÁCH ĐƠN HÀNG (Tự động hiển thị đơn hàng thực tế của thành viên, phân trang 5 đơn/trang kèm gợi ý /donhang2, /donhang3...):\n👉 Tra cứu & Rút tiền trên Web: {link_tra_cuu}`,
+    template_order_detail: `@{ten_zalo} 🛒 DANH SÁCH ĐƠN HÀNG (Trang {trang}/{tong_trang} - Tổng {tong_don} đơn):\n\n{danh_sach_don}\n\n👉 Tra cứu chi tiết & rút tiền tại:\n🌐 {link_tra_cuu}`,
     template_order_not_found: `@{ten_zalo} 🛒 Bạn chưa có đơn hàng nào trên hệ thống!`,
     template_wallet: `@{ten_zalo} 💳 THÔNG TIN VÍ HOÀN TIỀN {brand_name}:\n\n💰 Ví Khả Dụng (có thể rút): {so_du_vi}đ\n🟢 Đã hoàn thành (chưa đủ {so_ngay_giu} ngày): {hoahong_cho_du_ngay}đ\n⌛ Đơn chờ đối soát: {hoahong_cho}đ\n💸 Đã rút thành công: {hoahong_danhan}đ\n\n👉 Tra cứu chi tiết & Rút tiền 1 chạm tại:\n🌐 {link_tra_cuu}`,
     template_lookup: `@{ten_zalo} 🔍 TRA CỨU ĐƠN HÀNG & VÍ HOÀN TIỀN\n👉 Link tra cứu bảo mật (đã mã hóa định danh, click là xem ngay):\n🌐 {link_tra_cuu}\n\n💡 TÍNH NĂNG TRANG TRA CỨU:\n📦 Xem danh sách đơn đã mua & chi tiết hoa hồng từng đơn.\n💳 Quản lý 3 ví tiền: Đang chờ / Đã hoàn thành / Khả dụng.\n💸 Rút tiền hoa hồng & cập nhật tài khoản Ngân hàng 1 chạm.\n📌 Lưu ý: Đơn Hoàn thành sau 3 ngày sẽ tự chuyển xuống ví Khả Dụng để rút.`,
@@ -199,6 +199,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
   const [zaloUsers, setZaloUsers] = useState([]);
   const [webUsers, setWebUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [overviewFinanceMode, setOverviewFinanceMode] = useState("all"); // "all" | "completed" | "pending"
 
   // Filters for Orders Tab
   const [adminOrderSearchUser, setAdminOrderSearchUser] = useState("");
@@ -1400,29 +1401,101 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
             </div>
           </div>
 
-          {/* TÀI CHÍNH SHOPEE (SAU ĐỐI SOÁT HOÀN THÀNH) */}
-          <div>
-            <h3 className="text-xs font-black text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2 font-display">
-              <i className="fa-solid fa-coins text-amber-500"></i>
-              <span>Tài chính Shopee {isTiktokEnabled ? "& TikTok " : ""}(Sau đối soát hoàn thành)</span>
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-              {[
-                { label: "1. Hoa hồng thô (Sàn trả)", value: formatMoney(stats?.totalRawCommission || totalRawSum), icon: "fa-file-invoice-dollar" },
-                { label: `2. Thuế thu nhập (${taxRate}%)`, value: formatMoney(stats?.totalTaxAmount || totalTaxSum), icon: "fa-percent" },
-                { label: `3. Hoa hồng sau thuế (${100 - taxRate}%)`, value: formatMoney(stats?.totalAfterTaxCommission || totalAfterTaxSum), icon: "fa-scale-balanced" },
-                { label: `4. Thành viên nhận (${customerSplitRate}%)`, value: formatMoney(stats?.totalUserCommission || totalUserFinalSum), icon: "fa-user-tag" },
-                { label: `5. Admin giữ lại (${adminSplitRate}%)`, value: formatMoney(stats?.totalAdminProfit || totalAdminProfitSum), icon: "fa-briefcase" },
-              ].map((card, i) => (
-                <div key={i} className="bg-white rounded-3xl border border-slate-200/80 p-4 shadow-2xs space-y-1.5">
-                  <div className="w-8 h-8 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center text-xs shadow-inner">
-                    <i className={`fa-solid ${card.icon}`}></i>
-                  </div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide leading-tight">{card.label}</p>
-                  <p className="text-base font-black text-slate-900 font-mono mt-1">{card.value}</p>
-                </div>
-              ))}
+          {/* TÀI CHÍNH SHOPEE & TIKTOK THEO CHẾ ĐỘ CHỌN */}
+          <div className="space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <h3 className="text-xs font-black text-slate-500 uppercase tracking-wider flex items-center gap-2 font-display">
+                <i className="fa-solid fa-coins text-amber-500"></i>
+                <span>Tài chính Shopee {isTiktokEnabled ? "& TikTok " : ""}
+                  {overviewFinanceMode === "all" && `(Tất cả ${stats?.validOrdersCount ?? orders.length} đơn hợp lệ)`}
+                  {overviewFinanceMode === "completed" && `(Đã đối soát hoàn thành: ${stats?.completedOrdersCount ?? 0} đơn)`}
+                  {overviewFinanceMode === "pending" && `(Đang chờ đối soát: ${stats?.pendingOrdersCount ?? 0} đơn)`}
+                </span>
+              </h3>
+
+              {/* Bộ lọc chế độ xem tài chính */}
+              <div className="inline-flex bg-slate-100 p-1 rounded-2xl border border-slate-200/80 gap-1 text-[11px] font-bold self-start sm:self-auto">
+                <button
+                  type="button"
+                  onClick={() => setOverviewFinanceMode("all")}
+                  className={`px-3 py-1.5 rounded-xl transition cursor-pointer flex items-center gap-1.5 ${
+                    overviewFinanceMode === "all"
+                      ? "bg-white text-slate-900 shadow-xs font-black"
+                      : "text-slate-500 hover:text-slate-800"
+                  }`}
+                >
+                  <i className="fa-solid fa-layer-group text-violet-500"></i>
+                  <span>Tất cả đơn ({stats?.validOrdersCount ?? orders.length})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setOverviewFinanceMode("completed")}
+                  className={`px-3 py-1.5 rounded-xl transition cursor-pointer flex items-center gap-1.5 ${
+                    overviewFinanceMode === "completed"
+                      ? "bg-emerald-600 text-white shadow-xs font-black"
+                      : "text-slate-500 hover:text-slate-800"
+                  }`}
+                >
+                  <i className="fa-solid fa-circle-check"></i>
+                  <span>Đã hoàn thành ({stats?.completedOrdersCount ?? 0})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setOverviewFinanceMode("pending")}
+                  className={`px-3 py-1.5 rounded-xl transition cursor-pointer flex items-center gap-1.5 ${
+                    overviewFinanceMode === "pending"
+                      ? "bg-amber-500 text-white shadow-xs font-black"
+                      : "text-slate-500 hover:text-slate-800"
+                  }`}
+                >
+                  <i className="fa-solid fa-clock"></i>
+                  <span>Chờ đối soát ({stats?.pendingOrdersCount ?? 0})</span>
+                </button>
+              </div>
             </div>
+
+            {/* Tính toán giá trị tương ứng */}
+            {(() => {
+              let rawVal = stats?.totalRawCommission ?? totalRawSum;
+              let taxVal = stats?.totalTaxAmount ?? totalTaxSum;
+              let afterTaxVal = stats?.totalAfterTaxCommission ?? totalAfterTaxSum;
+              let userVal = stats?.totalUserCommission ?? totalUserFinalSum;
+              let adminVal = stats?.totalAdminProfit ?? totalAdminProfitSum;
+
+              if (overviewFinanceMode === "completed") {
+                rawVal = stats?.completedRawCommission ?? 0;
+                taxVal = stats?.completedTaxAmount ?? 0;
+                afterTaxVal = stats?.completedAfterTaxCommission ?? 0;
+                userVal = stats?.completedUserCommission ?? 0;
+                adminVal = stats?.completedAdminProfit ?? 0;
+              } else if (overviewFinanceMode === "pending") {
+                rawVal = stats?.pendingRawCommission ?? 0;
+                taxVal = stats?.pendingTaxAmount ?? 0;
+                afterTaxVal = stats?.pendingAfterTaxCommission ?? 0;
+                userVal = stats?.pendingUserCommission ?? 0;
+                adminVal = stats?.pendingAdminProfit ?? 0;
+              }
+
+              return (
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                  {[
+                    { label: "1. Hoa hồng thô (Sàn trả)", value: formatMoney(rawVal), icon: "fa-file-invoice-dollar", color: "orange" },
+                    { label: `2. Thuế thu nhập (${taxRate}%)`, value: formatMoney(taxVal), icon: "fa-percent", color: "rose" },
+                    { label: `3. Hoa hồng sau thuế (${100 - taxRate}%)`, value: formatMoney(afterTaxVal), icon: "fa-scale-balanced", color: "slate" },
+                    { label: `4. Thành viên nhận (${customerSplitRate}%)`, value: formatMoney(userVal), icon: "fa-user-tag", color: "amber" },
+                    { label: `5. Admin giữ lại (${adminSplitRate}%)`, value: formatMoney(adminVal), icon: "fa-briefcase", color: "purple" },
+                  ].map((card, i) => (
+                    <div key={i} className="bg-white rounded-3xl border border-slate-200/80 p-4 shadow-2xs space-y-1.5 hover:shadow-xs transition">
+                      <div className="w-8 h-8 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center text-xs shadow-inner">
+                        <i className={`fa-solid ${card.icon}`}></i>
+                      </div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide leading-tight">{card.label}</p>
+                      <p className="text-base font-black text-slate-900 font-mono mt-1">{card.value}</p>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
           </div>
         </div>
       )}

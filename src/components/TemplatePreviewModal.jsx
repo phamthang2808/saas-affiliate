@@ -169,6 +169,30 @@ export const VARIABLE_DEFINITIONS = {
     example: "/donhangg",
     desc: "Câu lệnh người dùng gõ sai hoặc không tồn tại trong hệ thống.",
     source: "Tin nhắn người dùng vừa gửi vào nhóm"
+  },
+  danh_sach_don: {
+    name: "{danh_sach_don}",
+    example: "1. Mã đơn: 260918BTYCYTBE\n   📦 Tắm gội 2in1...\n   💰 Hoa hồng: 8.086đ | Trạng thái: Hoàn thành",
+    desc: "Danh sách các đơn hàng thực tế của thành viên kèm phân trang tự động.",
+    source: "Hệ thống tự động render danh sách đơn hàng"
+  },
+  trang: {
+    name: "{trang}",
+    example: "1",
+    desc: "Số thứ tự trang danh sách đơn hàng hiện tại.",
+    source: "Hệ thống phân trang tự động"
+  },
+  tong_trang: {
+    name: "{tong_trang}",
+    example: "1",
+    desc: "Tổng số trang danh sách đơn hàng của thành viên.",
+    source: "Hệ thống phân trang tự động"
+  },
+  tong_don: {
+    name: "{tong_don}",
+    example: "3",
+    desc: "Tổng số lượng đơn hàng của thành viên.",
+    source: "Hệ thống tổng hợp đơn hàng"
   }
 };
 
@@ -331,11 +355,30 @@ export function TemplatePreviewModal({
     ma_don_hang: "240923SHP8192301",
     order_id: "240923SHP8192301",
     ten_thanh_vien: "Phạm Thắng",
-    lenh_sai: "/donhangg"
+    lenh_sai: "/donhangg",
+    danh_sach_don: `1. Mã đơn: 260918BTYCYTBE\n   📦 [LIVE] [TẶNG Chai 380g] Tắm gội 2in1/ ...\n   💰 Hoa hồng: 8.086đ | Trạng thái: Hoàn thành\n\n2. Mã đơn: 2609154WYEVGA2\n   📦 TPBVSK Vitabiotics FEROGLOBIN B12 Caps...\n   💰 Hoa hồng: 6.521đ | Trạng thái: Hoàn thành\n\n3. Mã đơn: 2609141HW4M4GJ\n   📦 [Combo 4 Hộp] Viên Nhai Bổ Sung Vitami...\n   💰 Hoa hồng: 7.746đ | Trạng thái: Hoàn thành`,
+    danh_sach_don_hang: `1. Mã đơn: 260918BTYCYTBE\n   📦 [LIVE] [TẶNG Chai 380g] Tắm gội 2in1/ ...\n   💰 Hoa hồng: 8.086đ | Trạng thái: Hoàn thành\n\n2. Mã đơn: 2609154WYEVGA2\n   📦 TPBVSK Vitabiotics FEROGLOBIN B12 Caps...\n   💰 Hoa hồng: 6.521đ | Trạng thái: Hoàn thành\n\n3. Mã đơn: 2609141HW4M4GJ\n   📦 [Combo 4 Hộp] Viên Nhai Bổ Sung Vitami...\n   💰 Hoa hồng: 7.746đ | Trạng thái: Hoàn thành`,
+    orders_list: `1. Mã đơn: 260918BTYCYTBE\n   📦 [LIVE] [TẶNG Chai 380g] Tắm gội 2in1/ ...\n   💰 Hoa hồng: 8.086đ | Trạng thái: Hoàn thành\n\n2. Mã đơn: 2609154WYEVGA2\n   📦 TPBVSK Vitabiotics FEROGLOBIN B12 Caps...\n   💰 Hoa hồng: 6.521đ | Trạng thái: Hoàn thành\n\n3. Mã đơn: 2609141HW4M4GJ\n   📦 [Combo 4 Hộp] Viên Nhai Bổ Sung Vitami...\n   💰 Hoa hồng: 7.746đ | Trạng thái: Hoàn thành`,
+    trang: "1",
+    tong_trang: "1",
+    tong_don: "3"
   };
 
   // Tiến hành thay thế biến thực tế
   let simulatedText = templateContent || "";
+
+  // Nếu là mẫu đơn hàng và chưa có placeholder danh sách: tự động thế vào vị trí phù hợp
+  if (templateKey === "template_order_detail") {
+    if (!simulatedText.includes("{danh_sach_don}") && !simulatedText.includes("{danh_sach_don_hang}") && !simulatedText.includes("{orders_list}")) {
+      if (simulatedText.includes("(Tự động hiển thị đơn hàng")) {
+        simulatedText = simulatedText.replace(/\(Tự động hiển thị đơn hàng[^)]*\):?/, "(Trang 1/1 - Tổng 3 đơn):\n\n" + mockValues.danh_sach_don + "\n");
+      } else if (simulatedText.includes("{link_tra_cuu}")) {
+        simulatedText = simulatedText.replace("{link_tra_cuu}", "\n" + mockValues.danh_sach_don + "\n\n{link_tra_cuu}");
+      } else {
+        simulatedText = simulatedText + "\n\n" + mockValues.danh_sach_don;
+      }
+    }
+  }
 
   // Nếu là mẫu ví tiền và số ngày giữ <= 0: áp dụng logic tự động ẩn dòng chưa đủ ngày
   if (templateKey === "template_wallet" && testHoldingDays <= 0) {

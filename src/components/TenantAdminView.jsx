@@ -409,6 +409,9 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
         Object.keys(rawDefs).forEach((k) => {
           defs[k] = convertEnglishToVietnamesePlaceholders(rawDefs[k]);
         });
+        if (!defs.template_order_detail || String(defs.template_order_detail).includes("(Tự động hiển thị đơn hàng") || !String(defs.template_order_detail).includes("{danh_sach_don}")) {
+          defs.template_order_detail = standard.template_order_detail;
+        }
         setDefaultTemplates(defs);
 
         let custom = {};
@@ -426,10 +429,15 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
 
         // Tự động nâng cấp mẫu cũ "VÍ TIỀN CỦA BẠN" sang mẫu mặc định chuẩn mới
         if (!custom.template_wallet || String(custom.template_wallet).includes("VÍ TIỀN CỦA BẠN")) {
-          custom.template_wallet = defs.template_wallet || standard.template_wallet;
+          custom.template_wallet = standard.template_wallet;
         }
         if (custom.template_wallet_has_orders && String(custom.template_wallet_has_orders).includes("VÍ TIỀN CỦA BẠN")) {
-          custom.template_wallet_has_orders = defs.template_wallet || standard.template_wallet;
+          custom.template_wallet_has_orders = standard.template_wallet;
+        }
+
+        // Tự động nâng cấp mẫu cũ "(Tự động hiển thị đơn hàng...)" sang mẫu mặc định chuẩn mới có {danh_sach_don}
+        if (!custom.template_order_detail || String(custom.template_order_detail).includes("(Tự động hiển thị đơn hàng") || !String(custom.template_order_detail).includes("{danh_sach_don}")) {
+          custom.template_order_detail = standard.template_order_detail;
         }
 
         const merged = { ...defs };
@@ -439,7 +447,10 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
           }
         });
         if (merged.template_wallet && String(merged.template_wallet).includes("VÍ TIỀN CỦA BẠN")) {
-          merged.template_wallet = defs.template_wallet || standard.template_wallet;
+          merged.template_wallet = standard.template_wallet;
+        }
+        if (!merged.template_order_detail || String(merged.template_order_detail).includes("(Tự động hiển thị đơn hàng") || !String(merged.template_order_detail).includes("{danh_sach_don}")) {
+          merged.template_order_detail = standard.template_order_detail;
         }
         setBotTemplates(merged);
       } else {
@@ -669,6 +680,9 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
     if (key === "template_wallet" && (!defVal || String(defVal).includes("VÍ TIỀN CỦA BẠN"))) {
       defVal = std.template_wallet;
     }
+    if (key === "template_order_detail" && (!defVal || String(defVal).includes("(Tự động hiển thị đơn hàng") || !String(defVal).includes("{danh_sach_don}"))) {
+      defVal = std.template_order_detail;
+    }
     if (defVal) {
       setBotTemplates((prev) => ({ ...prev, [key]: defVal }));
     }
@@ -677,7 +691,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
   const handleResetAllTemplates = () => {
     if (!window.confirm("Bạn có chắc chắn muốn khôi phục TẤT CẢ các mẫu tin nhắn về mặc định của hệ thống?")) return;
     const std = getStandardBotTemplates(activeTenant);
-    setBotTemplates({ ...std, ...defaultTemplates, template_wallet: std.template_wallet });
+    setBotTemplates({ ...std, ...defaultTemplates, template_wallet: std.template_wallet, template_order_detail: std.template_order_detail });
   };
 
   useEffect(() => {

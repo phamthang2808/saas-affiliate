@@ -53,7 +53,7 @@ const TEMPLATE_META = {
     title: "5. Mẫu tin nhắn Danh Sách Các Đơn Hàng Đã Mua (Lệnh /donhang)",
     command: "/donhang hoặc /donhang2, /donhang3...",
     icon: "fa-solid fa-box text-blue-600",
-    desc: "Tin nhắn Bot liệt kê danh sách đơn hàng khi gõ /donhang. Sửa mẫu hiển thị từng đơn ngay bên trong khối [don_hang]...[/don_hang]. Biến hỗ trợ: {stt}, {ten_san_pham}, {ma_don_hang}, {hoa_hong}, {trang_thai}, {icon_trang_thai}, {trang}, {tong_trang}, {tong_don}, {link_tra_cuu}."
+    desc: "Tin nhắn Bot liệt kê danh sách đơn hàng khi gõ /donhang. Sửa mẫu hiển thị từng đơn ngay bên trong khối [don_hang]...[/don_hang]. Biến hỗ trợ: {stt}, {ten_san_pham}, {id} (hoặc {ma_don_hang}), {hoa_hong}, {trang_thai}, {icon_trang_thai}, {trang}, {tong_trang}, {tong_don}, {link_tra_cuu}."
   },
   template_order_not_found: {
     title: "6. Mẫu tin nhắn Báo Chưa Có Đơn Hàng Nào (Khi Chưa Có Đơn)",
@@ -130,7 +130,7 @@ const getStandardBotTemplates = (tenant) => {
     template_link_tiktok: `Hi @{ten_zalo}, link của sếp đây ạ:\n📦 {ten_san_pham}\n💵 Giá tham khảo: {gia_san_pham}\n🔗 Link: {link_mua_sam}\n💵 Tổng hoa hồng: {tong_hoahong_phantram}% ({tong_hoahong_tien})\n💡 Mẹo nhỏ nhận hoa hồng chuẩn 100%: Xóa sp cũ trong giỏ ➔ Bấm link vào App ➔ Mua ngay (không xem Live/Video giữa chừng) nhé sếp ơi!`,
     template_tiktok_not_configured: `@{ten_zalo} Tính năng chuyển đổi link TikTok Shop hiện đang sắp ra mắt! 🚀\nHệ thống hiện tại hỗ trợ chuyển đổi link Shopee, bạn vui lòng gửi link Shopee giúp mình nhé!`,
     template_welcome: `Hi, chào @{ten_zalo}\n🎉 Chào mừng bạn đã tham gia nhóm {ten_nhom}!\n📌 Bạn vui lòng đọc kỹ BÀI GHIM của nhóm hoặc gõ lệnh /help để xem hướng dẫn cách gửi link mua sắm và nhận hoàn {ty_le_hoan}% hoa hồng nhé! 🥰`,
-    template_order_detail: `@{ten_zalo} 🛒 DANH SÁCH ĐƠN HÀNG (Trang {trang}/{tong_trang} - Tổng {tong_don} đơn):\n\n[don_hang]\n{stt}. Mã đơn: {ma_don_hang}\n   📦 {ten_san_pham}\n   💰 Hoa hồng: {hoa_hong} | Trạng thái: {trang_thai}\n[/don_hang]\n\n👉 Tra cứu chi tiết & rút tiền tại:\n🌐 {link_tra_cuu}`,
+    template_order_detail: `@{ten_zalo} 🛒 DANH SÁCH ĐƠN HÀNG (Trang {trang}/{tong_trang} - Tổng {tong_don} đơn):\n\n[don_hang]\n{stt}. 🛍️ {ten_san_pham}\n🏷️ ID: {ma_don_hang}\n💰 Hoa hồng: {hoa_hong} {icon_trang_thai}\n📊 Trạng thái: {trang_thai}\n───────────────────\n[/don_hang]\n\n👉 Tra cứu chi tiết & rút tiền tại:\n🌐 {link_tra_cuu}`,
     template_order_not_found: `@{ten_zalo} 🛒 Bạn chưa có đơn hàng nào trên hệ thống!`,
     template_wallet: `@{ten_zalo} 💳 THÔNG TIN VÍ HOÀN TIỀN {brand_name}:\n\n💰 Ví Khả Dụng (có thể rút): {so_du_vi}đ\n🟢 Đã hoàn thành (chưa đủ {so_ngay_giu} ngày): {hoahong_cho_du_ngay}đ\n⌛ Đơn chờ đối soát: {hoahong_cho}đ\n💸 Đã rút thành công: {hoahong_danhan}đ\n\n👉 Tra cứu chi tiết & Rút tiền 1 chạm tại:\n🌐 {link_tra_cuu}`,
     template_lookup: `@{ten_zalo} 🔍 TRA CỨU ĐƠN HÀNG & VÍ HOÀN TIỀN\n👉 Link tra cứu bảo mật (đã mã hóa định danh, click là xem ngay):\n🌐 {link_tra_cuu}\n\n💡 TÍNH NĂNG TRANG TRA CỨU:\n📦 Xem danh sách đơn đã mua & chi tiết hoa hồng từng đơn.\n💳 Quản lý 3 ví tiền: Đang chờ / Đã hoàn thành / Khả dụng.\n💸 Rút tiền hoa hồng & cập nhật tài khoản Ngân hàng 1 chạm.\n📌 Lưu ý: Đơn Hoàn thành sau 3 ngày sẽ tự chuyển xuống ví Khả Dụng để rút.`,

@@ -154,8 +154,14 @@ export const VARIABLE_DEFINITIONS = {
   },
   ma_don_hang: {
     name: "{ma_don_hang}",
-    example: "240923SHP8192301",
+    example: "261003M536RGS8",
     desc: "Mã đơn hàng Shopee hoặc TikTok Shop.",
+    source: "Mã đơn thực tế từ sàn TMĐT"
+  },
+  id: {
+    name: "{id}",
+    example: "261003M536RGS8",
+    desc: "Mã định danh đơn hàng (tương đương {ma_don_hang}).",
     source: "Mã đơn thực tế từ sàn TMĐT"
   },
   ten_thanh_vien: {
@@ -382,24 +388,29 @@ export function TemplatePreviewModal({
     so_tai_khoan: "0987654321",
     chu_tai_khoan: "PHAM VAN THANG",
     ma_giao_dich: "PO-8291",
-    ma_don_hang: "240923SHP8192301",
-    order_id: "240923SHP8192301",
+    ma_don_hang: "261003M536RGS8",
+    ma_don: "261003M536RGS8",
+    order_id: "261003M536RGS8",
+    id: "261003M536RGS8",
+    ID: "261003M536RGS8",
+    orderId: "261003M536RGS8",
+    id_don_hang: "261003M536RGS8",
     ten_thanh_vien: "Phạm Thắng",
     lenh_sai: "/donhangg",
     stt: "01",
     so_thu_tu: "01",
     stt_don: "1",
-    ten_san_pham: "Tắm gội 2in1 Romano Classic...",
-    hoa_hong: "8.086đ",
-    tien_hoa_hong: "8.086đ",
-    hoa_hong_so: "8.086",
-    trang_thai: "Hoàn thành",
-    icon_trang_thai: "✅",
+    ten_san_pham: "Túi đeo chéo nam nữ thời trang...",
+    hoa_hong: "13.513đ",
+    tien_hoa_hong: "13.513đ",
+    hoa_hong_so: "13.513",
+    trang_thai: "Đang xử lý",
+    icon_trang_thai: "⌛",
     san_thuong_mai: "Shopee",
     san: "Shopee",
-    danh_sach_don: `1. Mã đơn: 260918BTYCYTBE\n   📦 [LIVE] [TẶNG Chai 380g] Tắm gội 2in1/ ...\n   💰 Hoa hồng: 8.086đ | Trạng thái: Hoàn thành\n\n2. Mã đơn: 2609154WYEVGA2\n   📦 TPBVSK Vitabiotics FEROGLOBIN B12 Caps...\n   💰 Hoa hồng: 6.521đ | Trạng thái: Hoàn thành\n\n3. Mã đơn: 2609141HW4M4GJ\n   📦 [Combo 4 Hộp] Viên Nhai Bổ Sung Vitami...\n   💰 Hoa hồng: 7.746đ | Trạng thái: Hoàn thành`,
-    danh_sach_don_hang: `1. Mã đơn: 260918BTYCYTBE\n   📦 [LIVE] [TẶNG Chai 380g] Tắm gội 2in1/ ...\n   💰 Hoa hồng: 8.086đ | Trạng thái: Hoàn thành\n\n2. Mã đơn: 2609154WYEVGA2\n   📦 TPBVSK Vitabiotics FEROGLOBIN B12 Caps...\n   💰 Hoa hồng: 6.521đ | Trạng thái: Hoàn thành\n\n3. Mã đơn: 2609141HW4M4GJ\n   📦 [Combo 4 Hộp] Viên Nhai Bổ Sung Vitami...\n   💰 Hoa hồng: 7.746đ | Trạng thái: Hoàn thành`,
-    orders_list: `1. Mã đơn: 260918BTYCYTBE\n   📦 [LIVE] [TẶNG Chai 380g] Tắm gội 2in1/ ...\n   💰 Hoa hồng: 8.086đ | Trạng thái: Hoàn thành\n\n2. Mã đơn: 2609154WYEVGA2\n   📦 TPBVSK Vitabiotics FEROGLOBIN B12 Caps...\n   💰 Hoa hồng: 6.521đ | Trạng thái: Hoàn thành\n\n3. Mã đơn: 2609141HW4M4GJ\n   📦 [Combo 4 Hộp] Viên Nhai Bổ Sung Vitami...\n   💰 Hoa hồng: 7.746đ | Trạng thái: Hoàn thành`,
+    danh_sach_don: `01. 🛍️ Túi đeo chéo nam nữ thời...\n🏷️ ID: 261003M536RGS8\n💰 Hoa hồng: 13.513đ ⌛\n📊 Trạng thái: Đang xử lý\n───────────────────\n02. 🛍️ Bông tẩy trang LXSOFT 100...\n🏷️ ID: 261002JA0KJSDB\n💰 Hoa hồng: 2.162đ ✅\n📊 Trạng thái: Hoàn thành\n───────────────────\n03. 🛍️ ( BEST SELLER) ÁO LONG SL...\n🏷️ ID: 261002K0RG34F3\n💰 Hoa hồng: 23.429đ ⌛\n📊 Trạng thái: Đang xử lý`,
+    danh_sach_don_hang: `01. 🛍️ Túi đeo chéo nam nữ thời...\n🏷️ ID: 261003M536RGS8\n💰 Hoa hồng: 13.513đ ⌛\n📊 Trạng thái: Đang xử lý\n───────────────────\n02. 🛍️ Bông tẩy trang LXSOFT 100...\n🏷️ ID: 261002JA0KJSDB\n💰 Hoa hồng: 2.162đ ✅\n📊 Trạng thái: Hoàn thành\n───────────────────\n03. 🛍️ ( BEST SELLER) ÁO LONG SL...\n🏷️ ID: 261002K0RG34F3\n💰 Hoa hồng: 23.429đ ⌛\n📊 Trạng thái: Đang xử lý`,
+    orders_list: `01. 🛍️ Túi đeo chéo nam nữ thời...\n🏷️ ID: 261003M536RGS8\n💰 Hoa hồng: 13.513đ ⌛\n📊 Trạng thái: Đang xử lý\n───────────────────\n02. 🛍️ Bông tẩy trang LXSOFT 100...\n🏷️ ID: 261002JA0KJSDB\n💰 Hoa hồng: 2.162đ ✅\n📊 Trạng thái: Hoàn thành\n───────────────────\n03. 🛍️ ( BEST SELLER) ÁO LONG SL...\n🏷️ ID: 261002K0RG34F3\n💰 Hoa hồng: 23.429đ ⌛\n📊 Trạng thái: Đang xử lý`,
     trang: "1",
     tong_trang: "1",
     tong_don: "3"
@@ -415,9 +426,9 @@ export function TemplatePreviewModal({
     if (matchLoop) {
       const itemTpl = matchLoop[2].trim();
       const mockOrders = [
-        { stt: "1", stt2: "01", id: "260918BTYCYTBE", name: "Tắm gội 2in1 Romano Classic 650g", comm: "8.086đ", commNum: "8.086", status: "Hoàn thành", icon: "✅" },
-        { stt: "2", stt2: "02", id: "2609154WYEVGA2", name: "TPBVSK Vitabiotics FEROGLOBIN B12", comm: "6.521đ", commNum: "6.521", status: "Hoàn thành", icon: "✅" },
-        { stt: "3", stt2: "03", id: "2609141HW4M4GJ", name: "[Combo 4 Hộp] Viên Nhai Bổ Sung", comm: "7.746đ", commNum: "7.746", status: "Đang xử lý", icon: "⌛" }
+        { stt: "1", stt2: "01", id: "261003M536RGS8", name: "Túi đeo chéo nam nữ thời...", comm: "13.513đ", commNum: "13.513", status: "Đang xử lý", icon: "⌛" },
+        { stt: "2", stt2: "02", id: "261002JA0KJSDB", name: "Bông tẩy trang LXSOFT 100...", comm: "2.162đ", commNum: "2.162", status: "Hoàn thành", icon: "✅" },
+        { stt: "3", stt2: "03", id: "261002K0RG34F3", name: "( BEST SELLER) ÁO LONG SL...", comm: "23.429đ", commNum: "23.429", status: "Đang xử lý", icon: "⌛" }
       ];
       const useTwoDigit = itemTpl.includes("───") || itemTpl.includes("ID:") || itemTpl.includes("{stt_2so}");
       const renderedList = mockOrders.map(o => {
@@ -431,7 +442,10 @@ export function TemplatePreviewModal({
           .replace(/\{ma_don_hang\}/g, o.id)
           .replace(/\{ma_don\}/g, o.id)
           .replace(/\{order_id\}/g, o.id)
+          .replace(/\{id_don_hang\}/g, o.id)
           .replace(/\{id\}/g, o.id)
+          .replace(/\{ID\}/g, o.id)
+          .replace(/\{orderId\}/g, o.id)
           .replace(/\{hoa_hong\}/g, o.comm)
           .replace(/\{tien_hoa_hong\}/g, o.comm)
           .replace(/\{commission\}/g, o.comm)

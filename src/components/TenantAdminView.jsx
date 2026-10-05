@@ -53,7 +53,7 @@ const TEMPLATE_META = {
     title: "5. Mẫu tin nhắn Danh Sách Các Đơn Hàng Đã Mua (Lệnh /donhang)",
     command: "/donhang hoặc /donhang2, /donhang3...",
     icon: "fa-solid fa-box text-blue-600",
-    desc: "Tin nhắn Bot liệt kê danh sách đơn hàng khi gõ /donhang. Sửa mẫu hiển thị từng đơn ngay bên trong khối [don_hang]...[/don_hang]. Biến hỗ trợ: {stt}, {ten_san_pham}, {id} (hoặc {ma_don_hang}), {hoa_hong}, {trang_thai}, {icon_trang_thai}, {trang}, {tong_trang}, {tong_don}, {link_tra_cuu}."
+    desc: "Tin nhắn Bot liệt kê danh sách đơn hàng khi gõ /donhang. Sửa mẫu hiển thị từng đơn ngay bên trong khối [don_hang]...[/don_hang] hoặc chèn biến {danh_sach_don}. Biến hỗ trợ: {stt}, {ten_san_pham}, {id} (hoặc {ma_don_hang}), {hoa_hong}, {trang_thai}, {icon_trang_thai}, {trang}, {tong_trang}, {tong_don}, {danh_sach_don}, {link_tra_cuu}."
   },
   template_order_not_found: {
     title: "6. Mẫu tin nhắn Báo Chưa Có Đơn Hàng Nào (Khi Chưa Có Đơn)",

@@ -155,14 +155,44 @@ export const VARIABLE_DEFINITIONS = {
   ma_don_hang: {
     name: "{ma_don_hang}",
     example: "261003M536RGS8",
-    desc: "Mã đơn hàng Shopee hoặc TikTok Shop.",
-    source: "Mã đơn thực tế từ sàn TMĐT"
+    desc: "Mã đơn hàng Shopee hoặc TikTok Shop phát sinh từ link tiếp thị.",
+    source: "Mã đơn hàng thực tế do sàn TMĐT cấp"
   },
   id: {
     name: "{id}",
     example: "261003M536RGS8",
-    desc: "Mã định danh đơn hàng (tương đương {ma_don_hang}).",
-    source: "Mã đơn thực tế từ sàn TMĐT"
+    desc: "Mã định danh đơn hàng từ sàn (viết tắt ngắn gọn của {ma_don_hang}).",
+    source: "Mã đơn hàng thực tế do sàn TMĐT cấp"
+  },
+  ID: {
+    name: "{ID}",
+    example: "261003M536RGS8",
+    desc: "Mã định danh đơn hàng (dạng chữ hoa, tương đương {id}).",
+    source: "Mã đơn hàng thực tế do sàn TMĐT cấp"
+  },
+  ma_don: {
+    name: "{ma_don}",
+    example: "261003M536RGS8",
+    desc: "Mã đơn hàng (viết tắt của {ma_don_hang}).",
+    source: "Mã đơn hàng thực tế do sàn TMĐT cấp"
+  },
+  order_id: {
+    name: "{order_id}",
+    example: "261003M536RGS8",
+    desc: "Mã đơn hàng định dạng tiếng Anh (tương đương {ma_don_hang}).",
+    source: "Mã đơn hàng thực tế do sàn TMĐT cấp"
+  },
+  id_don_hang: {
+    name: "{id_don_hang}",
+    example: "261003M536RGS8",
+    desc: "Mã đơn hàng định danh đầy đủ.",
+    source: "Mã đơn hàng thực tế do sàn TMĐT cấp"
+  },
+  orderId: {
+    name: "{orderId}",
+    example: "261003M536RGS8",
+    desc: "Mã đơn hàng camelCase (tương đương {id}).",
+    source: "Mã đơn hàng thực tế do sàn TMĐT cấp"
   },
   ten_thanh_vien: {
     name: "{ten_thanh_vien}",
@@ -176,40 +206,106 @@ export const VARIABLE_DEFINITIONS = {
     desc: "Câu lệnh người dùng gõ sai hoặc không tồn tại trong hệ thống.",
     source: "Tin nhắn người dùng vừa gửi vào nhóm"
   },
+  don_hang: {
+    name: "[don_hang]...[/don_hang]",
+    example: "{stt}. 🛍️ {ten_san_pham}\n🏷️ ID: {ma_don_hang}\n💰 Hoa hồng: {hoa_hong} {icon_trang_thai}\n📊 Trạng thái: {trang_thai}\n───────────────────",
+    desc: "Khối lặp mẫu từng đơn hàng. Bot sẽ lặp lại cấu trúc bên trong khối này cho mỗi đơn hàng của khách. Bạn có thể tự do thêm/bớt dòng ID hoặc icon tùy thích.",
+    source: "Cấu trúc lặp linh hoạt theo từng đơn hàng"
+  },
   danh_sach_don: {
     name: "{danh_sach_don}",
-    example: "1. Mã đơn: 260918BTYCYTBE\n   📦 Tắm gội 2in1...\n   💰 Hoa hồng: 8.086đ | Trạng thái: Hoàn thành",
-    desc: "Danh sách các đơn hàng thực tế của thành viên kèm phân trang tự động.",
-    source: "Hệ thống tự động render danh sách đơn hàng theo mẫu"
+    example: "01. 🛍️ Túi đeo chéo nam nữ thời...\n🏷️ ID: 261003M536RGS8\n💰 Hoa hồng: 13.513đ ⌛\n📊 Trạng thái: Đang xử lý\n───────────────────\n02. 🛍️ Bông tẩy trang LXSOFT 100...\n🏷️ ID: 261002JA0KJSDB\n💰 Hoa hồng: 2.162đ ✅\n📊 Trạng thái: Hoàn thành",
+    desc: "Tự động chèn danh sách các đơn hàng đã mua của thành viên (gồm STT, Tên SP, Mã ID, Hoa hồng và Trạng thái). Nếu muốn chỉnh sửa chi tiết từng dòng, bạn dùng khối [don_hang]...[/don_hang].",
+    source: "Hệ thống tự động đồng bộ từ đơn hàng thực tế Shopee / TikTok Shop theo từng trang"
+  },
+  danh_sach_don_hang: {
+    name: "{danh_sach_don_hang}",
+    example: "01. 🛍️ Túi đeo chéo nam nữ...\n🏷️ ID: 261003M536RGS8\n💰 Hoa hồng: 13.513đ ⌛\n📊 Trạng thái: Đang xử lý",
+    desc: "Tự động chèn danh sách đơn hàng đã mua (tương đương biến {danh_sach_don}).",
+    source: "Hệ thống tự động đồng bộ từ đơn hàng thực tế Shopee / TikTok Shop"
+  },
+  orders_list: {
+    name: "{orders_list}",
+    example: "01. 🛍️ Túi đeo chéo nam nữ...\n🏷️ ID: 261003M536RGS8\n💰 Hoa hồng: 13.513đ ⌛\n📊 Trạng thái: Đang xử lý",
+    desc: "Danh sách đơn hàng (tương đương {danh_sach_don}).",
+    source: "Hệ thống tự động đồng bộ từ đơn hàng thực tế Shopee / TikTok Shop"
   },
   stt: {
     name: "{stt}",
     example: "01",
-    desc: "Số thứ tự đơn hàng 2 chữ số (01, 02...).",
+    desc: "Số thứ tự đơn hàng (tự động hiển thị 2 chữ số 01, 02... khi mẫu có dòng ID hoặc dòng kẻ).",
+    source: "Hệ thống tự động đánh số thứ tự đơn"
+  },
+  stt_2so: {
+    name: "{stt_2so}",
+    example: "01",
+    desc: "Số thứ tự đơn hàng luôn hiển thị 2 chữ số (01, 02...).",
+    source: "Hệ thống tự động đánh số thứ tự đơn"
+  },
+  stt_don: {
+    name: "{stt_don}",
+    example: "1",
+    desc: "Số thứ tự đơn hàng dạng 1 chữ số (1, 2, 3...).",
+    source: "Hệ thống tự động đánh số thứ tự đơn"
+  },
+  so_thu_tu: {
+    name: "{so_thu_tu}",
+    example: "01",
+    desc: "Số thứ tự đơn hàng (tương đương {stt}).",
     source: "Hệ thống tự động đánh số thứ tự đơn"
   },
   hoa_hong: {
     name: "{hoa_hong}",
     example: "13.513đ",
-    desc: "Số tiền hoa hồng của đơn hàng.",
-    source: "Tính toán từ đơn hàng thực tế"
+    desc: "Số tiền hoa hồng thực nhận của đơn hàng sau khi áp dụng thuế và tỷ lệ chia sẻ.",
+    source: "Tính toán tự động từ đơn hàng thực tế"
+  },
+  tien_hoa_hong: {
+    name: "{tien_hoa_hong}",
+    example: "13.513đ",
+    desc: "Số tiền hoa hồng của đơn hàng (tương đương {hoa_hong}).",
+    source: "Tính toán tự động từ đơn hàng thực tế"
+  },
+  commission: {
+    name: "{commission}",
+    example: "13.513đ",
+    desc: "Số tiền hoa hồng tiếng Anh (tương đương {hoa_hong}).",
+    source: "Tính toán tự động từ đơn hàng thực tế"
+  },
+  hoa_hong_so: {
+    name: "{hoa_hong_so}",
+    example: "13.513",
+    desc: "Số tiền hoa hồng dạng số thuần không kèm chữ đ.",
+    source: "Tính toán tự động từ đơn hàng thực tế"
   },
   trang_thai: {
     name: "{trang_thai}",
     example: "Đang xử lý",
     desc: "Trạng thái đơn hàng (Đang xử lý, Hoàn thành, Đã hủy).",
-    source: "Trạng thái thực tế của đơn hàng"
+    source: "Trạng thái thực tế từ sàn TMĐT"
+  },
+  status: {
+    name: "{status}",
+    example: "Đang xử lý",
+    desc: "Trạng thái đơn hàng tiếng Anh (tương đương {trang_thai}).",
+    source: "Trạng thái thực tế từ sàn TMĐT"
   },
   icon_trang_thai: {
     name: "{icon_trang_thai}",
     example: "⌛",
     desc: "Icon biểu tượng theo trạng thái đơn (⌛ Đang xử lý, ✅ Hoàn thành, ❌ Đã hủy).",
-    source: "Hệ thống tự sinh theo trạng thái"
+    source: "Hệ thống tự động hiển thị theo trạng thái"
   },
   san_thuong_mai: {
     name: "{san_thuong_mai}",
     example: "Shopee",
     desc: "Sàn thương mại điện tử nơi phát sinh đơn hàng (Shopee / TikTok).",
+    source: "Dữ liệu sàn TMĐT"
+  },
+  san: {
+    name: "{san}",
+    example: "Shopee",
+    desc: "Tên sàn TMĐT rút gọn (tương đương {san_thuong_mai}).",
     source: "Dữ liệu sàn TMĐT"
   },
   trang: {
@@ -218,16 +314,40 @@ export const VARIABLE_DEFINITIONS = {
     desc: "Số thứ tự trang danh sách đơn hàng hiện tại.",
     source: "Hệ thống phân trang tự động"
   },
+  page: {
+    name: "{page}",
+    example: "1",
+    desc: "Số thứ tự trang hiện tại (tương đương {trang}).",
+    source: "Hệ thống phân trang tự động"
+  },
   tong_trang: {
     name: "{tong_trang}",
     example: "1",
     desc: "Tổng số trang danh sách đơn hàng của thành viên.",
     source: "Hệ thống phân trang tự động"
   },
+  total_pages: {
+    name: "{total_pages}",
+    example: "1",
+    desc: "Tổng số trang (tương đương {tong_trang}).",
+    source: "Hệ thống phân trang tự động"
+  },
   tong_don: {
     name: "{tong_don}",
     example: "3",
-    desc: "Tổng số lượng đơn hàng của thành viên.",
+    desc: "Tổng số lượng đơn hàng mà thành viên đã mua qua link tiếp thị.",
+    source: "Hệ thống tổng hợp đơn hàng"
+  },
+  total_orders: {
+    name: "{total_orders}",
+    example: "3",
+    desc: "Tổng số lượng đơn hàng (tương đương {tong_don}).",
+    source: "Hệ thống tổng hợp đơn hàng"
+  },
+  so_don: {
+    name: "{so_don}",
+    example: "3",
+    desc: "Số lượng đơn hàng (tương đương {tong_don}).",
     source: "Hệ thống tổng hợp đơn hàng"
   }
 };
@@ -495,6 +615,13 @@ export function TemplatePreviewModal({
     }
   }
 
+  // Nhận diện khối lặp [don_hang]...[/don_hang] nếu có trong mẫu
+  if (/\[(don_hang|danh_sach_don|item)\]/i.test(templateContent || "")) {
+    if (!foundPlaceholders.includes("don_hang") && VARIABLE_DEFINITIONS["don_hang"]) {
+      foundPlaceholders.unshift("don_hang");
+    }
+  }
+
   const scenario = TRIGGER_SCENARIOS[templateKey] || {
     userMsg: `Kích hoạt lệnh: ${templateMeta?.command || "Nhắn tin vào nhóm"}`,
     userTime: "09:41",
@@ -688,34 +815,57 @@ export function TemplatePreviewModal({
             </div>
 
             {foundPlaceholders.length > 0 ? (
-              <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-2xs">
-                <table className="w-full text-left text-xs">
+              <div className="w-full rounded-2xl border border-slate-200 shadow-2xs overflow-hidden bg-white">
+                <table className="w-full text-left text-xs table-fixed border-collapse">
                   <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-black text-[11px]">
                     <tr>
-                      <th className="py-2.5 px-3">Tên Biến Trong Mẫu</th>
-                      <th className="py-2.5 px-3">Dữ Liệu Thay Thế Thực Tế</th>
-                      <th className="py-2.5 px-3">Ý Nghĩa & Nguồn Gốc Dữ Liệu</th>
+                      <th className="w-[25%] py-3 px-3.5">Tên Biến Trong Mẫu</th>
+                      <th className="w-[38%] py-3 px-3.5">Dữ Liệu Thay Thế Thực Tế</th>
+                      <th className="w-[37%] py-3 px-3.5">Ý Nghĩa & Nguồn Gốc Dữ Liệu</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 bg-white">
                     {foundPlaceholders.map((varKey) => {
                       const def = VARIABLE_DEFINITIONS[varKey];
                       const val = mockValues[varKey] || def?.example || "";
+                      const isMultiLine = String(val).includes("\n");
+                      const isUrl = String(val).startsWith("http");
+
                       return (
-                        <tr key={varKey} className="hover:bg-purple-50/40 transition">
-                          <td className="py-2.5 px-3 font-mono font-bold text-purple-700 whitespace-nowrap">
-                            {`{${varKey}}`}
-                          </td>
-                          <td className="py-2.5 px-3 font-bold text-slate-900 whitespace-nowrap">
-                            <span className="bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-lg text-emerald-800 font-mono text-[11px]">
-                              {val}
+                        <tr key={varKey} className="hover:bg-purple-50/30 transition">
+                          {/* Cột 1: Tên Biến */}
+                          <td className="w-[25%] py-3 px-3.5 font-mono font-bold text-purple-700 align-top break-words">
+                            <span className="inline-block bg-purple-50 text-purple-700 border border-purple-200/80 px-2 py-0.5 rounded-lg text-[11px]">
+                              {def?.name || `{${varKey}}`}
                             </span>
                           </td>
-                          <td className="py-2.5 px-3 text-slate-600 font-medium">
-                            <div>{def?.desc || "Biến động tự động"}</div>
+
+                          {/* Cột 2: Dữ Liệu Thực Tế */}
+                          <td className="w-[38%] py-3 px-3.5 align-top break-words">
+                            {isMultiLine ? (
+                              <div className="bg-slate-50 border border-slate-200/90 rounded-xl p-2.5 font-mono text-[10.5px] leading-relaxed text-slate-700 whitespace-pre-wrap break-words max-h-32 overflow-y-auto shadow-2xs">
+                                {val}
+                              </div>
+                            ) : isUrl ? (
+                              <div className="bg-purple-50/60 border border-purple-200/80 rounded-lg px-2.5 py-1 text-purple-700 font-mono text-[11px] break-all leading-normal">
+                                {val}
+                              </div>
+                            ) : (
+                              <span className="inline-block bg-slate-100/90 border border-slate-200 px-2.5 py-1 rounded-lg text-emerald-800 font-mono text-[11px] font-bold break-words">
+                                {val}
+                              </span>
+                            )}
+                          </td>
+
+                          {/* Cột 3: Ý Nghĩa & Nguồn Gốc Dữ Liệu */}
+                          <td className="w-[37%] py-3 px-3.5 text-slate-600 font-medium align-top break-words leading-relaxed">
+                            <div className="text-slate-800 text-[11.5px] font-medium leading-snug">
+                              {def?.desc || "Biến động tự động điền theo dữ liệu thực tế."}
+                            </div>
                             {def?.source && (
-                              <div className="text-[10px] text-slate-400 mt-0.5">
-                                💡 Nguồn: <span className="font-semibold text-slate-500">{def.source}</span>
+                              <div className="text-[10px] text-slate-400 mt-1.5 flex items-start gap-1">
+                                <span className="shrink-0 text-amber-500 font-bold">💡 Nguồn:</span>
+                                <span className="font-semibold text-slate-500 break-words">{def.source}</span>
                               </div>
                             )}
                           </td>

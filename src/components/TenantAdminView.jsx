@@ -170,6 +170,8 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
     tiktokCreatorUsername: "",
     isTiktokEnabled: activeTenant?.isTiktokEnabled ?? false,
     useShortLink: activeTenant?.useShortLink ?? true,
+    notifyBothPayout: activeTenant?.notifyBothPayout ?? false,
+    zaloGroupId: activeTenant?.zaloGroupId ?? "",
     botReplyDelayMode: "RANGE",
     botReplyDelayFixed: 2,
     botReplyDelayMin: 1,
@@ -318,6 +320,8 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
           tiktokCreatorUsername: data.tiktokCreatorUsername || "",
           isTiktokEnabled: data.isTiktokEnabled ?? activeTenant?.isTiktokEnabled ?? false,
           useShortLink: data.useShortLink ?? activeTenant?.useShortLink ?? true,
+          notifyBothPayout: data.notifyBothPayout ?? activeTenant?.notifyBothPayout ?? false,
+          zaloGroupId: data.zaloGroupId ?? activeTenant?.zaloGroupId ?? "",
           botReplyDelayMode: data.botReplyDelayMode || "RANGE",
           botReplyDelayFixed: data.botReplyDelayFixed ?? 2,
           botReplyDelayMin: data.botReplyDelayMin ?? 1,
@@ -3367,6 +3371,72 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                       </div>
                     </label>
                   </div>
+                </div>
+              </div>
+            </div>
+
+            {/* CẤU HÌNH THÔNG BÁO DUYỆT RÚT TIỀN (notifyBothPayout) */}
+            <div className="md:col-span-2 pt-2 border-t border-slate-100">
+              <div className="p-5 bg-gradient-to-br from-orange-50/70 via-rose-50/40 to-white rounded-3xl border border-orange-200/90 space-y-4 shadow-2xs">
+                <div className="flex items-start justify-between flex-wrap gap-2">
+                  <div>
+                    <h4 className="text-xs font-black uppercase text-orange-900 tracking-wider flex items-center gap-2">
+                      <i className="fa-solid fa-bell text-orange-600"></i>
+                      <span>Thông Báo Duyệt Rút Tiền (Đồng Thời Nhóm & Riêng)</span>
+                    </h4>
+                    <p className="text-[11px] text-orange-800/80 font-medium mt-1">
+                      Khi bật: Dù duyệt trên web hay gõ <code className="bg-orange-100 px-1 rounded">/duyet_ID</code> trong nhóm, bot sẽ gửi tin nhắn <b>riêng</b> cho thành viên VÀ đồng thời thông báo trong <b>nhóm</b> Zalo.<br/>
+                      Khi tắt: Duyệt web chỉ gửi riêng, gõ lệnh trong nhóm chỉ gửi nhóm (như trước).
+                    </p>
+                  </div>
+                  <span className={`px-3 py-1 rounded-xl text-[10px] font-black border shadow-2xs flex items-center gap-1.5 ${
+                    settings.notifyBothPayout
+                      ? "bg-emerald-100 text-emerald-900 border-emerald-200"
+                      : "bg-slate-100 text-slate-600 border-slate-200"
+                  }`}>
+                    {settings.notifyBothPayout ? "🔔 Đang BẬT - Gửi đồng thời" : "🔕 Đang TẮT - Chỉ gửi 1 nơi"}
+                  </span>
+                </div>
+
+                <div className="bg-white/90 backdrop-blur-xs p-4 rounded-2xl border border-orange-100 space-y-4 shadow-2xs">
+                  {/* Toggle BẬT/TẮT */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-xs font-bold text-slate-800">Bật gửi đồng thời (Nhóm + Riêng)</div>
+                      <div className="text-[11px] text-slate-500 mt-0.5">Bot sẽ gửi cả 2 kênh mỗi khi có lệnh duyệt rút tiền</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSettings({ ...settings, notifyBothPayout: !settings.notifyBothPayout })}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none ${
+                        settings.notifyBothPayout ? "bg-emerald-500" : "bg-slate-300"
+                      }`}
+                    >
+                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-200 ${
+                        settings.notifyBothPayout ? "translate-x-6" : "translate-x-1"
+                      }`} />
+                    </button>
+                  </div>
+
+                  {/* Zalo Group ID - chỉ hiện khi bật */}
+                  {settings.notifyBothPayout && (
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                        <i className="fa-solid fa-users text-orange-500"></i>
+                        ID Nhóm Zalo <span className="text-slate-400 font-normal">(Zalo Group Thread ID)</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={settings.zaloGroupId || ""}
+                        onChange={(e) => setSettings({ ...settings, zaloGroupId: e.target.value })}
+                        placeholder="VD: 12345678901234567 (ID nhóm Zalo của kênh)"
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-orange-200 focus:outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-200 bg-orange-50/30"
+                      />
+                      <p className="text-[10px] text-slate-400">
+                        💡 ID nhóm Zalo sẽ được tự động lưu khi có thành viên gõ lệnh trong nhóm. Hoặc bạn có thể nhập thủ công ở đây.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

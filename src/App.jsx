@@ -205,6 +205,7 @@ export default function App() {
           const cleanHash = window.location.hash.replace(/^#\/?/, "");
           const pathToCheck = cleanPath || cleanHash;
 
+          let matchedTenant = null;
           if (pathToCheck) {
             const segments = pathToCheck.split("/").filter(Boolean);
             const firstSegment = segments[0];
@@ -217,9 +218,9 @@ export default function App() {
               return;
             }
 
-            const matched = tenants.find((t) => t.slug.toLowerCase() === firstSegment.toLowerCase());
-            if (matched) {
-              setCurrentTenant(matched);
+            matchedTenant = tenants.find((t) => t.slug.toLowerCase() === firstSegment.toLowerCase());
+            if (matchedTenant) {
+              setCurrentTenant(matchedTenant);
 
               if (secondSegment) {
                 const lowerSecond = secondSegment.toLowerCase();
@@ -246,8 +247,12 @@ export default function App() {
             setInitialLookupQuery(queryParam);
           }
 
-          if (tenants.length > 0 && !currentTenant && !pathToCheck) {
-            setCurrentTenant(tenants[0]);
+          // 4. Nếu chưa chọn kênh qua URL cụ thể, luôn ưu tiên chọn Kênh Test "A Thắng cá chép Affiliate (/phamnga)" làm mặc định
+          if (tenants.length > 0 && !matchedTenant) {
+            const defaultTestTenant = tenants.find(
+              (t) => t.slug?.toLowerCase() === "phamnga" || t.slug?.toLowerCase().includes("phamnga")
+            ) || tenants[0];
+            setCurrentTenant(defaultTestTenant);
           }
         }
       } catch (err) {

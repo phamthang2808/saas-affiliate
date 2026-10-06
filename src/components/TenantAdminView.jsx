@@ -151,6 +151,9 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
     (availableTenants && user?.tenantId
       ? availableTenants.find((t) => String(t.id) === String(user.tenantId))
       : null) ||
+    (availableTenants && availableTenants.length > 0
+      ? (availableTenants.find((t) => t.slug?.toLowerCase() === "phamnga" || t.slug?.toLowerCase().includes("phamnga")) || availableTenants[0])
+      : null) ||
     (APP_CONFIG.isStandalone ? APP_CONFIG.tenant : null);
 
   // Dynamic Settings state

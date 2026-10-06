@@ -3382,11 +3382,11 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                   <div>
                     <h4 className="text-xs font-black uppercase text-orange-900 tracking-wider flex items-center gap-2">
                       <i className="fa-solid fa-bell text-orange-600"></i>
-                      <span>Thông Báo Duyệt Rút Tiền (Đồng Thời Nhóm & Riêng)</span>
+                      <span>Thông Báo Duyệt Rút Tiền (Đồng Thời Tất Cả Nhóm & Riêng)</span>
                     </h4>
                     <p className="text-[11px] text-orange-800/80 font-medium mt-1">
-                      Khi bật: Dù duyệt trên web hay gõ <code className="bg-orange-100 px-1 rounded">/duyet_ID</code> trong nhóm, bot sẽ gửi tin nhắn <b>riêng</b> cho thành viên VÀ đồng thời thông báo trong <b>nhóm</b> Zalo.<br/>
-                      Khi tắt: Duyệt web chỉ gửi riêng, gõ lệnh trong nhóm chỉ gửi nhóm (như trước).
+                      Khi bật: Dù duyệt trên web hay gõ <code className="bg-orange-100 px-1 rounded">/duyet_ID</code>, bot sẽ gửi tin nhắn <b>riêng</b> cho thành viên VÀ tự động thông báo tới <b>tất cả các nhóm Zalo</b> mà bot đang tham gia.<br/>
+                      Khi tắt: Duyệt web chỉ gửi riêng cho thành viên, gõ lệnh trong nhóm chỉ gửi nhóm (như trước).
                     </p>
                   </div>
                   <span className={`px-3 py-1 rounded-xl text-[10px] font-black border shadow-2xs flex items-center gap-1.5 ${
@@ -3402,8 +3402,8 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                   {/* Toggle BẬT/TẮT */}
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="text-xs font-bold text-slate-800">Bật gửi đồng thời (Nhóm + Riêng)</div>
-                      <div className="text-[11px] text-slate-500 mt-0.5">Bot sẽ gửi cả 2 kênh mỗi khi có lệnh duyệt rút tiền</div>
+                      <div className="text-xs font-bold text-slate-800">Bật gửi đồng thời (Tất cả nhóm Zalo + Riêng)</div>
+                      <div className="text-[11px] text-slate-500 mt-0.5">Tự động phát thông báo chúc mừng tới toàn bộ các nhóm Zalo bot đang có mặt</div>
                     </div>
                     <button
                       type="button"
@@ -3418,23 +3418,34 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                     </button>
                   </div>
 
-                  {/* Zalo Group ID - chỉ hiện khi bật */}
                   {settings.notifyBothPayout && (
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                        <i className="fa-solid fa-users text-orange-500"></i>
-                        ID Nhóm Zalo <span className="text-slate-400 font-normal">(Zalo Group Thread ID)</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={settings.zaloGroupId || ""}
-                        onChange={(e) => setSettings({ ...settings, zaloGroupId: e.target.value })}
-                        placeholder="VD: 12345678901234567 (ID nhóm Zalo của kênh)"
-                        className="w-full px-3 py-2 text-xs rounded-xl border border-orange-200 focus:outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-200 bg-orange-50/30"
-                      />
-                      <p className="text-[10px] text-slate-400">
-                        💡 ID nhóm Zalo sẽ được tự động lưu khi có thành viên gõ lệnh trong nhóm. Hoặc bạn có thể nhập thủ công ở đây.
+                    <div className="p-3 bg-emerald-50/70 border border-emerald-200/80 rounded-xl space-y-2 text-xs">
+                      <div className="flex items-center gap-2 text-emerald-800 font-bold">
+                        <i className="fa-solid fa-circle-check text-emerald-600"></i>
+                        <span>Chế độ: Tự động gửi tới TẤT CẢ các nhóm Zalo của Bot</span>
+                      </div>
+                      <p className="text-[11px] text-emerald-700/90 leading-relaxed">
+                        Bạn không cần phải tìm hay nhập ID nhóm. Khi bạn bấm Duyệt trên web, Bot sẽ tự động quét và gửi thông báo chúc mừng hoàn thành rút tiền vào tất cả các nhóm Zalo mà Bot đang tham gia.
                       </p>
+
+                      {/* Tùy chọn nâng cao: Chỉ định nhóm riêng nếu muốn */}
+                      <details className="mt-2 pt-2 border-t border-emerald-200/60 text-[11px]">
+                        <summary className="cursor-pointer font-semibold text-slate-600 hover:text-orange-600 select-none">
+                          ⚙️ Tùy chọn nâng cao: Chỉ định 1 ID nhóm cụ thể (nếu không muốn gửi cho tất cả các nhóm)
+                        </summary>
+                        <div className="mt-2 space-y-1">
+                          <input
+                            type="text"
+                            value={settings.zaloGroupId || ""}
+                            onChange={(e) => setSettings({ ...settings, zaloGroupId: e.target.value })}
+                            placeholder="Để trống = Gửi TẤT CẢ các nhóm (khuyên dùng)"
+                            className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-orange-400"
+                          />
+                          <p className="text-[10px] text-slate-400">
+                            💡 Mẹo: Hãy để trống ô trên để Bot tự động gửi thông báo tới toàn bộ các nhóm Zalo của bạn.
+                          </p>
+                        </div>
+                      </details>
                     </div>
                   )}
                 </div>

@@ -844,7 +844,11 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
     }
     const platformLabel = platform === "tiktok" ? "TikTok" : "Shopee";
     const confirmed = window.confirm(
-      `⚠️ BẠN CÓ CHẮC CHẮN MUỐN XÓA TOÀN BỘ đơn hàng ${platformLabel} của Kênh "${activeTenant?.name || ""}"?\n\nTHAO TÁC NÀY KHÔNG THỂ HOÀN TÁC và sẽ xóa toàn bộ đơn, hoa hồng liên quan!`
+      `⚠️ BẠN CÓ CHẮC CHẮN MUỐN XÓA ĐƠN HÀNG ${platformLabel.toUpperCase()} GẦN ĐÂY CỦA KÊNH "${activeTenant?.name || ""}"?\n\n` +
+      `🛡️ CHÍNH SÁCH BẢO VỆ DỮ LIỆU LỊCH SỬ:\n` +
+      `• Hệ thống CHỈ xóa các đơn thuộc THÁNG HIỆN TẠI VÀ 2 THÁNG GẦN NHẤT (vì Shopee vẫn hỗ trợ xuất lại báo cáo đối soát).\n` +
+      `• Toàn bộ đơn hàng lịch sử cũ hơn (trước 2 tháng) sẽ được TỰ ĐỘNG BẢO VỆ NGUYÊN VẸN, không bị xóa để bảo toàn lịch sử và số dư ví của thành viên!\n\n` +
+      `Bạn có chắc chắn muốn tiến hành xóa các đơn trong 3 tháng gần nhất?`
     );
     if (!confirmed) return;
 
@@ -2212,12 +2216,12 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                 onClick={() => handleDeleteAllOrders(activeTab === "tiktok" ? "tiktok" : "shopee")}
                 disabled={isDeletingAllOrders}
                 className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 hover:border-rose-300 text-[11px] font-black rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
-                title={`Xóa toàn bộ đơn hàng ${activeTab === "tiktok" ? "TikTok" : "Shopee"} (dùng khi import nhầm file)`}
+                title={`Xóa đơn hàng ${activeTab === "tiktok" ? "TikTok" : "Shopee"} gần đây (chỉ xóa tháng hiện tại và 2 tháng gần nhất, tự động bảo vệ an toàn các đơn lịch sử cũ hơn)`}
               >
                 {isDeletingAllOrders ? (
                   <><i className="fa-solid fa-spinner fa-spin"></i> Đang xóa...</>
                 ) : (
-                  <><i className="fa-solid fa-trash-can"></i> Xóa Tất Cả Đơn</>
+                  <><i className="fa-solid fa-trash-can"></i> Xóa Đơn (3 tháng gần nhất)</>
                 )}
               </button>
             </div>

@@ -77,6 +77,27 @@ export default function App() {
 
   const [initialLookupQuery, setInitialLookupQuery] = useState("");
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem("saasSidebarCollapsed") === "true";
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("saasSidebarCollapsed", isSidebarCollapsed ? "true" : "false");
+    } catch {}
+  }, [isSidebarCollapsed]);
+
+  const handleToggleSidebar = () => {
+    if (window.innerWidth < 1024) {
+      setIsMobileOpen((prev) => !prev);
+    } else {
+      setIsSidebarCollapsed((prev) => !prev);
+    }
+  };
 
   // Tenant state - prioritize environment variables if configured
   const [availableTenants, setAvailableTenants] = useState([]);
@@ -374,7 +395,7 @@ export default function App() {
         />
       )}
 
-      {/* Left Sidebar Layout (Desktop) */}
+      {/* Left Sidebar Layout */}
       <Sidebar
         currentView={currentView}
         setCurrentView={setCurrentView}
@@ -384,10 +405,16 @@ export default function App() {
         onLogout={handleLogout}
         isMobileOpen={isMobileOpen}
         onCloseMobile={() => setIsMobileOpen(false)}
+        isSidebarCollapsed={isSidebarCollapsed}
+        onToggleCollapse={() => setIsSidebarCollapsed((prev) => !prev)}
       />
 
       {/* Main Content Body */}
-      <div className="flex-1 lg:ml-64 flex flex-col min-h-screen min-w-0 max-w-full overflow-x-hidden">
+      <div
+        className={`flex-1 flex flex-col min-h-screen min-w-0 max-w-full overflow-x-hidden transition-[margin] duration-300 ease-in-out ${
+          isSidebarCollapsed ? "lg:ml-0" : "lg:ml-64"
+        }`}
+      >
         {/* Dynamic TopBar */}
         <TopBar
           currentView={currentView}
@@ -397,7 +424,8 @@ export default function App() {
           user={user}
           onOpenLogin={handleOpenLogin}
           onLogout={handleLogout}
-          onToggleMobile={() => setIsMobileOpen((prev) => !prev)}
+          onToggleSidebar={handleToggleSidebar}
+          isSidebarCollapsed={isSidebarCollapsed}
           onNavigate={(view) => setCurrentView(view)}
         />
 

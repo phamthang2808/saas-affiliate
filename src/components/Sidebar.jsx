@@ -9,6 +9,8 @@ export function Sidebar({
   onLogout,
   isMobileOpen,
   onCloseMobile,
+  isSidebarCollapsed,
+  onToggleCollapse,
 }) {
   const groupName = currentTenant?.name || "28AffiHub";
 
@@ -28,8 +30,10 @@ export function Sidebar({
 
   return (
     <aside
-      className={`fixed top-0 bottom-0 left-0 w-64 bg-white border-r border-slate-200/80 z-50 flex flex-col justify-between p-4 transition-transform duration-300 ${
-        isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+      className={`fixed top-0 bottom-0 left-0 w-64 bg-white border-r border-slate-200/80 z-50 flex flex-col justify-between p-4 transition-all duration-300 ease-in-out ${
+        isMobileOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
+      } ${
+        isSidebarCollapsed ? "lg:-translate-x-full lg:shadow-none" : "lg:translate-x-0"
       }`}
     >
       <div className="space-y-6 overflow-y-auto">
@@ -58,11 +62,22 @@ export function Sidebar({
 
           {/* Close button on mobile */}
           <button
+            type="button"
             onClick={onCloseMobile}
-            className="lg:hidden absolute -top-1 -right-1 w-7 h-7 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full flex items-center justify-center text-xs cursor-pointer border border-slate-200"
+            className="lg:hidden absolute -top-1.5 -right-1.5 w-7 h-7 bg-white hover:bg-slate-100 text-slate-500 rounded-full flex items-center justify-center text-xs cursor-pointer border border-slate-200 shadow-2xs active:scale-95 transition"
             title="Đóng menu"
           >
             <i className="fa-solid fa-xmark"></i>
+          </button>
+
+          {/* Collapse button on desktop */}
+          <button
+            type="button"
+            onClick={onToggleCollapse}
+            className="hidden lg:flex absolute -top-1.5 -right-1.5 w-7 h-7 bg-white hover:bg-orange-50 text-slate-400 hover:text-orange-600 rounded-full items-center justify-center text-xs cursor-pointer border border-slate-200 shadow-2xs active:scale-95 transition"
+            title="Thu gọn menu (Ẩn vào)"
+          >
+            <i className="fa-solid fa-chevron-left text-[11px]"></i>
           </button>
         </div>
 

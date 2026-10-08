@@ -10,7 +10,8 @@ export function TopBar({
   user,
   onOpenLogin,
   onLogout,
-  onToggleMobile,
+  onToggleSidebar,
+  isSidebarCollapsed,
   onNavigate,
 }) {
   const [showBellPopover, setShowBellPopover] = useState(false);
@@ -67,12 +68,26 @@ export function TopBar({
 
   return (
     <header className="bg-white/95 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-30 px-3 sm:px-4 md:px-8 py-2 md:py-3 flex items-center justify-between gap-2 sm:gap-4">
-      {/* Left: Mobile Brand Logo & Dynamic Breadcrumb + Title */}
-      <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1 overflow-hidden">
-        {/* Mobile Logo Link */}
+      {/* Left: Sidebar Toggle Button & Brand Logo & Dynamic Breadcrumb + Title */}
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 overflow-hidden">
+        {/* Toggle Sidebar Button (For both Mobile Drawer and Desktop Collapse) */}
+        <button
+          type="button"
+          onClick={onToggleSidebar}
+          className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-slate-100/90 hover:bg-orange-50 text-slate-600 hover:text-orange-600 border border-slate-200/90 hover:border-orange-300 flex items-center justify-center transition-all cursor-pointer shadow-2xs shrink-0 active:scale-95"
+          title={isSidebarCollapsed ? "Mở menu (Mở ra)" : "Thu gọn menu (Ẩn vào)"}
+          aria-label="Toggle navigation menu"
+        >
+          <i className={`fa-solid ${isSidebarCollapsed ? "fa-bars" : "fa-bars-staggered"} text-xs sm:text-sm`}></i>
+        </button>
+
+        {/* Mobile / Collapsed Desktop Logo Link */}
         <div
           onClick={() => onNavigate && onNavigate("gioi-thieu")}
-          className="lg:hidden flex items-center gap-1.5 cursor-pointer shrink-0"
+          className={`items-center gap-1.5 cursor-pointer shrink-0 transition-opacity ${
+            isSidebarCollapsed ? "flex" : "lg:hidden flex"
+          }`}
+          title="28AffiHub"
         >
           <img
             src={logoImg}

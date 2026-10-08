@@ -1658,15 +1658,41 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
           if (!member) return [];
           const mZaloId = String(member.zaloId || member.zalo_id || "").trim().toLowerCase();
           const mId = member.id ? String(member.id) : null;
+          const memberOrders = getOrdersForMember(member);
+          const matchedOrderUserIds = new Set();
+          const matchedOrderZaloIds = new Set();
+          memberOrders.forEach((o) => {
+            if (o.userId != null) matchedOrderUserIds.add(String(o.userId));
+            if (o.zaloId) matchedOrderZaloIds.add(String(o.zaloId).trim().toLowerCase());
+            if (o.subId) {
+              const cleanSub = String(o.subId).replace(/^(phamnga|ly|tranhuyen|lecuong|mailan|th|yenvy)[_-]/i, "").trim().toLowerCase();
+              matchedOrderZaloIds.add(cleanSub);
+            }
+          });
+
+          const mNormName = removeAccents(member.zaloName || member.zalo_name || member.name).replace(/[^a-z0-9]/g, "");
+          const mNormAcc = removeAccents(member.accountName).replace(/[^a-z0-9]/g, "");
 
           return (Array.isArray(payouts) ? payouts : []).filter((p) => {
             if (!p) return false;
             const pZaloId = String(p.zaloId || "").trim().toLowerCase();
             const pUserId = p.userId ? String(p.userId) : null;
             const pNote = String(p.note || "").toLowerCase();
+            const pNormZalo = removeAccents(p.zaloId || "").replace(/[^a-z0-9]/g, "");
 
             if (mZaloId && (pZaloId === mZaloId || pNote.includes(mZaloId))) return true;
             if (mId && pUserId === mId) return true;
+            if (pUserId && matchedOrderUserIds.has(pUserId)) return true;
+            if (pZaloId && matchedOrderZaloIds.has(pZaloId)) return true;
+            if (pNormZalo && matchedOrderZaloIds.has(pNormZalo)) return true;
+
+            if (pNormZalo && pNormZalo.length >= 2) {
+              if (mNormName && (pNormZalo === mNormName || mNormName.includes(pNormZalo) || pNormZalo.includes(mNormName))) return true;
+              if (mNormAcc && (pNormZalo === mNormAcc || mNormAcc.includes(pNormZalo) || pNormZalo.includes(mNormAcc))) return true;
+            }
+
+            if (mNormName && mNormName.length >= 2 && removeAccents(pNote).includes(mNormName)) return true;
+
             return false;
           });
         };

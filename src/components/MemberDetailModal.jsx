@@ -1,5 +1,14 @@
 import React, { useEffect, useState, useCallback } from "react";
 
+const removeAccents = (str) =>
+  String(str || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D")
+    .toLowerCase()
+    .trim();
+
 export function MemberDetailModal({
   member,
   orders = [],
@@ -71,12 +80,13 @@ export function MemberDetailModal({
 
   // Tải & làm mới dữ liệu ví, đơn hàng và lịch sử rút từ API public lookup
   const refreshLiveData = useCallback(async () => {
-    if (!zaloId) {
+    const queryTarget = zaloId || member.zaloName || member.zalo_name || member.name || "";
+    if (!queryTarget) {
       setIsLoadingLive(false);
       return;
     }
     try {
-      const queryKey = encodeURIComponent(zaloId.trim());
+      const queryKey = encodeURIComponent(queryTarget.trim());
       const res = await fetch(`${apiRoot}/api/saas/public/${tenantSlug}/lookup?query=${queryKey}`);
       if (res.ok) {
         const data = await res.json();
@@ -87,7 +97,7 @@ export function MemberDetailModal({
     } finally {
       setIsLoadingLive(false);
     }
-  }, [zaloId, apiRoot, tenantSlug]);
+  }, [zaloId, member, apiRoot, tenantSlug]);
 
   useEffect(() => {
     setIsLoadingLive(true);
@@ -98,6 +108,8 @@ export function MemberDetailModal({
   const mZaloId = zaloId.toLowerCase();
   const mId = member.id ? String(member.id) : null;
   const mSlug = String(tenantSlug || "").toLowerCase();
+  const mNormName = removeAccents(member.zaloName || member.zalo_name || member.name || "").replace(/[^a-z0-9]/g, "");
+  const mNormAcc = removeAccents(member.accountName || member.account_name || "").replace(/[^a-z0-9]/g, "");
 
   const fallbackOrders = (Array.isArray(orders) ? orders : []).filter((o) => {
     if (!o) return false;
@@ -114,7 +126,27 @@ export function MemberDetailModal({
     if (mId && (oUserId === mId || oSubId === `u${mId}` || (mSlug && oSubId === `${mSlug}_u${mId}`))) {
       return true;
     }
+
+    // So khớp tên không dấu (cho các đơn có subId là name slug như th_CherryMyVy)
+    const cleanSub = oSubId.replace(/^(phamnga|ly|tranhuyen|lecuong|mailan|th|yenvy)[_-]/i, "");
+    const cleanSubNorm = removeAccents(cleanSub).replace(/[^a-z0-9]/g, "");
+    if (cleanSubNorm && cleanSubNorm.length >= 2 && !/^\d+$/.test(cleanSubNorm)) {
+      if (mNormName && (cleanSubNorm === mNormName || mNormName === cleanSubNorm)) return true;
+      if (mNormAcc && (cleanSubNorm === mNormAcc || mNormAcc === cleanSubNorm)) return true;
+    }
+
     return false;
+  });
+
+  const matchedOrderUserIds = new Set();
+  const matchedOrderZaloIds = new Set();
+  fallbackOrders.forEach((o) => {
+    if (o.userId != null) matchedOrderUserIds.add(String(o.userId));
+    if (o.zaloId) matchedOrderZaloIds.add(String(o.zaloId).trim().toLowerCase());
+    if (o.subId) {
+      const cleanSub = String(o.subId).replace(/^(phamnga|ly|tranhuyen|lecuong|mailan|th|yenvy)[_-]/i, "").trim().toLowerCase();
+      matchedOrderZaloIds.add(cleanSub);
+    }
   });
 
   const fallbackPayouts = (Array.isArray(payouts) ? payouts : []).filter((p) => {
@@ -122,9 +154,21 @@ export function MemberDetailModal({
     const pZaloId = String(p.zaloId || "").trim().toLowerCase();
     const pUserId = p.userId ? String(p.userId) : null;
     const pNote = String(p.note || "").toLowerCase();
+    const pNormZalo = removeAccents(p.zaloId || "").replace(/[^a-z0-9]/g, "");
 
     if (mZaloId && (pZaloId === mZaloId || pNote.includes(mZaloId))) return true;
     if (mId && pUserId === mId) return true;
+    if (pUserId && matchedOrderUserIds.has(pUserId)) return true;
+    if (pZaloId && matchedOrderZaloIds.has(pZaloId)) return true;
+    if (pNormZalo && matchedOrderZaloIds.has(pNormZalo)) return true;
+
+    if (pNormZalo && pNormZalo.length >= 2) {
+      if (mNormName && (pNormZalo === mNormName || mNormName.includes(pNormZalo) || pNormZalo.includes(mNormName))) return true;
+      if (mNormAcc && (pNormZalo === mNormAcc || mNormAcc.includes(pNormZalo) || pNormZalo.includes(mNormAcc))) return true;
+    }
+
+    if (mNormName && mNormName.length >= 2 && removeAccents(pNote).includes(mNormName)) return true;
+
     return false;
   });
 
@@ -213,7 +257,18 @@ export function MemberDetailModal({
 
   // Live vs Fallback data
   const memberOrders = liveData?.orders != null ? liveData.orders : fallbackOrders;
-  const memberPayoutsList = liveData?.payouts != null ? liveData.payouts : fallbackPayouts;
+  // Hợp nhất danh sách rút tiền từ liveData và fallbackPayouts (tránh bị mất khi 1 trong 2 bên trả về rỗng)
+  const memberPayoutsList = (() => {
+    const livePayouts = Array.isArray(liveData?.payouts) ? liveData.payouts : [];
+    const map = new Map();
+    (fallbackPayouts || []).forEach((p) => {
+      if (p && p.id != null) map.set(String(p.id), p);
+    });
+    livePayouts.forEach((p) => {
+      if (p && p.id != null) map.set(String(p.id), p);
+    });
+    return Array.from(map.values()).sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+  })();
 
   const memberCompletedOrders = memberOrders.filter(isOrderCompleted);
   const memberPendingOrders = memberOrders.filter((o) => !isOrderCompleted(o) && !isOrderCancelled(o));

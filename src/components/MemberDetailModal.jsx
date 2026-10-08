@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 
 const removeAccents = (str) =>
   String(str || "")
@@ -111,66 +111,75 @@ export function MemberDetailModal({
   const mNormName = removeAccents(member.zaloName || member.zalo_name || member.name || "").replace(/[^a-z0-9]/g, "");
   const mNormAcc = removeAccents(member.accountName || member.account_name || "").replace(/[^a-z0-9]/g, "");
 
-  const fallbackOrders = (Array.isArray(orders) ? orders : []).filter((o) => {
-    if (!o) return false;
-    const oZaloId = String(o.zaloId || "").trim().toLowerCase();
-    const oSubId = String(o.subId || o.sub_id || "").trim().toLowerCase();
-    const oUserId = o.userId ? String(o.userId) : null;
+  const fallbackOrders = useMemo(() => {
+    return (Array.isArray(orders) ? orders : []).filter((o) => {
+      if (!o) return false;
+      const oZaloId = String(o.zaloId || "").trim().toLowerCase();
+      const oSubId = String(o.subId || o.sub_id || "").trim().toLowerCase();
+      const oUserId = o.userId ? String(o.userId) : null;
 
-    if (mZaloId) {
-      if (oZaloId === mZaloId) return true;
-      if (oSubId === mZaloId) return true;
-      if (mSlug && oSubId === `${mSlug}_${mZaloId}`) return true;
-      if (oSubId.includes(mZaloId)) return true;
-    }
-    if (mId && (oUserId === mId || oSubId === `u${mId}` || (mSlug && oSubId === `${mSlug}_u${mId}`))) {
-      return true;
-    }
+      if (mZaloId) {
+        if (oZaloId === mZaloId) return true;
+        if (oSubId === mZaloId) return true;
+        if (mSlug && oSubId === `${mSlug}_${mZaloId}`) return true;
+        if (oSubId.includes(mZaloId)) return true;
+      }
+      if (mId && (oUserId === mId || oSubId === `u${mId}` || (mSlug && oSubId === `${mSlug}_u${mId}`))) {
+        return true;
+      }
 
-    // So khớp tên không dấu (cho các đơn có subId là name slug như th_CherryMyVy)
-    const cleanSub = oSubId.replace(/^(phamnga|ly|tranhuyen|lecuong|mailan|th|yenvy)[_-]/i, "");
-    const cleanSubNorm = removeAccents(cleanSub).replace(/[^a-z0-9]/g, "");
-    if (cleanSubNorm && cleanSubNorm.length >= 2 && !/^\d+$/.test(cleanSubNorm)) {
-      if (mNormName && (cleanSubNorm === mNormName || mNormName === cleanSubNorm)) return true;
-      if (mNormAcc && (cleanSubNorm === mNormAcc || mNormAcc === cleanSubNorm)) return true;
-    }
+      // So khớp tên không dấu (cho các đơn có subId là name slug như th_CherryMyVy)
+      if (mNormName || mNormAcc) {
+        const cleanSub = oSubId.replace(/^(phamnga|ly|tranhuyen|lecuong|mailan|th|yenvy)[_-]/i, "");
+        const cleanSubNorm = removeAccents(cleanSub).replace(/[^a-z0-9]/g, "");
+        if (cleanSubNorm && cleanSubNorm.length >= 2 && !/^\d+$/.test(cleanSubNorm)) {
+          if (mNormName && (cleanSubNorm === mNormName || mNormName === cleanSubNorm)) return true;
+          if (mNormAcc && (cleanSubNorm === mNormAcc || mNormAcc === cleanSubNorm)) return true;
+        }
+      }
 
-    return false;
-  });
+      return false;
+    });
+  }, [orders, mZaloId, mId, mSlug, mNormName, mNormAcc]);
 
-  const matchedOrderUserIds = new Set();
-  const matchedOrderZaloIds = new Set();
-  fallbackOrders.forEach((o) => {
-    if (o.userId != null) matchedOrderUserIds.add(String(o.userId));
-    if (o.zaloId) matchedOrderZaloIds.add(String(o.zaloId).trim().toLowerCase());
-    if (o.subId) {
-      const cleanSub = String(o.subId).replace(/^(phamnga|ly|tranhuyen|lecuong|mailan|th|yenvy)[_-]/i, "").trim().toLowerCase();
-      matchedOrderZaloIds.add(cleanSub);
-    }
-  });
+  const { matchedOrderUserIds, matchedOrderZaloIds } = useMemo(() => {
+    const uIds = new Set();
+    const zIds = new Set();
+    fallbackOrders.forEach((o) => {
+      if (o.userId != null) uIds.add(String(o.userId));
+      if (o.zaloId) zIds.add(String(o.zaloId).trim().toLowerCase());
+      if (o.subId) {
+        const cleanSub = String(o.subId).replace(/^(phamnga|ly|tranhuyen|lecuong|mailan|th|yenvy)[_-]/i, "").trim().toLowerCase();
+        zIds.add(cleanSub);
+      }
+    });
+    return { matchedOrderUserIds: uIds, matchedOrderZaloIds: zIds };
+  }, [fallbackOrders]);
 
-  const fallbackPayouts = (Array.isArray(payouts) ? payouts : []).filter((p) => {
-    if (!p) return false;
-    const pZaloId = String(p.zaloId || "").trim().toLowerCase();
-    const pUserId = p.userId ? String(p.userId) : null;
-    const pNote = String(p.note || "").toLowerCase();
-    const pNormZalo = removeAccents(p.zaloId || "").replace(/[^a-z0-9]/g, "");
+  const fallbackPayouts = useMemo(() => {
+    return (Array.isArray(payouts) ? payouts : []).filter((p) => {
+      if (!p) return false;
+      const pZaloId = String(p.zaloId || "").trim().toLowerCase();
+      const pUserId = p.userId ? String(p.userId) : null;
+      const pNote = String(p.note || "").toLowerCase();
+      const pNormZalo = removeAccents(p.zaloId || "").replace(/[^a-z0-9]/g, "");
 
-    if (mZaloId && (pZaloId === mZaloId || pNote.includes(mZaloId))) return true;
-    if (mId && pUserId === mId) return true;
-    if (pUserId && matchedOrderUserIds.has(pUserId)) return true;
-    if (pZaloId && matchedOrderZaloIds.has(pZaloId)) return true;
-    if (pNormZalo && matchedOrderZaloIds.has(pNormZalo)) return true;
+      if (mZaloId && (pZaloId === mZaloId || pNote.includes(mZaloId))) return true;
+      if (mId && pUserId === mId) return true;
+      if (pUserId && matchedOrderUserIds.has(pUserId)) return true;
+      if (pZaloId && matchedOrderZaloIds.has(pZaloId)) return true;
+      if (pNormZalo && matchedOrderZaloIds.has(pNormZalo)) return true;
 
-    if (pNormZalo && pNormZalo.length >= 2) {
-      if (mNormName && (pNormZalo === mNormName || mNormName.includes(pNormZalo) || pNormZalo.includes(mNormName))) return true;
-      if (mNormAcc && (pNormZalo === mNormAcc || mNormAcc.includes(pNormZalo) || pNormZalo.includes(mNormAcc))) return true;
-    }
+      if (pNormZalo && pNormZalo.length >= 2) {
+        if (mNormName && (pNormZalo === mNormName || mNormName.includes(pNormZalo) || pNormZalo.includes(mNormName))) return true;
+        if (mNormAcc && (pNormZalo === mNormAcc || mNormAcc.includes(pNormZalo) || pNormZalo.includes(mNormAcc))) return true;
+      }
 
-    if (mNormName && mNormName.length >= 2 && removeAccents(pNote).includes(mNormName)) return true;
+      if (mNormName && mNormName.length >= 2 && removeAccents(pNote).includes(mNormName)) return true;
 
-    return false;
-  });
+      return false;
+    });
+  }, [payouts, mZaloId, mId, matchedOrderUserIds, matchedOrderZaloIds, mNormName, mNormAcc]);
 
   const isOrderCancelled = (o) => {
     const st = String(o.status || "").toLowerCase();
@@ -256,9 +265,12 @@ export function MemberDetailModal({
   );
 
   // Live vs Fallback data
-  const memberOrders = liveData?.orders != null ? liveData.orders : fallbackOrders;
+  const memberOrders = useMemo(() => {
+    return liveData?.orders != null ? liveData.orders : fallbackOrders;
+  }, [liveData?.orders, fallbackOrders]);
+
   // Hợp nhất danh sách rút tiền từ liveData và fallbackPayouts (tránh bị mất khi 1 trong 2 bên trả về rỗng)
-  const memberPayoutsList = (() => {
+  const memberPayoutsList = useMemo(() => {
     const livePayouts = Array.isArray(liveData?.payouts) ? liveData.payouts : [];
     const map = new Map();
     (fallbackPayouts || []).forEach((p) => {
@@ -268,7 +280,7 @@ export function MemberDetailModal({
       if (p && p.id != null) map.set(String(p.id), p);
     });
     return Array.from(map.values()).sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-  })();
+  }, [liveData?.payouts, fallbackPayouts]);
 
   const memberCompletedOrders = memberOrders.filter(isOrderCompleted);
   const memberPendingOrders = memberOrders.filter((o) => !isOrderCompleted(o) && !isOrderCancelled(o));
@@ -319,42 +331,47 @@ export function MemberDetailModal({
 
   const getOrderKey = (o) => (o && o.id != null ? String(o.id) : String(o?.orderId || ""));
 
-  const filteredOrders = memberOrders
-    .filter((o) => {
-      if (platformFilter !== "ALL" && getPlatform(o) !== platformFilter) return false;
-      if (statusFilter !== "ALL") {
-        if (statusFilter === "COMPLETED" && !isOrderCompleted(o)) return false;
-        if (statusFilter === "PENDING" && (isOrderCompleted(o) || isOrderCancelled(o))) return false;
-        if (statusFilter === "CANCELLED" && !isOrderCancelled(o)) return false;
-      }
-      if (paymentFilter !== "ALL") {
-        const isPaid = o.paymentStatus === "PAID";
-        if (paymentFilter === "PAID" && !isPaid) return false;
-        if (paymentFilter === "UNPAID" && isPaid) return false;
-      }
-      if (localSearch.trim()) {
-        const q = localSearch.toLowerCase().trim();
-        const orderId = (o.orderId || "").toLowerCase();
-        const productName = (o.productName || "").toLowerCase();
-        if (!orderId.includes(q) && !productName.includes(q)) return false;
-      }
-      return true;
-    })
-    .sort((a, b) => {
-      const timeA = new Date(a.orderDate || a.purchaseTime || a.createdAt || 0).getTime();
-      const timeB = new Date(b.orderDate || b.purchaseTime || b.createdAt || 0).getTime();
-      return timeB - timeA;
-    });
+  const filteredOrders = useMemo(() => {
+    return memberOrders
+      .filter((o) => {
+        if (platformFilter !== "ALL" && getPlatform(o) !== platformFilter) return false;
+        if (statusFilter !== "ALL") {
+          if (statusFilter === "COMPLETED" && !isOrderCompleted(o)) return false;
+          if (statusFilter === "PENDING" && (isOrderCompleted(o) || isOrderCancelled(o))) return false;
+          if (statusFilter === "CANCELLED" && !isOrderCancelled(o)) return false;
+        }
+        if (paymentFilter !== "ALL") {
+          const isPaid = o.paymentStatus === "PAID";
+          if (paymentFilter === "PAID" && !isPaid) return false;
+          if (paymentFilter === "UNPAID" && isPaid) return false;
+        }
+        if (localSearch.trim()) {
+          const q = localSearch.toLowerCase().trim();
+          const orderId = (o.orderId || "").toLowerCase();
+          const productName = (o.productName || "").toLowerCase();
+          if (!orderId.includes(q) && !productName.includes(q)) return false;
+        }
+        return true;
+      })
+      .sort((a, b) => {
+        const timeA = new Date(a.orderDate || a.purchaseTime || a.createdAt || 0).getTime();
+        const timeB = new Date(b.orderDate || b.purchaseTime || b.createdAt || 0).getTime();
+        return timeB - timeA;
+      });
+  }, [memberOrders, platformFilter, statusFilter, paymentFilter, localSearch]);
 
   // Selection & Statistics for selected orders
-  const selectedOrdersList = memberOrders.filter((o) => {
-    const k = getOrderKey(o);
-    return (
-      selectedOrderIds.has(k) ||
-      (o.id != null && selectedOrderIds.has(String(o.id))) ||
-      (o.orderId && selectedOrderIds.has(String(o.orderId)))
-    );
-  });
+  const selectedOrdersList = useMemo(() => {
+    if (selectedOrderIds.size === 0) return [];
+    return memberOrders.filter((o) => {
+      const k = getOrderKey(o);
+      return (
+        selectedOrderIds.has(k) ||
+        (o.id != null && selectedOrderIds.has(String(o.id))) ||
+        (o.orderId && selectedOrderIds.has(String(o.orderId)))
+      );
+    });
+  }, [memberOrders, selectedOrderIds]);
 
   const selectedTotalUserComm = selectedOrdersList.reduce((sum, o) => {
     if (isOrderCancelled(o)) return sum;

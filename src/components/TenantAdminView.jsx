@@ -12,6 +12,18 @@ const removeAccents = (str) =>
     .replace(/Đ/g, "D")
     .toLowerCase();
 
+const normalizeStr = (str) =>
+  removeAccents(str).replace(/[^a-z0-9]/g, "");
+
+const cleanTenantPrefix = (val, tenantSlug) => {
+  if (!val) return "";
+  let s = String(val).trim();
+  if (tenantSlug) {
+    s = s.replace(new RegExp(`^${tenantSlug}[_-]`, "i"), "");
+  }
+  return s.replace(/^(phamnga|ly|tranhuyen|lecuong|mailan|th|thanhhang|yenvy)[_-]/i, "");
+};
+
 // Standard default bot templates helper
 const CANONICAL_TEMPLATE_KEYS = [
   "template_link",
@@ -1120,8 +1132,8 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
           }
         }
         if (!matchedMeta && oSubId) {
-          const cleanSub = oSubId.replace(/^(phamnga|ly|tranhuyen|lecuong|mailan|th)[_-]/i, "");
-          const cleanSubNorm = removeAccents(cleanSub).replace(/[^a-z0-9]/g, "");
+          const cleanSub = cleanTenantPrefix(oSubId, mSlug);
+          const cleanSubNorm = normalizeStr(cleanSub);
           if (cleanSubNorm && cleanSubNorm.length >= 2 && !/^\d+$/.test(cleanSubNorm)) {
             if (memberByNormName.has(cleanSubNorm)) {
               matchedMeta = memberByNormName.get(cleanSubNorm);
@@ -1137,7 +1149,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
         if (o.userId != null) matchedMeta.matchedOrderUserIds.add(String(o.userId));
         if (o.zaloId) matchedMeta.matchedOrderZaloIds.add(String(o.zaloId).trim().toLowerCase());
         if (o.subId) {
-          const cleanSub = String(o.subId).replace(/^(phamnga|ly|tranhuyen|lecuong|mailan|th|yenvy)[_-]/i, "").trim().toLowerCase();
+          const cleanSub = cleanTenantPrefix(o.subId, mSlug).toLowerCase();
           matchedMeta.matchedOrderZaloIds.add(cleanSub);
         }
       }
@@ -1152,10 +1164,10 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
       const pZaloId = String(p.zaloId || "").trim().toLowerCase();
       const pUserId = p.userId ? String(p.userId) : null;
       const pNote = String(p.note || "").toLowerCase();
-      const cleanPZalo = pZaloId.replace(/^(phamnga|ly|tranhuyen|lecuong|mailan|th|yenvy)[_-]/i, "").trim().toLowerCase();
-      const pNormZalo = removeAccents(cleanPZalo || pZaloId).replace(/[^a-z0-9]/g, "");
+      const cleanPZalo = cleanTenantPrefix(pZaloId, mSlug).toLowerCase();
+      const pNormZalo = normalizeStr(cleanPZalo || pZaloId);
 
-      const pNormAcc = removeAccents(p.accountName || "").replace(/[^a-z0-9]/g, "");
+      const pNormAcc = normalizeStr(p.accountName || "");
 
       let matchedMeta = null;
       if (pZaloId && memberByZaloId.has(pZaloId)) {
@@ -1274,7 +1286,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
       const availableBalance = Math.max(0, eligibleCommission - totalWithdrawn - pendingWithdrawn);
       const finalCompletedCommission = Math.max(completedCommission, totalWithdrawn + availableBalance);
 
-      resultMap.set(meta.key, {
+      const walletObj = {
         pendingCommission,
         completedCommission: finalCompletedCommission,
         availableBalance,
@@ -1284,7 +1296,10 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
         orders: meta.matchedOrders,
         payouts: meta.matchedPayouts,
         orderIdSet: new Set(meta.matchedOrders.flatMap((mo) => [String(mo.id), String(mo.orderId || "")]).filter(Boolean)),
-      });
+      };
+      resultMap.set(meta.key, walletObj);
+      if (meta.mId) resultMap.set(String(meta.mId), walletObj);
+      if (meta.mZaloId) resultMap.set(String(meta.mZaloId), walletObj);
     });
 
     return resultMap;
@@ -1347,11 +1362,136 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
   const tiktokOrders = orders.filter((o) => o.platform && o.platform.toLowerCase().includes("tiktok"));
   const targetOrders = activeTab === "tiktok" ? tiktokOrders : shopeeOrders;
 
-  // Filter by Purchaser: tập hợp các ID đơn của thành viên được tìm kiếm (đồng bộ cả Sub ID chữ và số Zalo ID)
+  // 1. Pre-built Maps tra cứu thành viên O(1)
+  const userLookups = useMemo(() => {
+    const byZaloId = new Map();
+    const byId = new Map();
+    const byNormName = new Map();
+    const byNormAcc = new Map();
+
+    (zaloUsers || []).forEach((u) => {
+      if (!u) return;
+      const zId = String(u.zaloId || u.zalo_id || "").trim().toLowerCase();
+      const uId = u.id ? String(u.id).trim() : "";
+      if (zId) byZaloId.set(zId, u);
+      if (uId) byId.set(uId, u);
+
+      const normName = normalizeStr(u.zaloName || u.zalo_name || u.name);
+      if (normName && normName.length >= 2 && !/^\d+$/.test(normName)) {
+        if (!byNormName.has(normName)) byNormName.set(normName, u);
+      }
+      const normAcc = normalizeStr(u.accountName);
+      if (normAcc && normAcc.length >= 2 && !/^\d+$/.test(normAcc)) {
+        if (!byNormAcc.has(normAcc)) byNormAcc.set(normAcc, u);
+      }
+    });
+
+    return { byZaloId, byId, byNormName, byNormAcc };
+  }, [zaloUsers]);
+
+  // 2. Hàm định danh người mua cho đơn hàng (dùng chung cho cả bộ lọc và hiển thị bảng)
+  const getOrderBuyerInfo = useCallback(
+    (orderObj) => {
+      if (!orderObj) return { name: "Khách ẩn", isAssigned: false, isZaloName: false, zaloId: "", cleanSub: "" };
+      const rawSubId = String(orderObj.subId || orderObj.sub_id || orderObj.subId1 || "").trim();
+      const targetZaloId = String(orderObj.zaloId || "").trim();
+      const cleanSub = cleanTenantPrefix(rawSubId, activeTenant?.slug);
+      const lookupKey = targetZaloId || cleanSub || rawSubId;
+
+      // 2.1. Tra theo Zalo ID hoặc User ID
+      let zUser = null;
+      if (targetZaloId && userLookups.byZaloId.has(targetZaloId.toLowerCase())) {
+        zUser = userLookups.byZaloId.get(targetZaloId.toLowerCase());
+      } else if (cleanSub && userLookups.byZaloId.has(cleanSub.toLowerCase())) {
+        zUser = userLookups.byZaloId.get(cleanSub.toLowerCase());
+      } else if (lookupKey && userLookups.byId.has(lookupKey)) {
+        zUser = userLookups.byId.get(lookupKey);
+      } else if (lookupKey && lookupKey.length >= 8) {
+        zUser = (zaloUsers || []).find((z) => {
+          const zid = String(z?.zaloId || z?.zalo_id || "");
+          return zid.length >= 8 && (zid.startsWith(lookupKey) || lookupKey.startsWith(zid));
+        });
+      }
+
+      // 2.2. Tra theo tên không dấu nếu Sub ID là tên chữ (như HongPhuc)
+      if (!zUser) {
+        const normSub = normalizeStr(cleanSub || rawSubId);
+        if (normSub && normSub.length >= 2 && !/^\d+$/.test(normSub)) {
+          if (userLookups.byNormName.has(normSub)) {
+            zUser = userLookups.byNormName.get(normSub);
+          } else if (userLookups.byNormAcc.has(normSub)) {
+            zUser = userLookups.byNormAcc.get(normSub);
+          }
+        }
+      }
+
+      if (zUser) {
+        const zName = (zUser.zaloName || zUser.zalo_name || zUser.name || "").trim();
+        const zAccName = (zUser.accountName || "").trim();
+        const resolvedName = zName || zAccName;
+        if (resolvedName && !resolvedName.toLowerCase().startsWith("zalo id") && !resolvedName.toLowerCase().startsWith("sub id")) {
+          return {
+            name: resolvedName,
+            isAssigned: true,
+            isZaloName: true,
+            zaloId: zUser.zaloId || lookupKey,
+            zaloUser: zUser,
+            cleanSub,
+          };
+        }
+      }
+
+      // 2.3. Khớp tên zaloName lưu trên đơn
+      if (orderObj.zaloName && !orderObj.zaloName.toLowerCase().startsWith("zalo id") && !orderObj.zaloName.toLowerCase().startsWith("sub id")) {
+        return {
+          name: orderObj.zaloName,
+          isAssigned: true,
+          isZaloName: true,
+          zaloId: targetZaloId || cleanSub,
+          cleanSub,
+        };
+      }
+
+      // 2.4. Khớp User object nếu có
+      if (orderObj.user) {
+        const uZaloName = (orderObj.user.zaloName || "").trim();
+        const uName = (orderObj.user.name || "").trim();
+        const uEmail = (orderObj.user.email || "").trim();
+        const displayName = uZaloName || (uName && !uName.startsWith("Khách Zalo ") ? uName : null) || uEmail;
+        if (displayName) {
+          return {
+            name: displayName,
+            isAssigned: true,
+            isZaloName: true,
+            zaloId: orderObj.user.zaloId || targetZaloId,
+            cleanSub,
+          };
+        }
+      }
+
+      // 2.5. Sub ID định danh sạch
+      const finalId = cleanSub || targetZaloId || rawSubId;
+      if (finalId) {
+        return {
+          name: `Sub ID: ${finalId}`,
+          isAssigned: true,
+          isZaloName: false,
+          zaloId: finalId,
+          cleanSub,
+        };
+      }
+
+      return { name: "Khách ẩn", isAssigned: false, isZaloName: false, zaloId: "", cleanSub: "" };
+    },
+    [userLookups, activeTenant?.slug, zaloUsers]
+  );
+
+  // Filter by Purchaser: tập hợp các ID đơn của thành viên được tìm kiếm (đồng bộ từ ví)
   const matchedMemberOrderIds = useMemo(() => {
     if (!adminOrderSearchUser || !adminOrderSearchUser.trim()) return null;
     const qUser = adminOrderSearchUser.trim().toLowerCase();
     const qUserNoAccent = removeAccents(qUser);
+    const qUserNoSpace = qUserNoAccent.replace(/\s+/g, "");
 
     const matchedKeys = [];
     (zaloUsers || []).forEach((z) => {
@@ -1359,20 +1499,25 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
       const zZaloId = String(z.zaloId || z.zalo_id || "").toLowerCase();
       const zName = String(z.zaloName || z.zalo_name || z.name || "").toLowerCase();
       const zAcc = String(z.accountName || "").toLowerCase();
+      const zNormName = normalizeStr(zName);
+      const zNormAcc = normalizeStr(zAcc);
       if (
         zZaloId === qUser ||
         (zZaloId.length >= 6 && qUser.length >= 6 && zZaloId.includes(qUser)) ||
-        (zName && removeAccents(zName).includes(qUserNoAccent)) ||
-        (zAcc && removeAccents(zAcc).includes(qUserNoAccent))
+        (zName && (zName.includes(qUser) || removeAccents(zName).includes(qUserNoAccent))) ||
+        (zAcc && (zAcc.includes(qUser) || removeAccents(zAcc).includes(qUserNoAccent))) ||
+        (qUserNoSpace.length >= 2 && (zNormName.includes(qUserNoSpace) || zNormAcc.includes(qUserNoSpace)))
       ) {
-        matchedKeys.push(z.id || z.zaloId);
+        matchedKeys.push(String(z.id || z.zaloId));
+        if (z.zaloId) matchedKeys.push(String(z.zaloId));
+        if (z.id) matchedKeys.push(String(z.id));
       }
     });
 
     if (matchedKeys.length === 0) return null;
     const set = new Set();
     matchedKeys.forEach((k) => {
-      const w = memberWalletsMap.get(k);
+      const w = memberWalletsMap.get(k) || memberWalletsMap.get(String(k));
       if (w && w.orderIdSet) {
         w.orderIdSet.forEach((id) => set.add(id));
       }
@@ -1385,13 +1530,54 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
     if (!o) return false;
 
     // Filter by Purchaser
-    if (adminOrderSearchUser) {
-      const qUser = adminOrderSearchUser.toLowerCase();
-      const matchZaloId = o.zaloId && o.zaloId.toLowerCase().includes(qUser);
-      const matchZaloName = o.zaloName && o.zaloName.toLowerCase().includes(qUser);
-      const matchSubId = (o.subId || o.subId1) && String(o.subId || o.subId1).toLowerCase().includes(qUser);
-      const matchMemberOrders = matchedMemberOrderIds && (matchedMemberOrderIds.has(String(o.id)) || (o.orderId && matchedMemberOrderIds.has(String(o.orderId))));
-      if (!matchZaloId && !matchZaloName && !matchSubId && !matchMemberOrders) return false;
+    if (adminOrderSearchUser && adminOrderSearchUser.trim()) {
+      const qUser = adminOrderSearchUser.trim().toLowerCase();
+      const qUserNoAccent = removeAccents(qUser);
+      const qUserNoSpace = qUserNoAccent.replace(/\s+/g, "");
+
+      const buyer = getOrderBuyerInfo(o);
+      const buyerName = String(buyer?.name || "").toLowerCase();
+      const buyerNameNoAccent = removeAccents(buyerName);
+      const buyerNameNoSpace = buyerNameNoAccent.replace(/\s+/g, "");
+      const buyerZaloId = String(buyer?.zaloId || o.zaloId || "").trim().toLowerCase();
+      const cleanSub = String(buyer?.cleanSub || cleanTenantPrefix(o.subId || o.subId1, activeTenant?.slug) || "").toLowerCase();
+      const cleanSubNoAccent = removeAccents(cleanSub).replace(/\s+/g, "");
+
+      // 1. Khớp theo Tên hiển thị người mua (cả có dấu, không dấu, viết liền không dấu)
+      const matchBuyerName =
+        buyerName.includes(qUser) ||
+        buyerNameNoAccent.includes(qUserNoAccent) ||
+        (qUserNoSpace.length >= 2 && buyerNameNoSpace.includes(qUserNoSpace));
+
+      // 2. Khớp theo Zalo ID người mua
+      const matchZaloId = Boolean(buyerZaloId && (buyerZaloId === qUser || buyerZaloId.includes(qUser)));
+
+      // 3. Khớp theo Clean Sub ID (đã loại bỏ tiền tố Kênh như thanhhang_, th_...)
+      const matchSubId = Boolean(
+        cleanSub &&
+        (cleanSub === qUser || cleanSub.includes(qUser) || (qUserNoSpace.length >= 2 && cleanSubNoAccent.includes(qUserNoSpace)))
+      );
+
+      // 4. Khớp theo thông tin tài khoản ngân hàng / nick phụ
+      const u = buyer?.zaloUser;
+      const matchUserMeta = Boolean(
+        u &&
+        (
+          String(u.accountName || "").toLowerCase().includes(qUser) ||
+          removeAccents(u.accountName || "").includes(qUserNoAccent) ||
+          String(u.accountNumber || "").includes(qUser)
+        )
+      );
+
+      // 5. Khớp theo ID đơn thuộc thành viên trong ví
+      const matchMemberOrders = Boolean(
+        matchedMemberOrderIds &&
+        (matchedMemberOrderIds.has(String(o.id)) || (o.orderId && matchedMemberOrderIds.has(String(o.orderId))))
+      );
+
+      if (!matchBuyerName && !matchZaloId && !matchSubId && !matchUserMeta && !matchMemberOrders) {
+        return false;
+      }
     }
 
     // Filter by Order ID (supports multiple IDs)
@@ -2773,92 +2959,6 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                         const afterTaxVal = Math.max(0, rawVal - taxVal);
                         const userFinalVal = Math.round(afterTaxVal * (customerSplitRate / 100));
                         const adminProfitVal = Math.max(0, afterTaxVal - userFinalVal);
-
-                        const getOrderBuyerInfo = (orderObj) => {
-                          if (!orderObj) return { name: "Khách ẩn", isAssigned: false, isZaloName: false };
-                          const rawSubId = String(orderObj.subId || orderObj.sub_id || orderObj.subId1 || "").trim();
-                          const targetZaloId = String(orderObj.zaloId || "").trim();
-                          let cleanSub = rawSubId;
-                          if (cleanSub) {
-                            cleanSub = cleanSub.replace(/^(phamnga|ly|tranhuyen|lecuong|mailan|th)[_-]/i, "");
-                          }
-                          const lookupKey = targetZaloId || cleanSub || rawSubId;
-
-                          if (lookupKey && Array.isArray(zaloUsers) && zaloUsers.length > 0) {
-                            const zUser = zaloUsers.find((z) => {
-                              if (!z) return false;
-                              const zZaloId = String(z.zaloId || z.zalo_id || "").trim();
-                              const zId = String(z.id || "").trim();
-                              return (
-                                zZaloId === lookupKey ||
-                                zZaloId === targetZaloId ||
-                                zZaloId === cleanSub ||
-                                zZaloId === rawSubId ||
-                                zId === lookupKey ||
-                                (zZaloId.length >= 8 && lookupKey.length >= 8 && (zZaloId.startsWith(lookupKey) || lookupKey.startsWith(zZaloId)))
-                              );
-                            });
-                            if (zUser) {
-                              const zName = (zUser.zaloName || zUser.zalo_name || zUser.name || "").trim();
-                              const zAccName = (zUser.accountName || "").trim();
-                              const resolvedName = zName || zAccName;
-                              if (resolvedName && !resolvedName.toLowerCase().startsWith("zalo id") && !resolvedName.toLowerCase().startsWith("sub id")) {
-                                return { name: resolvedName, isAssigned: true, isZaloName: true, zaloId: zUser.zaloId || lookupKey };
-                              }
-                            }
-
-                            // TỰ ĐỘNG SO KHỚP TÊN KHÔNG DẤU (dành cho đơn mang Sub ID là tên chữ từ hệ thống cũ)
-                            const normalizeStr = (str) =>
-                              String(str || "")
-                                .normalize("NFD")
-                                .replace(/[\u0300-\u036f]/g, "")
-                                .replace(/đ/g, "d")
-                                .replace(/Đ/g, "D")
-                                .toLowerCase()
-                                .replace(/[^a-z0-9]/g, "");
-
-                            const normSub = normalizeStr(cleanSub || rawSubId);
-                            if (normSub && normSub.length >= 2 && !/^\d+$/.test(normSub)) {
-                              const zUserByName = zaloUsers.find((z) => {
-                                if (!z) return false;
-                                const normName = normalizeStr(z.zaloName || z.zalo_name || z.name);
-                                const normAcc = normalizeStr(z.accountName);
-                                return (normName && (normName === normSub || normSub === normName)) ||
-                                       (normAcc && (normAcc === normSub || normSub === normAcc));
-                              });
-                              if (zUserByName) {
-                                const zName = (zUserByName.zaloName || zUserByName.zalo_name || zUserByName.name || "").trim();
-                                const zAccName = (zUserByName.accountName || "").trim();
-                                const resolvedName = zName || zAccName;
-                                if (resolvedName && !resolvedName.toLowerCase().startsWith("zalo id") && !resolvedName.toLowerCase().startsWith("sub id")) {
-                                  return { name: resolvedName, isAssigned: true, isZaloName: true, zaloId: zUserByName.zaloId || lookupKey };
-                                }
-                              }
-                            }
-                          }
-
-                          if (orderObj.zaloName && !orderObj.zaloName.toLowerCase().startsWith("zalo id") && !orderObj.zaloName.toLowerCase().startsWith("sub id")) {
-                            return { name: orderObj.zaloName, isAssigned: true, isZaloName: true, zaloId: targetZaloId || cleanSub };
-                          }
-
-                          if (orderObj.user) {
-                            const uZaloName = (orderObj.user.zaloName || "").trim();
-                            const uName = (orderObj.user.name || "").trim();
-                            const uEmail = (orderObj.user.email || "").trim();
-                            const displayName = uZaloName || (uName && !uName.startsWith("Khách Zalo ") ? uName : null) || uEmail;
-                            if (displayName) {
-                              return { name: displayName, isAssigned: true, isZaloName: true, zaloId: orderObj.user.zaloId || targetZaloId };
-                            }
-                          }
-
-                          const finalId = cleanSub || targetZaloId || rawSubId;
-                          if (finalId) {
-                            return { name: `Sub ID: ${finalId}`, isAssigned: true, isZaloName: false, zaloId: finalId };
-                          }
-
-                          return { name: "Khách ẩn", isAssigned: false, isZaloName: false };
-                        };
-
                         const buyer = getOrderBuyerInfo(o);
 
                         return (

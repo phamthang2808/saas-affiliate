@@ -1114,7 +1114,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
       } else {
         for (let j = 0; j < membersMeta.length; j++) {
           const meta = membersMeta[j];
-          if (meta.mZaloId && oSubId.includes(meta.mZaloId)) {
+          if (meta.mZaloId && /^\d{6,}$/.test(meta.mZaloId) && oSubId.includes(meta.mZaloId)) {
             matchedMeta = meta;
             break;
           }
@@ -1155,6 +1155,8 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
       const cleanPZalo = pZaloId.replace(/^(phamnga|ly|tranhuyen|lecuong|mailan|th|yenvy)[_-]/i, "").trim().toLowerCase();
       const pNormZalo = removeAccents(cleanPZalo || pZaloId).replace(/[^a-z0-9]/g, "");
 
+      const pNormAcc = removeAccents(p.accountName || "").replace(/[^a-z0-9]/g, "");
+
       let matchedMeta = null;
       if (pZaloId && memberByZaloId.has(pZaloId)) {
         matchedMeta = memberByZaloId.get(pZaloId);
@@ -1162,24 +1164,39 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
         matchedMeta = memberByZaloId.get(cleanPZalo);
       } else if (pUserId && memberByUserId.has(pUserId)) {
         matchedMeta = memberByUserId.get(pUserId);
-      } else if (pNormZalo && memberByNormName.has(pNormZalo)) {
-        matchedMeta = memberByNormName.get(pNormZalo);
-      } else if (pNormZalo && memberByNormAcc.has(pNormZalo)) {
-        matchedMeta = memberByNormAcc.get(pNormZalo);
       } else {
         for (let j = 0; j < membersMeta.length; j++) {
           const meta = membersMeta[j];
-          if (
+          const hasZaloMatch = Boolean(
             (meta.mZaloId && /^\d{6,}$/.test(meta.mZaloId) && pNote.includes(meta.mZaloId)) ||
             (pUserId && meta.matchedOrderUserIds.has(pUserId)) ||
             (pZaloId && meta.matchedOrderZaloIds.has(pZaloId)) ||
             (cleanPZalo && meta.matchedOrderZaloIds.has(cleanPZalo)) ||
-            (pNormZalo && meta.matchedOrderZaloIds.has(pNormZalo)) ||
-            (pNormZalo && pNormZalo.length >= 2 && (meta.mNormName === pNormZalo || meta.mNormAcc === pNormZalo))
-          ) {
+            (pNormZalo && meta.matchedOrderZaloIds.has(pNormZalo))
+          );
+          if (!hasZaloMatch) continue;
+
+          // Bắt buộc phải trùng cả điều kiện tên không dấu nếu có định danh tên
+          const hasNameMatch = Boolean(
+            !pNormZalo || pNormZalo.length < 2 || meta.mNormName === pNormZalo || meta.mNormAcc === pNormZalo
+          );
+
+          if (hasZaloMatch && hasNameMatch) {
             matchedMeta = meta;
             break;
           }
+        }
+      }
+
+      // Kiểm tra chặt tên chủ tài khoản nhận (accountName) nếu có: không được gán cho người khác tên
+      if (matchedMeta && pNormAcc && pNormAcc.length >= 2) {
+        const m = matchedMeta;
+        const matchesName = Boolean(
+          (m.mNormName && (pNormAcc === m.mNormName || pNormAcc.includes(m.mNormName) || m.mNormName.includes(pNormAcc))) ||
+          (m.mNormAcc && (pNormAcc === m.mNormAcc || pNormAcc.includes(m.mNormAcc) || m.mNormAcc.includes(pNormAcc)))
+        );
+        if (!matchesName) {
+          matchedMeta = null; // Tên tài khoản khác hẳn -> loại bỏ
         }
       }
 

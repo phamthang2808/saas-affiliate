@@ -130,7 +130,7 @@ export function MemberDetailModal({
         if (oZaloId === mZaloId) return true;
         if (oSubId === mZaloId) return true;
         if (mSlug && oSubId === `${mSlug}_${mZaloId}`) return true;
-        if (oSubId.includes(mZaloId)) return true;
+        if (/^\d{6,}$/.test(mZaloId) && oSubId.includes(mZaloId)) return true;
       }
       if (mId && (oUserId === mId || oSubId === `u${mId}` || (mSlug && oSubId === `${mSlug}_u${mId}`))) {
         return true;
@@ -170,23 +170,55 @@ export function MemberDetailModal({
       const pZaloId = String(p.zaloId || "").trim().toLowerCase();
       const pUserId = p.userId ? String(p.userId) : null;
       const pNote = String(p.note || "").toLowerCase();
-      const cleanPZalo = pZaloId.replace(/^(phamnga|ly|tranhuyen|lecuong|mailan|th|yenvy)[_-]/i, "").trim();
+      const cleanPZalo = pZaloId.replace(/^(phamnga|ly|tranhuyen|lecuong|mailan|th|yenvy)[_-]/i, "").trim().toLowerCase();
       const pNormZalo = removeAccents(cleanPZalo || p.zaloId || "").replace(/[^a-z0-9]/g, "");
+      const pNormAcc = removeAccents(p.accountName || "").replace(/[^a-z0-9]/g, "");
 
-      if (mZaloId && (pZaloId === mZaloId || cleanPZalo === mZaloId)) return true;
-      if (mZaloId && /^\d{6,}$/.test(mZaloId) && pNote.includes(mZaloId)) return true;
-      if (mId && pUserId === mId) return true;
-      if (pUserId && matchedOrderUserIds.has(pUserId)) return true;
-      if (pZaloId && matchedOrderZaloIds.has(pZaloId)) return true;
-      if (cleanPZalo && matchedOrderZaloIds.has(cleanPZalo)) return true;
-      if (pNormZalo && matchedOrderZaloIds.has(pNormZalo)) return true;
+      // 1. Kiểm tra điều kiện Zalo ID / User ID
+      const hasDirectIdMatch = Boolean(
+        (mZaloId && (pZaloId === mZaloId || cleanPZalo === mZaloId)) ||
+        (mId && pUserId === mId) ||
+        (mZaloId && /^\d{6,}$/.test(mZaloId) && pNote.includes(mZaloId))
+      );
 
-      if (pNormZalo && pNormZalo.length >= 2) {
-        if (mNormName && pNormZalo === mNormName) return true;
-        if (mNormAcc && pNormZalo === mNormAcc) return true;
+      // 2. Kiểm tra điều kiện định danh theo đơn hàng của thành viên
+      const hasOrderIdMatch = Boolean(
+        (pUserId && matchedOrderUserIds.has(pUserId)) ||
+        (pZaloId && matchedOrderZaloIds.has(pZaloId)) ||
+        (cleanPZalo && matchedOrderZaloIds.has(cleanPZalo)) ||
+        (pNormZalo && matchedOrderZaloIds.has(pNormZalo))
+      );
+
+      // Bắt buộc phải trùng Zalo ID / User ID / định danh đơn của thành viên
+      if (!hasDirectIdMatch && !hasOrderIdMatch) {
+        return false;
       }
 
-      return false;
+      // 3. KIỂM TRA CHẶT TÊN KHÔNG DẤU:
+      // Nếu lệnh rút tiền có tên chủ tài khoản nhận (accountName), bắt buộc tên đó phải khớp với tên/tài khoản thành viên
+      if (pNormAcc && pNormAcc.length >= 2) {
+        const matchesMemberName = Boolean(
+          (mNormName && (pNormAcc === mNormName || pNormAcc.includes(mNormName) || mNormName.includes(pNormAcc))) ||
+          (mNormAcc && (pNormAcc === mNormAcc || pNormAcc.includes(mNormAcc) || mNormAcc.includes(pNormAcc)))
+        );
+        if (!matchesMemberName) {
+          return false; // Tên tài khoản nhận tiền thuộc người khác -> loại bỏ ngay
+        }
+      }
+
+      // 4. Nếu chỉ khớp qua đơn hàng (hasOrderIdMatch) chứ không phải trùng Zalo ID trực tiếp:
+      // BẮT BUỘC PHẢI THỎA MÃN CẢ HAI: vừa trùng ID đơn VÀ vừa trùng tên không dấu
+      if (!hasDirectIdMatch && hasOrderIdMatch) {
+        const isNameMatched = Boolean(
+          (mNormName && mNormName.length >= 2 && pNormZalo === mNormName) ||
+          (mNormAcc && mNormAcc.length >= 2 && pNormZalo === mNormAcc)
+        );
+        if (!isNameMatched) {
+          return false;
+        }
+      }
+
+      return true;
     });
   }, [payouts, mZaloId, mId, matchedOrderUserIds, matchedOrderZaloIds, mNormName, mNormAcc]);
 

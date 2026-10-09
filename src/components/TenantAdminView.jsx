@@ -1152,23 +1152,30 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
       const pZaloId = String(p.zaloId || "").trim().toLowerCase();
       const pUserId = p.userId ? String(p.userId) : null;
       const pNote = String(p.note || "").toLowerCase();
-      const pNormZalo = removeAccents(p.zaloId || "").replace(/[^a-z0-9]/g, "");
+      const cleanPZalo = pZaloId.replace(/^(phamnga|ly|tranhuyen|lecuong|mailan|th|yenvy)[_-]/i, "").trim().toLowerCase();
+      const pNormZalo = removeAccents(cleanPZalo || pZaloId).replace(/[^a-z0-9]/g, "");
 
       let matchedMeta = null;
       if (pZaloId && memberByZaloId.has(pZaloId)) {
         matchedMeta = memberByZaloId.get(pZaloId);
+      } else if (cleanPZalo && memberByZaloId.has(cleanPZalo)) {
+        matchedMeta = memberByZaloId.get(cleanPZalo);
       } else if (pUserId && memberByUserId.has(pUserId)) {
         matchedMeta = memberByUserId.get(pUserId);
+      } else if (pNormZalo && memberByNormName.has(pNormZalo)) {
+        matchedMeta = memberByNormName.get(pNormZalo);
+      } else if (pNormZalo && memberByNormAcc.has(pNormZalo)) {
+        matchedMeta = memberByNormAcc.get(pNormZalo);
       } else {
         for (let j = 0; j < membersMeta.length; j++) {
           const meta = membersMeta[j];
           if (
-            (meta.mZaloId && pNote.includes(meta.mZaloId)) ||
+            (meta.mZaloId && /^\d{6,}$/.test(meta.mZaloId) && pNote.includes(meta.mZaloId)) ||
             (pUserId && meta.matchedOrderUserIds.has(pUserId)) ||
             (pZaloId && meta.matchedOrderZaloIds.has(pZaloId)) ||
+            (cleanPZalo && meta.matchedOrderZaloIds.has(cleanPZalo)) ||
             (pNormZalo && meta.matchedOrderZaloIds.has(pNormZalo)) ||
-            (pNormZalo && pNormZalo.length >= 2 && (meta.mNormName === pNormZalo || meta.mNormAcc === pNormZalo)) ||
-            (meta.mNormName && meta.mNormName.length >= 2 && removeAccents(pNote).includes(meta.mNormName))
+            (pNormZalo && pNormZalo.length >= 2 && (meta.mNormName === pNormZalo || meta.mNormAcc === pNormZalo))
           ) {
             matchedMeta = meta;
             break;

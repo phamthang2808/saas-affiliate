@@ -1202,9 +1202,9 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
         const raw = Number(o.rawCommission || 0);
         let comm = 0;
         if (raw > 0) {
-          const tax = Math.round(raw * (currentTax / 100));
+          const tax = Math.round((raw * currentTax) / 100);
           const afterTax = Math.max(0, raw - tax);
-          comm = Math.round(afterTax * (currentSplit / 100));
+          comm = Math.round((afterTax * currentSplit) / 100);
         } else {
           comm = Math.round(Number(o.finalCommission || 0));
         }
@@ -1248,10 +1248,11 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
 
       const totalWithdrawn = Math.max(totalPayoutsWithdrawn, paidOrdersCommission);
       const availableBalance = Math.max(0, eligibleCommission - totalWithdrawn - pendingWithdrawn);
+      const finalCompletedCommission = Math.max(completedCommission, totalWithdrawn + availableBalance);
 
       resultMap.set(meta.key, {
         pendingCommission,
-        completedCommission,
+        completedCommission: finalCompletedCommission,
         availableBalance,
         totalWithdrawn,
         pendingWithdrawn,

@@ -211,9 +211,9 @@ export function MemberDetailModal({
     if (isOrderCancelled(o)) return 0;
     const raw = Number(o.rawCommission || 0);
     if (raw > 0) {
-      const tax = Math.round(raw * (taxRate / 100));
+      const tax = Math.round((raw * taxRate) / 100);
       const afterTax = Math.max(0, raw - tax);
-      return Math.round(afterTax * (customerSplitRate / 100));
+      return Math.round((afterTax * customerSplitRate) / 100);
     }
     return Math.round(Number(o.finalCommission || 0));
   };
@@ -323,6 +323,7 @@ export function MemberDetailModal({
   const totalWithdrawn = Math.max(totalPayoutsWithdrawn, paidOrdersCommission);
 
   const availableBalance = Math.max(0, eligibleCompletedCommission - totalWithdrawn - pendingWithdrawn);
+  const displayCompletedCommission = Math.max(completedCommission, totalWithdrawn + availableBalance);
 
   const zaloName = liveData?.zaloName || liveData?.user?.name || initialZaloName;
   const bankName = liveData?.bankName || liveData?.user?.bankName || initialBankName;
@@ -831,7 +832,7 @@ export function MemberDetailModal({
               </p>
             </div>
             <div className="text-lg sm:text-2xl font-black text-emerald-600 font-mono truncate">
-              {formatMoney(completedCommission)}
+              {formatMoney(displayCompletedCommission)}
             </div>
           </div>
 

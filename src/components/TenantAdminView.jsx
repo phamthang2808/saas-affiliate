@@ -24,6 +24,45 @@ const cleanTenantPrefix = (val, tenantSlug) => {
   return s.replace(/^(phamnga|ly|tranhuyen|lecuong|mailan|th|thanhhang|yenvy)[_-]/i, "");
 };
 
+// Khớp chuẩn xác theo từ/tên (Exact match / Whole-word match, không dùng LIKE substring)
+const matchesExactOrWords = (targetStr, qStr) => {
+  if (!targetStr || !qStr) return false;
+  const t = String(targetStr).trim().toLowerCase();
+  const q = String(qStr).trim().toLowerCase();
+  if (t === q) return true;
+
+  const tNorm = removeAccents(t);
+  const qNorm = removeAccents(q);
+  if (tNorm === qNorm) return true;
+
+  const tNoSpace = tNorm.replace(/\s+/g, "");
+  const qNoSpace = qNorm.replace(/\s+/g, "");
+  if (tNoSpace === qNoSpace) return true;
+
+  // Khớp theo từng từ nguyên vẹn (Whole-word exact match)
+  const tWords = tNorm.split(/\s+/).filter(Boolean);
+  const qWords = qNorm.split(/\s+/).filter(Boolean);
+
+  if (qWords.length === 1) {
+    return tWords.includes(qWords[0]);
+  }
+
+  if (qWords.length > 1 && qWords.length <= tWords.length) {
+    for (let i = 0; i <= tWords.length - qWords.length; i++) {
+      let allMatch = true;
+      for (let j = 0; j < qWords.length; j++) {
+        if (tWords[i + j] !== qWords[j]) {
+          allMatch = false;
+          break;
+        }
+      }
+      if (allMatch) return true;
+    }
+  }
+
+  return false;
+};
+
 // Standard default bot templates helper
 const CANONICAL_TEMPLATE_KEYS = [
   "template_link",
@@ -1486,28 +1525,23 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
     [userLookups, activeTenant?.slug, zaloUsers]
   );
 
-  // Filter by Purchaser: tập hợp các ID đơn của thành viên được tìm kiếm (đồng bộ từ ví)
+  // Filter by Purchaser: tập hợp các ID đơn của thành viên được tìm kiếm (chuẩn luôn theo tên/ID)
   const matchedMemberOrderIds = useMemo(() => {
     if (!adminOrderSearchUser || !adminOrderSearchUser.trim()) return null;
     const qUser = adminOrderSearchUser.trim().toLowerCase();
-    const qUserNoAccent = removeAccents(qUser);
-    const qUserNoSpace = qUserNoAccent.replace(/\s+/g, "");
 
     const matchedKeys = [];
     (zaloUsers || []).forEach((z) => {
       if (!z) return;
-      const zZaloId = String(z.zaloId || z.zalo_id || "").toLowerCase();
-      const zName = String(z.zaloName || z.zalo_name || z.name || "").toLowerCase();
-      const zAcc = String(z.accountName || "").toLowerCase();
-      const zNormName = normalizeStr(zName);
-      const zNormAcc = normalizeStr(zAcc);
-      if (
-        zZaloId === qUser ||
-        (zZaloId.length >= 6 && qUser.length >= 6 && zZaloId.includes(qUser)) ||
-        (zName && (zName.includes(qUser) || removeAccents(zName).includes(qUserNoAccent))) ||
-        (zAcc && (zAcc.includes(qUser) || removeAccents(zAcc).includes(qUserNoAccent))) ||
-        (qUserNoSpace.length >= 2 && (zNormName.includes(qUserNoSpace) || zNormAcc.includes(qUserNoSpace)))
-      ) {
+      const zZaloId = String(z.zaloId || z.zalo_id || "").trim().toLowerCase();
+      const zName = String(z.zaloName || z.zalo_name || z.name || "").trim();
+      const zAcc = String(z.accountName || "").trim();
+
+      const matchId = Boolean(zZaloId && (zZaloId === qUser || (/^\d+$/.test(qUser) && qUser.length >= 8 && zZaloId.startsWith(qUser))));
+      const matchName = matchesExactOrWords(zName, qUser);
+      const matchAcc = matchesExactOrWords(zAcc, qUser);
+
+      if (matchId || matchName || matchAcc) {
         matchedKeys.push(String(z.id || z.zaloId));
         if (z.zaloId) matchedKeys.push(String(z.zaloId));
         if (z.id) matchedKeys.push(String(z.id));
@@ -1529,33 +1563,28 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
   const filteredOrders = targetOrders.filter((o) => {
     if (!o) return false;
 
-    // Filter by Purchaser
+    // Filter by Purchaser (Chuẩn luôn, không dùng LIKE substring)
     if (adminOrderSearchUser && adminOrderSearchUser.trim()) {
       const qUser = adminOrderSearchUser.trim().toLowerCase();
-      const qUserNoAccent = removeAccents(qUser);
-      const qUserNoSpace = qUserNoAccent.replace(/\s+/g, "");
 
       const buyer = getOrderBuyerInfo(o);
-      const buyerName = String(buyer?.name || "").toLowerCase();
-      const buyerNameNoAccent = removeAccents(buyerName);
-      const buyerNameNoSpace = buyerNameNoAccent.replace(/\s+/g, "");
+      const buyerName = String(buyer?.name || "").trim();
       const buyerZaloId = String(buyer?.zaloId || o.zaloId || "").trim().toLowerCase();
-      const cleanSub = String(buyer?.cleanSub || cleanTenantPrefix(o.subId || o.subId1, activeTenant?.slug) || "").toLowerCase();
-      const cleanSubNoAccent = removeAccents(cleanSub).replace(/\s+/g, "");
+      const cleanSub = String(buyer?.cleanSub || cleanTenantPrefix(o.subId || o.subId1, activeTenant?.slug) || "").trim();
 
-      // 1. Khớp theo Tên hiển thị người mua (cả có dấu, không dấu, viết liền không dấu)
-      const matchBuyerName =
-        buyerName.includes(qUser) ||
-        buyerNameNoAccent.includes(qUserNoAccent) ||
-        (qUserNoSpace.length >= 2 && buyerNameNoSpace.includes(qUserNoSpace));
+      // 1. Khớp chuẩn xác hoặc trọn vẹn từ theo Tên người mua
+      const matchBuyerName = matchesExactOrWords(buyerName, qUser);
 
-      // 2. Khớp theo Zalo ID người mua
-      const matchZaloId = Boolean(buyerZaloId && (buyerZaloId === qUser || buyerZaloId.includes(qUser)));
+      // 2. Khớp chuẩn xác theo Zalo ID người mua
+      const matchZaloId = Boolean(
+        buyerZaloId &&
+        (buyerZaloId === qUser || (/^\d+$/.test(qUser) && qUser.length >= 8 && buyerZaloId.startsWith(qUser)))
+      );
 
-      // 3. Khớp theo Clean Sub ID (đã loại bỏ tiền tố Kênh như thanhhang_, th_...)
+      // 3. Khớp chuẩn xác theo Clean Sub ID (đã loại bỏ tiền tố Kênh như thanhhang_, th_...)
       const matchSubId = Boolean(
         cleanSub &&
-        (cleanSub === qUser || cleanSub.includes(qUser) || (qUserNoSpace.length >= 2 && cleanSubNoAccent.includes(qUserNoSpace)))
+        matchesExactOrWords(cleanSub, qUser)
       );
 
       // 4. Khớp theo thông tin tài khoản ngân hàng / nick phụ
@@ -1563,9 +1592,8 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
       const matchUserMeta = Boolean(
         u &&
         (
-          String(u.accountName || "").toLowerCase().includes(qUser) ||
-          removeAccents(u.accountName || "").includes(qUserNoAccent) ||
-          String(u.accountNumber || "").includes(qUser)
+          matchesExactOrWords(u.accountName, qUser) ||
+          String(u.accountNumber || "").trim() === qUser
         )
       );
 

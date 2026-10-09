@@ -36,6 +36,7 @@ export function MemberDetailModal({
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedOrderIds, setSelectedOrderIds] = useState(new Set());
   const [isMarkingPaid, setIsMarkingPaid] = useState(false);
+  const [showSelectMenu, setShowSelectMenu] = useState(false);
   const pageSize = 10;
 
   // Manual Payout state
@@ -103,6 +104,13 @@ export function MemberDetailModal({
     setIsLoadingLive(true);
     refreshLiveData();
   }, [refreshLiveData]);
+
+  useEffect(() => {
+    if (!showSelectMenu) return;
+    const handleClickOutside = () => setShowSelectMenu(false);
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, [showSelectMenu]);
 
   // Fallback Matching if liveData is not loaded
   const mZaloId = zaloId.toLowerCase();
@@ -394,35 +402,48 @@ export function MemberDetailModal({
     });
   };
 
-  const currentPageKeys = (filteredOrders.slice((Math.min(currentPage, Math.ceil(filteredOrders.length / pageSize) || 1) - 1) * pageSize, Math.min(currentPage, Math.ceil(filteredOrders.length / pageSize) || 1) * pageSize)).map(getOrderKey);
-  const isAllCurrentPageSelected =
-    currentPageKeys.length > 0 && currentPageKeys.every((k) => selectedOrderIds.has(k));
-
-  const toggleSelectAllCurrentPage = () => {
-    if (isAllCurrentPageSelected) {
-      setSelectedOrderIds((prev) => {
-        const next = new Set(prev);
-        currentPageKeys.forEach((k) => next.delete(k));
-        return next;
-      });
-    } else {
-      setSelectedOrderIds((prev) => {
-        const next = new Set(prev);
-        currentPageKeys.forEach((k) => next.add(k));
-        return next;
-      });
-    }
-  };
-
-  const allFilteredKeys = filteredOrders.map(getOrderKey);
-  const isAllFilteredSelected =
-    allFilteredKeys.length > 0 && allFilteredKeys.every((k) => selectedOrderIds.has(k));
+  const allFilteredKeys = useMemo(() => filteredOrders.map(getOrderKey), [filteredOrders]);
+  const isAllFilteredSelected = useMemo(
+    () => allFilteredKeys.length > 0 && allFilteredKeys.every((k) => selectedOrderIds.has(k)),
+    [allFilteredKeys, selectedOrderIds]
+  );
+  const isSomeFilteredSelected = selectedOrderIds.size > 0 && !isAllFilteredSelected;
 
   const toggleSelectAllFiltered = () => {
     if (isAllFilteredSelected) {
       setSelectedOrderIds(new Set());
     } else {
       setSelectedOrderIds(new Set(allFilteredKeys));
+    }
+  };
+
+  const selectCurrentPageOnly = () => {
+    const totalP = Math.ceil(filteredOrders.length / pageSize) || 1;
+    const safeP = Math.min(currentPage, totalP);
+    const start = (safeP - 1) * pageSize;
+    const pageKeys = filteredOrders.slice(start, start + pageSize).map(getOrderKey);
+    setSelectedOrderIds(new Set(pageKeys));
+  };
+
+  const toggleSelectAllCurrentPage = () => {
+    const totalP = Math.ceil(filteredOrders.length / pageSize) || 1;
+    const safeP = Math.min(currentPage, totalP);
+    const start = (safeP - 1) * pageSize;
+    const pageKeys = filteredOrders.slice(start, start + pageSize).map(getOrderKey);
+    const isAllPageSelected = pageKeys.length > 0 && pageKeys.every((k) => selectedOrderIds.has(k));
+
+    if (isAllPageSelected) {
+      setSelectedOrderIds((prev) => {
+        const next = new Set(prev);
+        pageKeys.forEach((k) => next.delete(k));
+        return next;
+      });
+    } else {
+      setSelectedOrderIds((prev) => {
+        const next = new Set(prev);
+        pageKeys.forEach((k) => next.add(k));
+        return next;
+      });
     }
   };
 
@@ -1050,15 +1071,19 @@ export function MemberDetailModal({
                 <button
                   type="button"
                   onClick={toggleSelectAllFiltered}
-                  className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer border flex items-center gap-1.5 shadow-2xs ${
+                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer border flex items-center gap-1.5 shadow-xs ${
                     isAllFilteredSelected
-                      ? "bg-amber-100 text-amber-900 border-amber-300"
-                      : "bg-white hover:bg-slate-50 text-slate-700 border-slate-200"
+                      ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white border-orange-600 shadow-orange-500/25 ring-2 ring-orange-400/30"
+                      : "bg-amber-50 hover:bg-amber-100 text-amber-900 border-amber-300 hover:border-amber-400"
                   }`}
-                  title="Chọn tất cả đơn của khách này đang hiển thị theo bộ lọc"
+                  title="Tích chọn TẤT CẢ các đơn trên TẤT CẢ các trang (không cần lật từng trang)"
                 >
-                  <i className={`fa-regular ${isAllFilteredSelected ? "fa-square-check text-amber-700" : "fa-square text-slate-400"}`}></i>
-                  <span>{isAllFilteredSelected ? "Bỏ chọn" : `Chọn ${filteredOrders.length} đơn`}</span>
+                  <i className={`fa-solid ${isAllFilteredSelected ? "fa-circle-check text-white" : "fa-check-double text-amber-600"}`}></i>
+                  <span>
+                    {isAllFilteredSelected
+                      ? `Đã chọn tất cả (${allFilteredKeys.length} đơn)`
+                      : `Tích chọn tất cả (${filteredOrders.length} đơn - All trang)`}
+                  </span>
                 </button>
               )}
 
@@ -1097,9 +1122,23 @@ export function MemberDetailModal({
                     {selectedOrderIds.size}
                   </span>
                   <span className="text-xs font-black text-slate-800">
-                    Đang chọn {selectedOrderIds.size} đơn:
+                    Đang chọn {selectedOrderIds.size} / {filteredOrders.length} đơn
+                    {selectedOrderIds.size === filteredOrders.length ? " (Tất cả các trang)" : ` (Trang ${safePage})`}
                   </span>
                 </div>
+
+                {selectedOrderIds.size < filteredOrders.length && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedOrderIds(new Set(allFilteredKeys))}
+                    className="px-2.5 py-1 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 shadow-xs"
+                    title="Bấm để chọn toàn bộ đơn hàng trên tất cả các trang"
+                  >
+                    <i className="fa-solid fa-check-double text-[11px]"></i>
+                    <span>Tích chọn tất cả {filteredOrders.length} đơn (All trang)</span>
+                  </button>
+                )}
+
                 <div className="flex items-center gap-2 text-xs">
                   <span className="text-slate-500 font-semibold">Khách nhận:</span>
                   <span className="text-base font-black text-orange-600 font-mono">
@@ -1150,14 +1189,96 @@ export function MemberDetailModal({
             <table className="w-full text-left text-xs">
               <thead>
                 <tr className="bg-slate-50 border-b-2 border-slate-200">
-                  <th className="px-3 py-3 w-8 text-center">
-                    <input
-                      type="checkbox"
-                      checked={isAllCurrentPageSelected}
-                      onChange={toggleSelectAllCurrentPage}
-                      className="w-4 h-4 rounded text-orange-600 focus:ring-orange-500 border-slate-300 cursor-pointer"
-                      title="Chọn tất cả đơn trên trang này"
-                    />
+                  <th className="px-3 py-3 text-center whitespace-nowrap">
+                    <div className="relative inline-flex items-center justify-center gap-0.5">
+                      <input
+                        type="checkbox"
+                        ref={(el) => {
+                          if (el) {
+                            el.indeterminate = isSomeFilteredSelected;
+                          }
+                        }}
+                        checked={isAllFilteredSelected}
+                        onChange={toggleSelectAllFiltered}
+                        className="w-4 h-4 rounded text-orange-600 focus:ring-orange-500 border-slate-300 cursor-pointer"
+                        title={
+                          isAllFilteredSelected
+                            ? "Bỏ chọn tất cả các trang"
+                            : `Tích chọn TẤT CẢ ${filteredOrders.length} đơn trên tất cả các trang`
+                        }
+                      />
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowSelectMenu((v) => !v);
+                        }}
+                        className="text-slate-400 hover:text-slate-700 p-0.5 rounded cursor-pointer transition"
+                        title="Tùy chọn tích chọn (tất cả các trang hoặc chỉ trang này)"
+                      >
+                        <i className="fa-solid fa-caret-down text-[10px]"></i>
+                      </button>
+
+                      {showSelectMenu && (
+                        <div
+                          className="absolute left-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-50 py-1.5 w-52 text-left animate-[fadeIn_0.1s_ease-out]"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div className="px-3 py-1 text-[10px] font-black uppercase text-slate-400 border-b border-slate-100 mb-1">
+                            Tùy chọn tích chọn
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedOrderIds(new Set(allFilteredKeys));
+                              setShowSelectMenu(false);
+                            }}
+                            className={`w-full px-3 py-1.5 text-xs font-bold flex items-center justify-between transition cursor-pointer ${
+                              isAllFilteredSelected
+                                ? "bg-orange-50 text-orange-600 font-black"
+                                : "text-slate-700 hover:bg-slate-50"
+                            }`}
+                          >
+                            <span className="flex items-center gap-1.5">
+                              <i className="fa-solid fa-check-double text-orange-500 text-[11px]"></i>
+                              <span>Tất cả các trang</span>
+                            </span>
+                            <span className="text-[11px] font-semibold text-slate-400">({allFilteredKeys.length} đơn)</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              selectCurrentPageOnly();
+                              setShowSelectMenu(false);
+                            }}
+                            className="w-full px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center justify-between transition cursor-pointer"
+                          >
+                            <span className="flex items-center gap-1.5">
+                              <i className="fa-solid fa-file-lines text-slate-400 text-[11px]"></i>
+                              <span>Chỉ trang {safePage}</span>
+                            </span>
+                            <span className="text-[11px] font-semibold text-slate-400">({paginatedOrders.length} đơn)</span>
+                          </button>
+
+                          {selectedOrderIds.size > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedOrderIds(new Set());
+                                setShowSelectMenu(false);
+                              }}
+                              className="w-full px-3 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-50 flex items-center justify-between transition cursor-pointer border-t border-slate-100 mt-1 pt-1.5"
+                            >
+                              <span className="flex items-center gap-1.5">
+                                <i className="fa-solid fa-xmark text-rose-500 text-[11px]"></i>
+                                <span>Bỏ chọn tất cả</span>
+                              </span>
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </th>
                   <th className="px-3 py-3 font-black text-slate-700 whitespace-nowrap">Mã đơn</th>
                   <th className="px-3 py-3 font-black text-slate-700 whitespace-nowrap">Nền tảng</th>

@@ -1,8 +1,16 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { formatMoney, formatDate } from "../utils/formatters";
 import { APP_CONFIG } from "../config/api";
 import { MemberDetailModal } from "./MemberDetailModal";
 import { TemplatePreviewModal } from "./TemplatePreviewModal";
+
+const removeAccents = (str) =>
+  String(str || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D")
+    .toLowerCase();
 
 // Standard default bot templates helper
 const CANONICAL_TEMPLATE_KEYS = [
@@ -996,7 +1004,14 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
       if (res.ok) {
         showNotification(data.message || "✅ Đã cập nhật STK thành công!", "success");
         setEditingMemberBank(null);
-        fetchTenantData();
+        setZaloUsers((prev) =>
+          prev.map((u) => {
+            if (String(u.zaloId || u.zalo_id) === String(zaloId)) {
+              return { ...u, bankName, accountNumber, accountName };
+            }
+            return u;
+          })
+        );
       } else {
         showNotification("❌ " + (data.message || "Lỗi cập nhật STK"), "error");
       }
@@ -1027,6 +1042,279 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
       : (stats?.tenant?.holdingDays ?? activeTenant?.holdingDays ?? 0)
   );
   const adminSplitRate = Math.max(0, 100 - customerSplitRate);
+
+  // === TỐI ƯU HÓA HIỆU NĂNG: TÍNH TOÁN VÍ THÀNH VIÊN 1 LẦN DUY NHẤT (O(N) thay vì O(M*N)) ===
+  const memberWalletsMap = useMemo(() => {
+    if (!Array.isArray(zaloUsers) || zaloUsers.length === 0) return new Map();
+
+    const mSlug = String(activeTenant?.slug || "").toLowerCase();
+    const currentSplit = customerSplitRate || 80;
+    const currentTax = taxRate !== undefined ? taxRate : 10;
+    const tenantHoldingDays = Number(holdingDays || 0);
+
+    // 1. Chuẩn hóa định danh của 123 thành viên 1 lần duy nhất
+    const membersMeta = zaloUsers.map((m) => {
+      const mZaloId = String(m.zaloId || m.zalo_id || "").trim().toLowerCase();
+      const mId = m.id ? String(m.id) : null;
+      const mNormName = removeAccents(m.zaloName || m.zalo_name || m.name).replace(/[^a-z0-9]/g, "");
+      const mNormAcc = removeAccents(m.accountName).replace(/[^a-z0-9]/g, "");
+      return {
+        key: m.id || m.zaloId,
+        member: m,
+        mZaloId,
+        mId,
+        mNormName,
+        mNormAcc,
+        matchedOrders: [],
+        matchedPayouts: [],
+        matchedOrderUserIds: new Set(),
+        matchedOrderZaloIds: new Set(),
+      };
+    });
+
+    const memberByZaloId = new Map();
+    const memberByUserId = new Map();
+    const memberByNormName = new Map();
+    const memberByNormAcc = new Map();
+
+    membersMeta.forEach((meta) => {
+      if (meta.mZaloId) memberByZaloId.set(meta.mZaloId, meta);
+      if (meta.mId) memberByUserId.set(meta.mId, meta);
+      if (meta.mNormName && meta.mNormName.length >= 2 && !/^\d+$/.test(meta.mNormName)) {
+        memberByNormName.set(meta.mNormName, meta);
+      }
+      if (meta.mNormAcc && meta.mNormAcc.length >= 2 && !/^\d+$/.test(meta.mNormAcc)) {
+        memberByNormAcc.set(meta.mNormAcc, meta);
+      }
+    });
+
+    // 2. Quét toàn bộ 3,177 đơn đúng 1 vòng (O(N)) thay vì lặp hàng trăm ngàn lần
+    const safeOrders = Array.isArray(orders) ? orders : [];
+    for (let i = 0; i < safeOrders.length; i++) {
+      const o = safeOrders[i];
+      if (!o) continue;
+
+      const oZaloId = String(o.zaloId || "").trim().toLowerCase();
+      const oSubId = String(o.subId || o.sub_id || "").trim().toLowerCase();
+      const oUserId = o.userId ? String(o.userId) : null;
+
+      let matchedMeta = null;
+      if (oZaloId && memberByZaloId.has(oZaloId)) {
+        matchedMeta = memberByZaloId.get(oZaloId);
+      } else if (oSubId && memberByZaloId.has(oSubId)) {
+        matchedMeta = memberByZaloId.get(oSubId);
+      } else if (mSlug && oSubId.startsWith(`${mSlug}_`) && memberByZaloId.has(oSubId.substring(mSlug.length + 1))) {
+        matchedMeta = memberByZaloId.get(oSubId.substring(mSlug.length + 1));
+      } else if (oUserId && memberByUserId.has(oUserId)) {
+        matchedMeta = memberByUserId.get(oUserId);
+      } else if (oSubId.startsWith("u") && memberByUserId.has(oSubId.substring(1))) {
+        matchedMeta = memberByUserId.get(oSubId.substring(1));
+      } else if (mSlug && oSubId.startsWith(`${mSlug}_u`) && memberByUserId.has(oSubId.substring(mSlug.length + 2))) {
+        matchedMeta = memberByUserId.get(oSubId.substring(mSlug.length + 2));
+      } else {
+        for (let j = 0; j < membersMeta.length; j++) {
+          const meta = membersMeta[j];
+          if (meta.mZaloId && oSubId.includes(meta.mZaloId)) {
+            matchedMeta = meta;
+            break;
+          }
+        }
+        if (!matchedMeta && oSubId) {
+          const cleanSub = oSubId.replace(/^(phamnga|ly|tranhuyen|lecuong|mailan|th)[_-]/i, "");
+          const cleanSubNorm = removeAccents(cleanSub).replace(/[^a-z0-9]/g, "");
+          if (cleanSubNorm && cleanSubNorm.length >= 2 && !/^\d+$/.test(cleanSubNorm)) {
+            if (memberByNormName.has(cleanSubNorm)) {
+              matchedMeta = memberByNormName.get(cleanSubNorm);
+            } else if (memberByNormAcc.has(cleanSubNorm)) {
+              matchedMeta = memberByNormAcc.get(cleanSubNorm);
+            }
+          }
+        }
+      }
+
+      if (matchedMeta) {
+        matchedMeta.matchedOrders.push(o);
+        if (o.userId != null) matchedMeta.matchedOrderUserIds.add(String(o.userId));
+        if (o.zaloId) matchedMeta.matchedOrderZaloIds.add(String(o.zaloId).trim().toLowerCase());
+        if (o.subId) {
+          const cleanSub = String(o.subId).replace(/^(phamnga|ly|tranhuyen|lecuong|mailan|th|yenvy)[_-]/i, "").trim().toLowerCase();
+          matchedMeta.matchedOrderZaloIds.add(cleanSub);
+        }
+      }
+    }
+
+    // 3. Phân bổ các lệnh rút tiền (O(P))
+    const safePayouts = Array.isArray(payouts) ? payouts : [];
+    for (let i = 0; i < safePayouts.length; i++) {
+      const p = safePayouts[i];
+      if (!p) continue;
+
+      const pZaloId = String(p.zaloId || "").trim().toLowerCase();
+      const pUserId = p.userId ? String(p.userId) : null;
+      const pNote = String(p.note || "").toLowerCase();
+      const pNormZalo = removeAccents(p.zaloId || "").replace(/[^a-z0-9]/g, "");
+
+      let matchedMeta = null;
+      if (pZaloId && memberByZaloId.has(pZaloId)) {
+        matchedMeta = memberByZaloId.get(pZaloId);
+      } else if (pUserId && memberByUserId.has(pUserId)) {
+        matchedMeta = memberByUserId.get(pUserId);
+      } else {
+        for (let j = 0; j < membersMeta.length; j++) {
+          const meta = membersMeta[j];
+          if (
+            (meta.mZaloId && pNote.includes(meta.mZaloId)) ||
+            (pUserId && meta.matchedOrderUserIds.has(pUserId)) ||
+            (pZaloId && meta.matchedOrderZaloIds.has(pZaloId)) ||
+            (pNormZalo && meta.matchedOrderZaloIds.has(pNormZalo)) ||
+            (pNormZalo && pNormZalo.length >= 2 && (meta.mNormName === pNormZalo || meta.mNormAcc === pNormZalo)) ||
+            (meta.mNormName && meta.mNormName.length >= 2 && removeAccents(pNote).includes(meta.mNormName))
+          ) {
+            matchedMeta = meta;
+            break;
+          }
+        }
+      }
+
+      if (matchedMeta) {
+        matchedMeta.matchedPayouts.push(p);
+      }
+    }
+
+    // 4. Tính toán Ví tiền cho từng thành viên
+    const resultMap = new Map();
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const thresholdTime = tenantHoldingDays > 0 ? new Date(now.getTime() - tenantHoldingDays * 24 * 60 * 60 * 1000) : null;
+
+    membersMeta.forEach((meta) => {
+      let pendingCommission = 0;
+      let completedCommission = 0;
+      let eligibleCommission = 0;
+      let paidOrdersCommission = 0;
+
+      for (let i = 0; i < meta.matchedOrders.length; i++) {
+        const o = meta.matchedOrders[i];
+        const st = String(o.status || "").toLowerCase();
+        const isCompleted = st.includes("hoàn thành") || st.includes("completed") || st.includes("thành công") || st.includes("thanh toán") || st.includes("duyệt") || st === "2";
+        const isCancelled = st.includes("hủy") || st.includes("cancel") || st.includes("refund") || st === "3";
+
+        const raw = Number(o.rawCommission || 0);
+        let comm = 0;
+        if (raw > 0) {
+          const tax = Math.round(raw * (currentTax / 100));
+          const afterTax = Math.max(0, raw - tax);
+          comm = Math.round(afterTax * (currentSplit / 100));
+        } else {
+          comm = Math.round(Number(o.finalCommission || 0));
+        }
+
+        if (isCompleted) {
+          completedCommission += comm;
+
+          let eligible = true;
+          if (tenantHoldingDays > 0) {
+            const dateStr = o.completeTime || o.completedAt || o.orderDate || o.createdAt;
+            if (dateStr) {
+              const oDate = new Date(dateStr);
+              if (!isNaN(oDate.getTime())) {
+                if (oDate > thresholdTime) {
+                  const oDay = new Date(oDate.getFullYear(), oDate.getMonth(), oDate.getDate());
+                  oDay.setDate(oDay.getDate() + tenantHoldingDays);
+                  eligible = oDay <= today;
+                }
+              }
+            }
+          }
+          if (eligible) eligibleCommission += comm;
+          if (String(o.paymentStatus || "").toUpperCase() === "PAID") paidOrdersCommission += comm;
+        } else if (!isCancelled) {
+          pendingCommission += comm;
+        }
+      }
+
+      let totalPayoutsWithdrawn = 0;
+      let pendingWithdrawn = 0;
+      for (let i = 0; i < meta.matchedPayouts.length; i++) {
+        const p = meta.matchedPayouts[i];
+        const pst = String(p.status || "").toUpperCase();
+        const amt = Number(p.amount) || 0;
+        if (pst === "COMPLETED" || pst === "APPROVED") {
+          totalPayoutsWithdrawn += amt;
+        } else if (pst === "PENDING") {
+          pendingWithdrawn += amt;
+        }
+      }
+
+      const totalWithdrawn = Math.max(totalPayoutsWithdrawn, paidOrdersCommission);
+      const availableBalance = Math.max(0, eligibleCommission - totalWithdrawn - pendingWithdrawn);
+
+      resultMap.set(meta.key, {
+        pendingCommission,
+        completedCommission,
+        availableBalance,
+        totalWithdrawn,
+        pendingWithdrawn,
+        totalOrders: meta.matchedOrders.length,
+        orders: meta.matchedOrders,
+        payouts: meta.matchedPayouts,
+      });
+    });
+
+    return resultMap;
+  }, [orders, payouts, zaloUsers, customerSplitRate, taxRate, holdingDays, activeTenant?.slug]);
+
+  // Danh sách thành viên sau lọc tìm kiếm (memoized để không re-filter khi gõ modal)
+  const filteredMembers = useMemo(() => {
+    const list = Array.isArray(zaloUsers) ? zaloUsers : [];
+    const q = String(memberSearch || "").toLowerCase().trim();
+    if (!q) return list;
+    const qNoAccent = removeAccents(q);
+
+    return list.filter((u) => {
+      if (!u) return false;
+      const zaloId = String(u.zaloId || u.zalo_id || "").toLowerCase();
+      const zaloName = String(u.zaloName || u.zalo_name || "").toLowerCase();
+      const bankName = String(u.bankName || u.bank_name || "").toLowerCase();
+      const accountNumber = String(u.accountNumber || u.account_number || "").toLowerCase();
+      const accountName = String(u.accountName || u.account_name || "").toLowerCase();
+
+      return (
+        zaloId.includes(q) ||
+        zaloName.includes(q) ||
+        bankName.includes(q) ||
+        accountNumber.includes(q) ||
+        accountName.includes(q) ||
+        removeAccents(zaloName).includes(qNoAccent)
+      );
+    });
+  }, [zaloUsers, memberSearch]);
+
+  const memberItemsPerPage = 20;
+  const totalMemberPages = Math.max(1, Math.ceil(filteredMembers.length / memberItemsPerPage));
+  const currentMemberPage = Math.min(memberPage, totalMemberPages);
+  const currentMembers = useMemo(() => {
+    return filteredMembers.slice((currentMemberPage - 1) * memberItemsPerPage, currentMemberPage * memberItemsPerPage);
+  }, [filteredMembers, currentMemberPage]);
+
+  // Tổng cộng trang hiện tại cho footer (tính từ Map đã memoized, cực nhanh)
+  const pageTotals = useMemo(() => {
+    let pending = 0;
+    let completed = 0;
+    let available = 0;
+    let withdrawn = 0;
+    for (let i = 0; i < currentMembers.length; i++) {
+      const u = currentMembers[i];
+      const w = memberWalletsMap.get(u.id || u.zaloId);
+      if (w) {
+        pending += w.pendingCommission || 0;
+        completed += w.completedCommission || 0;
+        available += w.availableBalance || 0;
+        withdrawn += w.totalWithdrawn || 0;
+      }
+    }
+    return { pending, completed, available, withdrawn };
+  }, [currentMembers, memberWalletsMap]);
 
   // Split platform orders
   const shopeeOrders = orders.filter((o) => !o.platform || o.platform.toLowerCase().includes("shopee"));
@@ -1609,494 +1897,299 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
       )}
 
       {/* ===================== TAB 3: THÀNH VIÊN (LỲ-STYLE) ===================== */}
-      {activeTab === "zalo_users" && !isLoading && (() => {
-        const removeAccents = (str) =>
-          String(str || "")
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "")
-            .replace(/đ/g, "d")
-            .replace(/Đ/g, "D")
-            .toLowerCase();
-
-        const getOrdersForMember = (member) => {
-          if (!member) return [];
-          const mZaloId = String(member.zaloId || member.zalo_id || "").trim().toLowerCase();
-          const mId = member.id ? String(member.id) : null;
-          const mSlug = String(activeTenant?.slug || "").toLowerCase();
-
-          return (Array.isArray(orders) ? orders : []).filter((o) => {
-            if (!o) return false;
-            const oZaloId = String(o.zaloId || "").trim().toLowerCase();
-            const oSubId = String(o.subId || o.sub_id || "").trim().toLowerCase();
-            const oUserId = o.userId ? String(o.userId) : null;
-
-            if (mZaloId) {
-              if (oZaloId === mZaloId) return true;
-              if (oSubId === mZaloId) return true;
-              if (mSlug && oSubId === `${mSlug}_${mZaloId}`) return true;
-              if (oSubId.includes(mZaloId)) return true;
-            }
-            if (mId && (oUserId === mId || oSubId === `u${mId}` || (mSlug && oSubId === `${mSlug}_u${mId}`))) {
-              return true;
-            }
-
-            // SO KHỚP TÊN KHÔNG DẤU (dành cho các đơn cũ có Sub ID là tên chữ không dấu)
-            const mNormName = removeAccents(member.zaloName || member.zalo_name || member.name).replace(/[^a-z0-9]/g, "");
-            const mNormAcc = removeAccents(member.accountName).replace(/[^a-z0-9]/g, "");
-            const cleanSub = oSubId.replace(/^(phamnga|ly|tranhuyen|lecuong|mailan|th)[_-]/i, "");
-            const cleanSubNorm = removeAccents(cleanSub).replace(/[^a-z0-9]/g, "");
-            if (cleanSubNorm && cleanSubNorm.length >= 2 && !/^\d+$/.test(cleanSubNorm)) {
-              if (mNormName && (cleanSubNorm === mNormName || mNormName === cleanSubNorm)) return true;
-              if (mNormAcc && (cleanSubNorm === mNormAcc || mNormAcc === cleanSubNorm)) return true;
-            }
-
-            return false;
-          });
-        };
-
-        const getPayoutsForMember = (member) => {
-          if (!member) return [];
-          const mZaloId = String(member.zaloId || member.zalo_id || "").trim().toLowerCase();
-          const mId = member.id ? String(member.id) : null;
-          const memberOrders = getOrdersForMember(member);
-          const matchedOrderUserIds = new Set();
-          const matchedOrderZaloIds = new Set();
-          memberOrders.forEach((o) => {
-            if (o.userId != null) matchedOrderUserIds.add(String(o.userId));
-            if (o.zaloId) matchedOrderZaloIds.add(String(o.zaloId).trim().toLowerCase());
-            if (o.subId) {
-              const cleanSub = String(o.subId).replace(/^(phamnga|ly|tranhuyen|lecuong|mailan|th|yenvy)[_-]/i, "").trim().toLowerCase();
-              matchedOrderZaloIds.add(cleanSub);
-            }
-          });
-
-          const mNormName = removeAccents(member.zaloName || member.zalo_name || member.name).replace(/[^a-z0-9]/g, "");
-          const mNormAcc = removeAccents(member.accountName).replace(/[^a-z0-9]/g, "");
-
-          return (Array.isArray(payouts) ? payouts : []).filter((p) => {
-            if (!p) return false;
-            const pZaloId = String(p.zaloId || "").trim().toLowerCase();
-            const pUserId = p.userId ? String(p.userId) : null;
-            const pNote = String(p.note || "").toLowerCase();
-            const pNormZalo = removeAccents(p.zaloId || "").replace(/[^a-z0-9]/g, "");
-
-            if (mZaloId && (pZaloId === mZaloId || pNote.includes(mZaloId))) return true;
-            if (mId && pUserId === mId) return true;
-            if (pUserId && matchedOrderUserIds.has(pUserId)) return true;
-            if (pZaloId && matchedOrderZaloIds.has(pZaloId)) return true;
-            if (pNormZalo && matchedOrderZaloIds.has(pNormZalo)) return true;
-
-            if (pNormZalo && pNormZalo.length >= 2) {
-              if (mNormName && (pNormZalo === mNormName || mNormName.includes(pNormZalo) || pNormZalo.includes(mNormName))) return true;
-              if (mNormAcc && (pNormZalo === mNormAcc || mNormAcc.includes(pNormZalo) || pNormZalo.includes(mNormAcc))) return true;
-            }
-
-            if (mNormName && mNormName.length >= 2 && removeAccents(pNote).includes(mNormName)) return true;
-
-            return false;
-          });
-        };
-
-        const getMemberWallet = (member) => {
-          const memberOrders = getOrdersForMember(member);
-          const memberPayouts = getPayoutsForMember(member);
-
-          const isOrderCompleted = (o) => {
-            const st = String(o.status || "").toLowerCase();
-            return st.includes("hoàn thành") || st.includes("completed") || st.includes("thành công") || st.includes("thanh toán") || st.includes("duyệt") || st === "2";
-          };
-
-          const isOrderCancelled = (o) => {
-            const st = String(o.status || "").toLowerCase();
-            return st.includes("hủy") || st.includes("cancel") || st.includes("refund") || st === "3";
-          };
-
-          const completedOrders = memberOrders.filter(isOrderCompleted);
-          const pendingOrders = memberOrders.filter((o) => !isOrderCompleted(o) && !isOrderCancelled(o));
-
-          const currentSplit = customerSplitRate || 80;
-          const currentTax = taxRate !== undefined ? taxRate : 10;
-          const tenantHoldingDays = Number(settings?.holdingDays !== undefined ? settings.holdingDays : (tenant?.holdingDays || 0));
-
-          const calculateComm = (o) => {
-            const raw = Number(o.rawCommission || 0);
-            if (raw > 0) {
-              const tax = Math.round(raw * (currentTax / 100));
-              const afterTax = Math.max(0, raw - tax);
-              return Math.round(afterTax * (currentSplit / 100));
-            }
-            return Math.round(Number(o.finalCommission || 0));
-          };
-
-          const isEligible = (o) => {
-            if (tenantHoldingDays <= 0) return true;
-            const dateStr = o.completeTime || o.completedAt || o.orderDate || o.createdAt;
-            if (!dateStr) return true;
-            const oDate = new Date(dateStr);
-            if (isNaN(oDate.getTime())) return true;
-            const now = new Date();
-            const thresholdTime = new Date(now.getTime() - tenantHoldingDays * 24 * 60 * 60 * 1000);
-            if (oDate <= thresholdTime) return true;
-            const oDay = new Date(oDate.getFullYear(), oDate.getMonth(), oDate.getDate());
-            oDay.setDate(oDay.getDate() + tenantHoldingDays);
-            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-            return oDay <= today;
-          };
-
-          const pendingCommission = pendingOrders.reduce((sum, o) => sum + calculateComm(o), 0);
-          const completedCommission = completedOrders.reduce((sum, o) => sum + calculateComm(o), 0);
-
-          let eligibleCommission = 0;
-          let paidOrdersCommission = 0;
-          completedOrders.forEach((o) => {
-            const comm = calculateComm(o);
-            if (isEligible(o)) {
-              eligibleCommission += comm;
-            }
-            if (String(o.paymentStatus || "").toUpperCase() === "PAID") {
-              paidOrdersCommission += comm;
-            }
-          });
-
-          const approvedPayouts = memberPayouts.filter((p) => {
-            const st = String(p.status || "").toUpperCase();
-            return st === "COMPLETED" || st === "APPROVED";
-          });
-          const pendingPayoutsList = memberPayouts.filter((p) => {
-            const st = String(p.status || "").toUpperCase();
-            return st === "PENDING";
-          });
-
-          const totalPayoutsWithdrawn = approvedPayouts.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
-          const pendingWithdrawn = pendingPayoutsList.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
-          const totalWithdrawn = Math.max(totalPayoutsWithdrawn, paidOrdersCommission);
-          const availableBalance = Math.max(0, eligibleCommission - totalWithdrawn - pendingWithdrawn);
-
-          return {
-            pendingCommission,
-            completedCommission,
-            availableBalance,
-            totalWithdrawn,
-            pendingWithdrawn,
-            totalOrders: memberOrders.length,
-          };
-        };
-
-        const filteredMembers = (Array.isArray(zaloUsers) ? zaloUsers : []).filter((u) => {
-          if (!u) return false;
-          const q = String(memberSearch || "").toLowerCase().trim();
-          if (!q) return true;
-          const zaloId = String(u.zaloId || u.zalo_id || "").toLowerCase();
-          const zaloName = String(u.zaloName || u.zalo_name || "").toLowerCase();
-          const bankName = String(u.bankName || u.bank_name || "").toLowerCase();
-          const accountNumber = String(u.accountNumber || u.account_number || "").toLowerCase();
-          const accountName = String(u.accountName || u.account_name || "").toLowerCase();
-          const qNoAccent = removeAccents(q);
-
-          return (
-            zaloId.includes(q) ||
-            zaloName.includes(q) ||
-            bankName.includes(q) ||
-            accountNumber.includes(q) ||
-            accountName.includes(q) ||
-            removeAccents(zaloName).includes(qNoAccent)
-          );
-        });
-
-        const memberItemsPerPage = 20;
-        const totalMemberPages = Math.max(1, Math.ceil(filteredMembers.length / memberItemsPerPage));
-        const currentMemberPage = Math.min(memberPage, totalMemberPages);
-        const currentMembers = filteredMembers.slice((currentMemberPage - 1) * memberItemsPerPage, currentMemberPage * memberItemsPerPage);
-
-        return (
-          <div className="space-y-4">
-            {/* Search Header */}
-            <div className="bg-white rounded-3xl border border-slate-200/80 p-4 shadow-2xs flex items-center justify-between gap-4 flex-wrap">
-              <div className="relative flex-1 min-w-[240px]">
-                <input
-                  type="text"
-                  value={memberSearch}
-                  onChange={(e) => {
-                    setMemberSearch(e.target.value);
-                    setMemberPage(1);
-                  }}
-                  placeholder="Tìm kiếm thành viên (Tên, Zalo ID, Ngân hàng, STK, Chủ TK)..."
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-2.5 pl-10 pr-4 text-xs font-bold text-slate-800 outline-none focus:border-orange-500 focus:bg-white transition"
-                />
-                <i className="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400 text-xs"></i>
-              </div>
-
-              <span className="text-xs font-bold text-slate-500">
-                Tổng số:{" "}
-                <span className="text-orange-600 font-extrabold">{filteredMembers.length}</span>{" "}
-                thành viên
-              </span>
+      {activeTab === "zalo_users" && !isLoading && (
+        <div className="space-y-4">
+          {/* Search Header */}
+          <div className="bg-white rounded-3xl border border-slate-200/80 p-4 shadow-2xs flex items-center justify-between gap-4 flex-wrap">
+            <div className="relative flex-1 min-w-[240px]">
+              <input
+                type="text"
+                value={memberSearch}
+                onChange={(e) => {
+                  setMemberSearch(e.target.value);
+                  setMemberPage(1);
+                }}
+                placeholder="Tìm kiếm thành viên (Tên, Zalo ID, Ngân hàng, STK, Chủ TK)..."
+                className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-2.5 pl-10 pr-4 text-xs font-bold text-slate-800 outline-none focus:border-orange-500 focus:bg-white transition"
+              />
+              <i className="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400 text-xs"></i>
             </div>
 
-            {filteredMembers.length === 0 ? (
-              <div className="text-center py-12 text-slate-400 bg-white rounded-3xl border border-slate-200/80 shadow-2xs">
-                <i className="fa-solid fa-users text-3xl mb-3 block text-slate-300"></i>
-                <p className="font-bold text-sm">Không tìm thấy thành viên phù hợp</p>
-              </div>
-            ) : (
-              <>
-                {/* Members Table */}
-                <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs">
-                      <thead>
-                        <tr className="bg-slate-50 border-b-2 border-slate-200">
-                          <th className="px-4 py-3.5 font-black text-slate-700 whitespace-nowrap">Tên thành viên</th>
-                          <th className="px-4 py-3.5 font-black text-slate-700 whitespace-nowrap">Zalo ID</th>
-                          <th className="px-4 py-3.5 font-black text-slate-700 whitespace-nowrap min-w-[200px]">Tài khoản nhận tiền</th>
-                          <th className="px-4 py-3.5 font-black text-slate-700 whitespace-nowrap text-right">Chờ xử lý</th>
-                          <th className="px-4 py-3.5 font-black text-slate-700 whitespace-nowrap text-right">Tích lũy hoàn thành</th>
-                          <th className="px-4 py-3.5 font-black text-slate-700 whitespace-nowrap text-right">Khả dụng rút</th>
-                          <th className="px-4 py-3.5 font-black text-slate-700 whitespace-nowrap text-right">Đã rút</th>
-                          <th className="px-4 py-3.5 font-black text-slate-700 whitespace-nowrap text-center">Thao tác</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {currentMembers.map((u) => {
-                          const wallet = getMemberWallet(u);
-                          const bankN = u.bankName || u.bank_name || "";
-                          const accNum = u.accountNumber || u.account_number || "";
-                          const accName = u.accountName || u.account_name || "";
-                          return (
-                            <tr key={u.id || u.zaloId} className="border-b border-slate-100 hover:bg-orange-50/30 transition">
-                              <td className="px-4 py-3.5 whitespace-nowrap">
-                                <span className="font-black text-slate-900 text-sm truncate block max-w-[170px]" title={u.zaloName || u.zalo_name}>
-                                  {u.zaloName || u.zalo_name || "Thành viên Zalo"}
-                                </span>
-                              </td>
-                              <td className="px-4 py-3.5 whitespace-nowrap">
-                                <code className="text-[11px] font-mono font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-200">
-                                  {u.zaloId || u.zalo_id || "—"}
-                                </code>
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap min-w-[130px]">
-                                <div className="flex items-center justify-between gap-2">
-                                  {bankN ? (
-                                    <div className="min-w-0">
-                                      <div className="font-black text-slate-800 text-xs">
-                                        {bankN}
-                                      </div>
-                                      {accNum && (
-                                        <div className="text-[11px] font-mono text-slate-600 font-bold mt-0.5 whitespace-nowrap flex items-center gap-1">
-                                          <span className="text-slate-400 font-normal">STK:</span>
-                                          <span>{accNum}</span>
-                                        </div>
-                                      )}
-                                      {accName && (
-                                        <div className="mt-0.5">
-                                          <span className="text-[10px] text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded font-extrabold uppercase whitespace-nowrap tracking-wide border border-orange-100 inline-block">
-                                            {accName}
-                                          </span>
-                                        </div>
-                                      )}
+            <span className="text-xs font-bold text-slate-500">
+              Tổng số:{" "}
+              <span className="text-orange-600 font-extrabold">{filteredMembers.length}</span>{" "}
+              thành viên
+            </span>
+          </div>
+
+          {filteredMembers.length === 0 ? (
+            <div className="text-center py-12 text-slate-400 bg-white rounded-3xl border border-slate-200/80 shadow-2xs">
+              <i className="fa-solid fa-users text-3xl mb-3 block text-slate-300"></i>
+              <p className="font-bold text-sm">Không tìm thấy thành viên phù hợp</p>
+            </div>
+          ) : (
+            <>
+              {/* Members Table */}
+              <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="bg-slate-50 border-b-2 border-slate-200">
+                        <th className="px-4 py-3.5 font-black text-slate-700 whitespace-nowrap">Tên thành viên</th>
+                        <th className="px-4 py-3.5 font-black text-slate-700 whitespace-nowrap">Zalo ID</th>
+                        <th className="px-4 py-3.5 font-black text-slate-700 whitespace-nowrap min-w-[200px]">Tài khoản nhận tiền</th>
+                        <th className="px-4 py-3.5 font-black text-slate-700 whitespace-nowrap text-right">Chờ xử lý</th>
+                        <th className="px-4 py-3.5 font-black text-slate-700 whitespace-nowrap text-right">Tích lũy hoàn thành</th>
+                        <th className="px-4 py-3.5 font-black text-slate-700 whitespace-nowrap text-right">Khả dụng rút</th>
+                        <th className="px-4 py-3.5 font-black text-slate-700 whitespace-nowrap text-right">Đã rút</th>
+                        <th className="px-4 py-3.5 font-black text-slate-700 whitespace-nowrap text-center">Thao tác</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {currentMembers.map((u) => {
+                        const wallet = memberWalletsMap.get(u.id || u.zaloId) || {
+                          pendingCommission: 0,
+                          completedCommission: 0,
+                          availableBalance: 0,
+                          totalWithdrawn: 0,
+                        };
+                        const bankN = u.bankName || u.bank_name || "";
+                        const accNum = u.accountNumber || u.account_number || "";
+                        const accName = u.accountName || u.account_name || "";
+                        return (
+                          <tr key={u.id || u.zaloId} className="border-b border-slate-100 hover:bg-orange-50/30 transition">
+                            <td className="px-4 py-3.5 whitespace-nowrap">
+                              <span className="font-black text-slate-900 text-sm truncate block max-w-[170px]" title={u.zaloName || u.zalo_name}>
+                                {u.zaloName || u.zalo_name || "Thành viên Zalo"}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3.5 whitespace-nowrap">
+                              <code className="text-[11px] font-mono font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-200">
+                                {u.zaloId || u.zalo_id || "—"}
+                              </code>
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap min-w-[130px]">
+                              <div className="flex items-center justify-between gap-2">
+                                {bankN ? (
+                                  <div className="min-w-0">
+                                    <div className="font-black text-slate-800 text-xs">
+                                      {bankN}
                                     </div>
-                                  ) : (
-                                    <span className="text-slate-400 italic text-[11px]">Chưa lưu STK</span>
-                                  )}
-                                  <button
-                                    type="button"
-                                    onClick={() => setEditingMemberBank({
-                                      zaloId: u.zaloId || u.zalo_id,
-                                      zaloName: u.zaloName || u.zalo_name || u.name,
-                                      bankName: bankN,
-                                      accountNumber: accNum,
-                                      accountName: accName
-                                    })}
-                                    className="p-1.5 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition cursor-pointer shrink-0"
-                                    title="Sửa thông tin STK"
-                                  >
-                                    <i className="fa-solid fa-pen text-[11px]"></i>
-                                  </button>
-                                </div>
-                              </td>
-                              <td className="px-4 py-3.5 text-right font-mono font-bold text-amber-600 whitespace-nowrap">
-                                {formatMoney(wallet.pendingCommission)}
-                              </td>
-                              <td className="px-4 py-3.5 text-right font-mono font-black text-slate-800 whitespace-nowrap">
-                                {formatMoney(wallet.completedCommission)}
-                              </td>
-                              <td className="px-4 py-3.5 text-right font-mono font-bold text-emerald-600 whitespace-nowrap">
-                                {formatMoney(wallet.availableBalance)}
-                              </td>
-                              <td className="px-4 py-3.5 text-right font-mono font-semibold text-slate-500 whitespace-nowrap">
-                                {formatMoney(wallet.totalWithdrawn)}
-                              </td>
-                              <td className="px-4 py-3.5 text-center whitespace-nowrap">
-                                <div className="flex items-center justify-center gap-1.5">
-                                  <button
-                                    type="button"
-                                    onClick={() => setEditingMemberBank({
-                                      zaloId: u.zaloId || u.zalo_id,
-                                      zaloName: u.zaloName || u.zalo_name || u.name,
-                                      bankName: bankN,
-                                      accountNumber: accNum,
-                                      accountName: accName
-                                    })}
-                                    className="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 border border-blue-200/80 rounded-xl text-[11px] font-bold transition shadow-2xs cursor-pointer inline-flex items-center gap-1"
-                                    title="Sửa thông tin STK nhận tiền"
-                                  >
-                                    <i className="fa-solid fa-pen-to-square text-[10px]"></i> Sửa STK
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => setSelectedMember(u)}
-                                    className="px-2.5 py-1.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-xl text-[11px] font-bold transition shadow-xs cursor-pointer inline-flex items-center gap-1"
-                                    title="Xem chi tiết ví & đơn hàng"
-                                  >
-                                    <i className="fa-regular fa-eye text-[10px]"></i> Xem
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleDeleteMember(u)}
-                                    className="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-700 border border-rose-200/80 rounded-xl text-[11px] font-bold transition shadow-2xs cursor-pointer inline-flex items-center gap-1"
-                                    title="Xóa thành viên khỏi danh sách"
-                                  >
-                                    <i className="fa-regular fa-trash-can text-[10px]"></i> Xóa
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                      {currentMembers.length > 0 && (
-                        <tfoot className="bg-slate-100/90 border-t-2 border-slate-300 font-bold text-xs sticky bottom-0 z-10 shadow-xs">
-                          <tr className="bg-slate-100/95">
-                            <td colSpan="3" className="px-4 py-3.5 text-slate-900 font-black">
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-base">📊</span>
-                                <span>
-                                  Tổng cộng trang {currentMemberPage}{" "}
-                                  <span className="text-[11px] font-semibold text-slate-500">
-                                    ({currentMembers.length} thành viên)
-                                  </span>
-                                </span>
+                                    {accNum && (
+                                      <div className="text-[11px] font-mono text-slate-600 font-bold mt-0.5 whitespace-nowrap flex items-center gap-1">
+                                        <span className="text-slate-400 font-normal">STK:</span>
+                                        <span>{accNum}</span>
+                                      </div>
+                                    )}
+                                    {accName && (
+                                      <div className="mt-0.5">
+                                        <span className="text-[10px] text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded font-extrabold uppercase whitespace-nowrap tracking-wide border border-orange-100 inline-block">
+                                          {accName}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <span className="text-slate-400 italic text-[11px]">Chưa lưu STK</span>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingMemberBank({
+                                    zaloId: u.zaloId || u.zalo_id,
+                                    zaloName: u.zaloName || u.zalo_name || u.name,
+                                    bankName: bankN,
+                                    accountNumber: accNum,
+                                    accountName: accName
+                                  })}
+                                  className="p-1.5 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition cursor-pointer shrink-0"
+                                  title="Sửa thông tin STK"
+                                >
+                                  <i className="fa-solid fa-pen text-[11px]"></i>
+                                </button>
                               </div>
                             </td>
-                            <td className="px-4 py-3.5 text-right font-mono font-black text-amber-600 whitespace-nowrap">
-                              {formatMoney(currentMembers.reduce((sum, u) => sum + getMemberWallet(u).pendingCommission, 0))}
+                            <td className="px-4 py-3.5 text-right font-mono font-bold text-amber-600 whitespace-nowrap">
+                              {formatMoney(wallet.pendingCommission)}
                             </td>
                             <td className="px-4 py-3.5 text-right font-mono font-black text-slate-800 whitespace-nowrap">
-                              {formatMoney(currentMembers.reduce((sum, u) => sum + getMemberWallet(u).completedCommission, 0))}
+                              {formatMoney(wallet.completedCommission)}
                             </td>
-                            <td className="px-4 py-3.5 text-right font-mono font-black text-emerald-600 whitespace-nowrap">
-                              {formatMoney(currentMembers.reduce((sum, u) => sum + getMemberWallet(u).availableBalance, 0))}
+                            <td className="px-4 py-3.5 text-right font-mono font-bold text-emerald-600 whitespace-nowrap">
+                              {formatMoney(wallet.availableBalance)}
                             </td>
-                            <td className="px-4 py-3.5 text-right font-mono font-black text-slate-500 whitespace-nowrap">
-                              {formatMoney(currentMembers.reduce((sum, u) => sum + getMemberWallet(u).totalWithdrawn, 0))}
+                            <td className="px-4 py-3.5 text-right font-mono font-semibold text-slate-500 whitespace-nowrap">
+                              {formatMoney(wallet.totalWithdrawn)}
                             </td>
-                            <td className="px-4 py-3.5 text-center text-slate-400 font-bold text-[11px] whitespace-nowrap">
-                              Trang {currentMemberPage}/{totalMemberPages}
+                            <td className="px-4 py-3.5 text-center whitespace-nowrap">
+                              <div className="flex items-center justify-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingMemberBank({
+                                    zaloId: u.zaloId || u.zalo_id,
+                                    zaloName: u.zaloName || u.zalo_name || u.name,
+                                    bankName: bankN,
+                                    accountNumber: accNum,
+                                    accountName: accName
+                                  })}
+                                  className="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 border border-blue-200/80 rounded-xl text-[11px] font-bold transition shadow-2xs cursor-pointer inline-flex items-center gap-1"
+                                  title="Sửa thông tin STK nhận tiền"
+                                >
+                                  <i className="fa-solid fa-pen-to-square text-[10px]"></i> Sửa STK
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedMember(u)}
+                                  className="px-2.5 py-1.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-xl text-[11px] font-bold transition shadow-xs cursor-pointer inline-flex items-center gap-1"
+                                  title="Xem chi tiết ví & đơn hàng"
+                                >
+                                  <i className="fa-solid fa-eye text-[10px]"></i> Chi tiết
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteMember(u)}
+                                  className="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-700 border border-rose-200/80 rounded-xl text-[11px] font-bold transition shadow-2xs cursor-pointer inline-flex items-center gap-1"
+                                  title="Xóa thành viên khỏi danh sách"
+                                >
+                                  <i className="fa-regular fa-trash-can text-[10px]"></i> Xóa
+                                </button>
+                              </div>
                             </td>
                           </tr>
-                        </tfoot>
-                      )}
-                    </table>
-                  </div>
-
-                  {/* Pagination */}
-                  {totalMemberPages > 1 && (
-                    <div className="p-4 bg-white border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-medium">
-                      <div className="text-slate-500">
-                        Hiển thị{" "}
-                        <strong className="text-slate-800">
-                          {(currentMemberPage - 1) * memberItemsPerPage + 1} -{" "}
-                          {Math.min(currentMemberPage * memberItemsPerPage, filteredMembers.length)}
-                        </strong>{" "}
-                        trong tổng số <strong className="text-orange-600">{filteredMembers.length}</strong> thành viên (Trang {currentMemberPage}/{totalMemberPages})
-                      </div>
-
-                      <div className="flex items-center gap-1 font-bold">
-                        <button
-                          onClick={() => setMemberPage(1)}
-                          disabled={currentMemberPage === 1}
-                          className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 disabled:opacity-30 cursor-pointer transition flex items-center justify-center text-xs"
-                          title="Trang đầu"
-                        >
-                          «
-                        </button>
-                        <button
-                          onClick={() => setMemberPage((p) => Math.max(1, p - 1))}
-                          disabled={currentMemberPage === 1}
-                          className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 disabled:opacity-30 cursor-pointer transition flex items-center justify-center text-xs"
-                          title="Trang trước"
-                        >
-                          ‹
-                        </button>
-
-                        {Array.from({ length: totalMemberPages }, (_, i) => i + 1)
-                          .filter((p) => p === 1 || p === totalMemberPages || Math.abs(p - currentMemberPage) <= 2)
-                          .map((p, idx, arr) => (
-                            <React.Fragment key={p}>
-                              {idx > 0 && arr[idx - 1] !== p - 1 && (
-                                <span className="px-1 text-slate-400">...</span>
-                              )}
-                              <button
-                                onClick={() => setMemberPage(p)}
-                                className={`w-8 h-8 rounded-xl text-xs font-black transition cursor-pointer ${
-                                  currentMemberPage === p
-                                    ? "bg-orange-600 text-white shadow-xs"
-                                    : "bg-slate-100 hover:bg-slate-200 text-slate-700"
-                                }`}
-                              >
-                                {p}
-                              </button>
-                            </React.Fragment>
-                          ))}
-
-                        <button
-                          onClick={() => setMemberPage((p) => Math.min(totalMemberPages, p + 1))}
-                          disabled={currentMemberPage === totalMemberPages}
-                          className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 disabled:opacity-30 cursor-pointer transition flex items-center justify-center text-xs"
-                          title="Trang sau"
-                        >
-                          ›
-                        </button>
-                        <button
-                          onClick={() => setMemberPage(totalMemberPages)}
-                          disabled={currentMemberPage === totalMemberPages}
-                          className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 disabled:opacity-30 cursor-pointer transition flex items-center justify-center text-xs"
-                          title="Trang cuối"
-                        >
-                          »
-                        </button>
-                      </div>
-                    </div>
-                  )}
+                        );
+                      })}
+                    </tbody>
+                    {currentMembers.length > 0 && (
+                      <tfoot className="bg-slate-100/90 border-t-2 border-slate-300 font-bold text-xs sticky bottom-0 z-10 shadow-xs">
+                        <tr className="bg-slate-100/95">
+                          <td colSpan="3" className="px-4 py-3.5 text-slate-900 font-black">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-base">📊</span>
+                              <span>
+                                Tổng cộng trang {currentMemberPage}{" "}
+                                <span className="text-[11px] font-semibold text-slate-500">
+                                  ({currentMembers.length} thành viên)
+                                </span>
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3.5 text-right font-mono font-black text-amber-600 whitespace-nowrap">
+                            {formatMoney(pageTotals.pending)}
+                          </td>
+                          <td className="px-4 py-3.5 text-right font-mono font-black text-slate-800 whitespace-nowrap">
+                            {formatMoney(pageTotals.completed)}
+                          </td>
+                          <td className="px-4 py-3.5 text-right font-mono font-black text-emerald-600 whitespace-nowrap">
+                            {formatMoney(pageTotals.available)}
+                          </td>
+                          <td className="px-4 py-3.5 text-right font-mono font-black text-slate-500 whitespace-nowrap">
+                            {formatMoney(pageTotals.withdrawn)}
+                          </td>
+                          <td className="px-4 py-3.5 text-center text-slate-400 font-bold text-[11px] whitespace-nowrap">
+                            Trang {currentMemberPage}/{totalMemberPages}
+                          </td>
+                        </tr>
+                      </tfoot>
+                    )}
+                  </table>
                 </div>
-              </>
-            )}
 
-            {/* Member Detail Modal */}
-            {selectedMember && (
-              <MemberDetailModal
-                member={selectedMember}
-                orders={orders}
-                payouts={payouts}
-                onClose={() => setSelectedMember(null)}
-                onDelete={() => handleDeleteMember(selectedMember)}
-                apiRoot={apiRoot}
-                activeTenant={{
-                  ...activeTenant,
-                  customerSplitRate,
-                  taxRate,
-                  holdingDays,
-                }}
-                formatMoney={formatMoney}
-                formatDate={formatDate}
-                authHeaders={authHeaders}
-                onOrdersUpdated={fetchTenantData}
-                showNotification={showNotification}
-              />
-            )}
-          </div>
-        );
-      })()}
+                {/* Pagination */}
+                {totalMemberPages > 1 && (
+                  <div className="p-4 bg-white border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-medium">
+                    <div className="text-slate-500">
+                      Hiển thị{" "}
+                      <strong className="text-slate-800">
+                        {(currentMemberPage - 1) * memberItemsPerPage + 1} -{" "}
+                        {Math.min(currentMemberPage * memberItemsPerPage, filteredMembers.length)}
+                      </strong>{" "}
+                      trong tổng số <strong className="text-orange-600">{filteredMembers.length}</strong> thành viên (Trang {currentMemberPage}/{totalMemberPages})
+                    </div>
+
+                    <div className="flex items-center gap-1 font-bold">
+                      <button
+                        onClick={() => setMemberPage(1)}
+                        disabled={currentMemberPage === 1}
+                        className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 disabled:opacity-30 cursor-pointer transition flex items-center justify-center text-xs"
+                        title="Trang đầu"
+                      >
+                        «
+                      </button>
+                      <button
+                        onClick={() => setMemberPage((p) => Math.max(1, p - 1))}
+                        disabled={currentMemberPage === 1}
+                        className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 disabled:opacity-30 cursor-pointer transition flex items-center justify-center text-xs"
+                        title="Trang trước"
+                      >
+                        ‹
+                      </button>
+
+                      {Array.from({ length: totalMemberPages }, (_, i) => i + 1)
+                        .filter((p) => p === 1 || p === totalMemberPages || Math.abs(p - currentMemberPage) <= 2)
+                        .map((p, idx, arr) => (
+                          <React.Fragment key={p}>
+                            {idx > 0 && arr[idx - 1] !== p - 1 && (
+                              <span className="px-1 text-slate-400">...</span>
+                            )}
+                            <button
+                              onClick={() => setMemberPage(p)}
+                              className={`w-8 h-8 rounded-xl text-xs font-black transition cursor-pointer ${
+                                currentMemberPage === p
+                                  ? "bg-orange-600 text-white shadow-xs"
+                                  : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+                              }`}
+                            >
+                              {p}
+                            </button>
+                          </React.Fragment>
+                        ))}
+
+                      <button
+                        onClick={() => setMemberPage((p) => Math.min(totalMemberPages, p + 1))}
+                        disabled={currentMemberPage === totalMemberPages}
+                        className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 disabled:opacity-30 cursor-pointer transition flex items-center justify-center text-xs"
+                        title="Trang sau"
+                      >
+                        ›
+                      </button>
+                      <button
+                        onClick={() => setMemberPage(totalMemberPages)}
+                        disabled={currentMemberPage === totalMemberPages}
+                        className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 disabled:opacity-30 cursor-pointer transition flex items-center justify-center text-xs"
+                        title="Trang cuối"
+                      >
+                        »
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* Member Detail Modal */}
+          {selectedMember && (
+            <MemberDetailModal
+              member={selectedMember}
+              orders={memberWalletsMap.get(selectedMember.id || selectedMember.zaloId)?.orders || orders}
+              payouts={memberWalletsMap.get(selectedMember.id || selectedMember.zaloId)?.payouts || payouts}
+              onClose={() => setSelectedMember(null)}
+              onDelete={() => handleDeleteMember(selectedMember)}
+              apiRoot={apiRoot}
+              activeTenant={{
+                ...activeTenant,
+                customerSplitRate,
+                taxRate,
+                holdingDays,
+              }}
+              formatMoney={formatMoney}
+              formatDate={formatDate}
+              authHeaders={authHeaders}
+              onOrdersUpdated={fetchTenantData}
+              showNotification={showNotification}
+            />
+          )}
+        </div>
+      )}
 
       {/* ===================== TAB 4: RÚT TIỀN (PAYOUTS) ===================== */}
       {activeTab === "payouts" && !isLoading && (

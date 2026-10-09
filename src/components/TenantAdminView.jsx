@@ -1283,6 +1283,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
         totalOrders: meta.matchedOrders.length,
         orders: meta.matchedOrders,
         payouts: meta.matchedPayouts,
+        orderIdSet: new Set(meta.matchedOrders.flatMap((mo) => [String(mo.id), String(mo.orderId || "")]).filter(Boolean)),
       });
     });
 
@@ -1346,6 +1347,39 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
   const tiktokOrders = orders.filter((o) => o.platform && o.platform.toLowerCase().includes("tiktok"));
   const targetOrders = activeTab === "tiktok" ? tiktokOrders : shopeeOrders;
 
+  // Filter by Purchaser: tập hợp các ID đơn của thành viên được tìm kiếm (đồng bộ cả Sub ID chữ và số Zalo ID)
+  const matchedMemberOrderIds = useMemo(() => {
+    if (!adminOrderSearchUser || !adminOrderSearchUser.trim()) return null;
+    const qUser = adminOrderSearchUser.trim().toLowerCase();
+    const qUserNoAccent = removeAccents(qUser);
+
+    const matchedKeys = [];
+    (zaloUsers || []).forEach((z) => {
+      if (!z) return;
+      const zZaloId = String(z.zaloId || z.zalo_id || "").toLowerCase();
+      const zName = String(z.zaloName || z.zalo_name || z.name || "").toLowerCase();
+      const zAcc = String(z.accountName || "").toLowerCase();
+      if (
+        zZaloId === qUser ||
+        (zZaloId.length >= 6 && qUser.length >= 6 && zZaloId.includes(qUser)) ||
+        (zName && removeAccents(zName).includes(qUserNoAccent)) ||
+        (zAcc && removeAccents(zAcc).includes(qUserNoAccent))
+      ) {
+        matchedKeys.push(z.id || z.zaloId);
+      }
+    });
+
+    if (matchedKeys.length === 0) return null;
+    const set = new Set();
+    matchedKeys.forEach((k) => {
+      const w = memberWalletsMap.get(k);
+      if (w && w.orderIdSet) {
+        w.orderIdSet.forEach((id) => set.add(id));
+      }
+    });
+    return set;
+  }, [adminOrderSearchUser, zaloUsers, memberWalletsMap]);
+
   // Filter Orders
   const filteredOrders = targetOrders.filter((o) => {
     if (!o) return false;
@@ -1356,7 +1390,8 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
       const matchZaloId = o.zaloId && o.zaloId.toLowerCase().includes(qUser);
       const matchZaloName = o.zaloName && o.zaloName.toLowerCase().includes(qUser);
       const matchSubId = (o.subId || o.subId1) && String(o.subId || o.subId1).toLowerCase().includes(qUser);
-      if (!matchZaloId && !matchZaloName && !matchSubId) return false;
+      const matchMemberOrders = matchedMemberOrderIds && (matchedMemberOrderIds.has(String(o.id)) || (o.orderId && matchedMemberOrderIds.has(String(o.orderId))));
+      if (!matchZaloId && !matchZaloName && !matchSubId && !matchMemberOrders) return false;
     }
 
     // Filter by Order ID (supports multiple IDs)

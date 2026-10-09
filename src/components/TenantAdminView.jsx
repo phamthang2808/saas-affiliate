@@ -24,44 +24,25 @@ const cleanTenantPrefix = (val, tenantSlug) => {
   return s.replace(/^(phamnga|ly|tranhuyen|lecuong|mailan|th|thanhhang|yenvy)[_-]/i, "");
 };
 
-// Khớp chuẩn xác theo từ/tên (Exact match / Whole-word match, không dùng LIKE substring)
-const matchesExactOrWords = (targetStr, qStr) => {
+// Khớp chuẩn xác theo tên/ID (bỏ qua dấu tiếng Việt, chữ hoa/thường: 'Ha' khớp 'Hà'/'Hạ', KHÔNG khớp 'Thu Hà')
+const matchesExactIgnoredAccents = (targetStr, qStr) => {
   if (!targetStr || !qStr) return false;
   const t = String(targetStr).trim().toLowerCase();
   const q = String(qStr).trim().toLowerCase();
   if (t === q) return true;
 
-  const tNorm = removeAccents(t);
-  const qNorm = removeAccents(q);
+  const tNorm = removeAccents(t).trim();
+  const qNorm = removeAccents(q).trim();
   if (tNorm === qNorm) return true;
 
   const tNoSpace = tNorm.replace(/\s+/g, "");
   const qNoSpace = qNorm.replace(/\s+/g, "");
   if (tNoSpace === qNoSpace) return true;
 
-  // Khớp theo từng từ nguyên vẹn (Whole-word exact match)
-  const tWords = tNorm.split(/\s+/).filter(Boolean);
-  const qWords = qNorm.split(/\s+/).filter(Boolean);
-
-  if (qWords.length === 1) {
-    return tWords.includes(qWords[0]);
-  }
-
-  if (qWords.length > 1 && qWords.length <= tWords.length) {
-    for (let i = 0; i <= tWords.length - qWords.length; i++) {
-      let allMatch = true;
-      for (let j = 0; j < qWords.length; j++) {
-        if (tWords[i + j] !== qWords[j]) {
-          allMatch = false;
-          break;
-        }
-      }
-      if (allMatch) return true;
-    }
-  }
-
   return false;
 };
+
+const matchesExactOrWords = matchesExactIgnoredAccents;
 
 // Standard default bot templates helper
 const CANONICAL_TEMPLATE_KEYS = [

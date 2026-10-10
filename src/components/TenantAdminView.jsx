@@ -2492,14 +2492,15 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                         <p className="text-[11px] text-slate-500">{p.accountName}</p>
                       </td>
                       <td className="p-3.5 text-center whitespace-nowrap">
-                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                        <span className={`text-xs font-bold inline-flex items-center gap-1 ${
                           p.status === "COMPLETED"
-                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                            ? "text-emerald-600"
                             : p.status === "REJECTED"
-                            ? "bg-rose-50 text-rose-700 border border-rose-200"
-                            : "bg-amber-50 text-amber-700 border border-amber-200 animate-pulse"
+                            ? "text-rose-600"
+                            : "text-amber-600 animate-pulse"
                         }`}>
-                          {p.status === "COMPLETED" ? "Đã duyệt" : p.status === "REJECTED" ? "Từ chối" : "Chờ duyệt"}
+                          <i className={`fa-solid ${p.status === "COMPLETED" ? "fa-circle-check" : p.status === "REJECTED" ? "fa-circle-xmark" : "fa-clock"}`}></i>
+                          <span>{p.status === "COMPLETED" ? "Đã duyệt" : p.status === "REJECTED" ? "Từ chối" : "Chờ duyệt"}</span>
                         </span>
                       </td>
                       <td className="p-3.5 text-right space-x-2 whitespace-nowrap">
@@ -3074,7 +3075,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                                     setSelectedOrderIds(new Set([o.id]));
                                     handleMarkPaid("UNPAID");
                                   }}
-                                  className="inline-flex items-center gap-1 text-[11px] font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-200 shadow-2xs transition cursor-pointer"
+                                  className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 hover:text-emerald-700 py-0.5 px-2 rounded-lg hover:bg-slate-100 transition cursor-pointer"
                                   title="Đã thanh toán (bấm để đổi thành Chưa thanh toán)"
                                 >
                                   <i className="fa-solid fa-check text-[10px]"></i> Đã TT
@@ -3086,7 +3087,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                                     setSelectedOrderIds(new Set([o.id]));
                                     handleMarkPaid("PAID");
                                   }}
-                                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-400 bg-slate-100 hover:bg-orange-50 hover:text-orange-600 hover:border-orange-200 px-2 py-0.5 rounded-full border border-slate-200 shadow-2xs transition cursor-pointer"
+                                  className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-400 hover:text-slate-600 py-0.5 px-2 rounded-lg hover:bg-slate-100 transition cursor-pointer"
                                   title="Chưa thanh toán (bấm để đánh dấu Đã thanh toán)"
                                 >
                                   Chưa TT

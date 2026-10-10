@@ -334,7 +334,7 @@ export function AuthModal({
         </div>
 
         {/* Security Footer Note */}
-        <div className="mt-4 flex items-center justify-center gap-1.5 text-[11px] text-emerald-700 font-semibold bg-emerald-50 px-3.5 py-1.5 rounded-full border border-emerald-200/80 relative z-10">
+        <div className="mt-4 flex items-center justify-center gap-1.5 text-[11px] text-slate-500 font-medium relative z-10">
           <i className="fa-solid fa-shield-check text-emerald-600"></i>
           <span>Xác thực bảo mật qua Google OAuth 2.0 • An toàn 100%</span>
         </div>

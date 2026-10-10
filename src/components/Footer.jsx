@@ -25,7 +25,7 @@ export function Footer({ currentTenant, onNavigate, user }) {
             <p className="text-xs text-slate-500 leading-relaxed">
               Nền tảng công nghệ cho thuê Bot Zalo Affiliate Shopee & TikTok Shop, tạo Website tra cứu đơn hàng, đối soát hoa hồng và chi trả hoàn tiền tự động 24/7 cho Trưởng Nhóm và cộng đồng.
             </p>
-            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-bold border border-emerald-200">
+            <div className="inline-flex items-center gap-2 text-slate-500 text-[11px] font-medium">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
               <span>Hệ thống Hoạt động 24/7 (99.9% Uptime)</span>
             </div>

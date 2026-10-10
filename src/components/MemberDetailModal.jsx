@@ -1370,7 +1370,7 @@ export function MemberDetailModal({
                             <button
                               type="button"
                               onClick={() => handleMarkPaid("UNPAID", o)}
-                              className="inline-flex items-center gap-1 text-[11px] font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-200 shadow-2xs transition cursor-pointer"
+                              className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 hover:text-emerald-700 py-0.5 px-2 rounded-lg hover:bg-slate-100 transition cursor-pointer"
                               title="Đã thanh toán (Bấm để chuyển về Chưa thanh toán)"
                             >
                               <i className="fa-solid fa-check text-[10px]"></i> Đã TT
@@ -1379,7 +1379,7 @@ export function MemberDetailModal({
                             <button
                               type="button"
                               onClick={() => handleMarkPaid("PAID", o)}
-                              className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-400 bg-slate-100 hover:bg-orange-50 hover:text-orange-600 hover:border-orange-200 px-2 py-0.5 rounded-full border border-slate-200 shadow-2xs transition cursor-pointer"
+                              className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-400 hover:text-slate-600 py-0.5 px-2 rounded-lg hover:bg-slate-100 transition cursor-pointer"
                               title="Chưa thanh toán (Bấm để đánh dấu Đã thanh toán)"
                             >
                               Chưa TT

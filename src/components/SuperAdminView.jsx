@@ -201,25 +201,26 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
   const getPaidMonths = (tenant) => {
     if (!tenant) return new Set();
     const note = tenant.billingNote;
-    if (!note || typeof note !== "string" || !note.trim()) {
-      if ((tenant.subscriptionStatus || "PAID").toUpperCase() === "PAID") {
-        const now = new Date();
-        const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-        return new Set([currentMonth]);
-      }
-      return new Set();
-    }
-    try {
-      if (note.trim().startsWith("{") && note.includes("paidMonths")) {
-        const parsed = JSON.parse(note);
-        if (Array.isArray(parsed.paidMonths)) {
-          return new Set(parsed.paidMonths);
+    if (note && typeof note === "string" && note.trim()) {
+      try {
+        if (note.trim().startsWith("{") && note.includes("paidMonths")) {
+          const parsed = JSON.parse(note);
+          if (Array.isArray(parsed.paidMonths)) {
+            return new Set(parsed.paidMonths);
+          }
         }
+        return new Set(note.split(",").map((s) => s.trim()).filter(Boolean));
+      } catch {
+        // continue
       }
-      return new Set(note.split(",").map((s) => s.trim()).filter(Boolean));
-    } catch {
-      return new Set();
     }
+    if (tenant.lastPaidAt && typeof tenant.lastPaidAt === "string") {
+      const match = tenant.lastPaidAt.match(/^(\d{4}-\d{2})/);
+      if (match) {
+        return new Set([match[1]]);
+      }
+    }
+    return new Set();
   };
 
   const handleToggleMonth = async (tenant, monthKey) => {
@@ -346,6 +347,16 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
     }
   };
 
+  // Tính toán thông tin thời gian hiện tại
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonthNum = now.getMonth() + 1;
+  const currentMonthKey = `${currentYear}-${String(currentMonthNum).padStart(2, "0")}`;
+
+  const isTenantPaidCurrentMonth = (t) => {
+    return getPaidMonths(t).has(currentMonthKey);
+  };
+
   // Filter & Sort Tenants by Billing Cycle Day (Ascending: 1 -> 31)
   const filteredTenants = tenants
     .filter((t) => {
@@ -354,7 +365,7 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
         t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         t.slug.toLowerCase().includes(searchQuery.toLowerCase());
 
-      const isPaid = (t.subscriptionStatus || "PAID").toUpperCase() === "PAID";
+      const isPaid = isTenantPaidCurrentMonth(t);
       const matchPayment =
         paymentFilter === "ALL" ||
         (paymentFilter === "PAID" && isPaid) ||
@@ -371,17 +382,11 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
       return (a.name || "").localeCompare(b.name || "");
     });
 
-  const paidTenantsCount = tenants.filter(
-    (t) => (t.subscriptionStatus || "PAID").toUpperCase() === "PAID"
-  ).length;
+  const paidTenantsCount = tenants.filter(isTenantPaidCurrentMonth).length;
   const unpaidTenantsCount = tenants.length - paidTenantsCount;
 
   // Tính toán dữ liệu Ma trận 12 tháng thu tiền
   const months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonthNum = now.getMonth() + 1;
-  const currentMonthKey = `${currentYear}-${String(currentMonthNum).padStart(2, "0")}`;
 
   const monthSummaries = months.map((m) => {
     const monthKey = `${selectedYear}-${String(m).padStart(2, "0")}`;
@@ -616,36 +621,36 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
               <p className="text-[11px] text-slate-400 mt-1">Từ {tenants.length} Trưởng Nhóm</p>
             </div>
 
-            <div className="metric-card bg-gradient-to-br from-emerald-50/60 to-white border-emerald-200">
+            <div className="metric-card">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-extrabold text-emerald-700 uppercase tracking-wider">
-                  Đã Thu Tháng Này (🟢)
+                <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">
+                  Đã Thu Tháng Này (T{currentMonthNum})
                 </span>
-                <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs font-bold">
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs font-bold">
                   <i className="fa-solid fa-circle-check"></i>
                 </div>
               </div>
-              <div className="text-xl md:text-2xl font-black text-emerald-800 mt-2 font-display truncate">
+              <div className="text-xl md:text-2xl font-black text-slate-900 mt-2 font-display truncate">
                 {paidTenantsCount} <span className="text-xs font-bold text-slate-400">/ {tenants.length}</span>
               </div>
-              <p className="text-[11px] text-emerald-600 mt-1 font-semibold">
+              <p className="text-[11px] text-slate-400 mt-1">
                 Đạt {tenants.length > 0 ? Math.round((paidTenantsCount / tenants.length) * 100) : 0}% tỷ lệ thu phí
               </p>
             </div>
 
-            <div className="metric-card bg-gradient-to-br from-rose-50/60 to-white border-rose-200">
+            <div className="metric-card">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-extrabold text-rose-700 uppercase tracking-wider">
-                  Chưa Đóng Phí (🔴)
+                <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">
+                  Chưa Đóng Phí (T{currentMonthNum})
                 </span>
-                <div className="w-8 h-8 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center text-xs font-bold">
+                <div className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-xs font-bold">
                   <i className="fa-solid fa-clock-rotate-left"></i>
                 </div>
               </div>
-              <div className="text-xl md:text-2xl font-black text-rose-800 mt-2 font-display truncate">
+              <div className="text-xl md:text-2xl font-black text-slate-900 mt-2 font-display truncate">
                 {unpaidTenantsCount} <span className="text-xs font-bold text-slate-400">nhóm</span>
               </div>
-              <p className="text-[11px] text-rose-600 mt-1 font-semibold">Cần nhắc thanh toán chu kỳ</p>
+              <p className="text-[11px] text-slate-400 mt-1">Cần nhắc thanh toán chu kỳ</p>
             </div>
 
             <div className="metric-card">
@@ -684,7 +689,7 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
                 onClick={() => setPaymentFilter("ALL")}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition whitespace-nowrap ${
                   paymentFilter === "ALL"
-                    ? "bg-slate-800 text-white"
+                    ? "bg-slate-900 text-white shadow-xs"
                     : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                 }`}
               >
@@ -692,23 +697,25 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
               </button>
               <button
                 onClick={() => setPaymentFilter("PAID")}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition whitespace-nowrap ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition whitespace-nowrap inline-flex items-center gap-1.5 ${
                   paymentFilter === "PAID"
-                    ? "bg-emerald-600 text-white shadow-xs"
-                    : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                    ? "bg-slate-900 text-white shadow-xs"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                 }`}
               >
-                🟢 Đã đóng tiền ({paidTenantsCount})
+                <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+                <span>Đã đóng ({paidTenantsCount})</span>
               </button>
               <button
                 onClick={() => setPaymentFilter("UNPAID")}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition whitespace-nowrap ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition whitespace-nowrap inline-flex items-center gap-1.5 ${
                   paymentFilter === "UNPAID"
-                    ? "bg-rose-600 text-white shadow-xs"
-                    : "bg-rose-50 text-rose-700 hover:bg-rose-100"
+                    ? "bg-slate-900 text-white shadow-xs"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                 }`}
               >
-                🔴 Chưa đóng tiền ({unpaidTenantsCount})
+                <span className="w-2 h-2 rounded-full bg-rose-500 inline-block"></span>
+                <span>Chưa đóng ({unpaidTenantsCount})</span>
               </button>
             </div>
           </div>
@@ -726,8 +733,8 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
                   <div>
                     <h3 className="text-sm font-black text-slate-900 font-display flex items-center gap-2">
                       <span>Bảng Đối Soát Thu Tiền Thuê Năm {selectedYear}</span>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold border border-emerald-200 shrink-0">
-                        1-Chạm Bật/Tắt
+                      <span className="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 font-semibold shrink-0">
+                        1-chạm bật/tắt
                       </span>
                     </h3>
                     <p className="text-[11px] text-slate-500 mt-0.5">
@@ -760,9 +767,9 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
                     </button>
                   </div>
 
-                  <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-2xl text-xs">
-                    <span className="text-emerald-700 font-medium text-[11px] hidden sm:inline">Tổng thu {selectedYear}:</span>
-                    <span className="font-black text-emerald-800 font-display">{formatMoney(totalYearRevenue)}</span>
+                  <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200/80 px-3 py-1.5 rounded-2xl text-xs">
+                    <span className="text-slate-500 font-medium text-[11px] hidden sm:inline">Tổng thu {selectedYear}:</span>
+                    <span className="font-black text-slate-900 font-display">{formatMoney(totalYearRevenue)}</span>
                   </div>
 
                   <div className="hidden lg:flex items-center gap-2 text-xs text-slate-500 pl-2 border-l border-slate-200">
@@ -893,14 +900,14 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
                                     title={`${t.name} - Tháng ${m}/${selectedYear}: ${
                                       isPaid ? "ĐÃ THANH TOÁN (" + formatMoney(fee) + "). Bấm để hủy." : "CHƯA THANH TOÁN. Bấm để xác nhận đã thu."
                                     }`}
-                                    className={`w-full py-1.5 px-1 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 border ${
+                                    className={`w-full py-1.5 px-1 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 ${
                                       isToggling
-                                        ? "opacity-50 cursor-wait bg-slate-100 border-slate-200 text-slate-400"
+                                        ? "opacity-50 cursor-wait bg-slate-50 text-slate-400"
                                         : isPaid
-                                        ? "bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100 hover:border-emerald-400 shadow-2xs active:scale-95"
+                                        ? "text-emerald-700 hover:bg-emerald-50/70 active:scale-95"
                                         : isPast || isCurrent
-                                        ? "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100 hover:border-rose-300 active:scale-95"
-                                        : "bg-slate-50/80 text-slate-400 border-dashed border-slate-200 hover:bg-slate-100 hover:text-slate-600 active:scale-95"
+                                        ? "text-rose-600 hover:bg-rose-50/70 active:scale-95"
+                                        : "text-slate-400 hover:bg-slate-50 active:scale-95"
                                     }`}
                                   >
                                     {isToggling ? (
@@ -1008,7 +1015,7 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
                   </div>
                 ) : (
                   filteredTenants.map((t) => {
-                    const isPaid = (t.subscriptionStatus || "PAID").toUpperCase() === "PAID";
+                    const isPaid = isTenantPaidCurrentMonth(t);
                     return (
                       <div
                         key={t.id}
@@ -1030,14 +1037,16 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
                           </div>
 
                           <button
+                            type="button"
                             onClick={() => handleTogglePayment(t)}
-                            className={`px-3 py-1 rounded-full text-[11px] font-black cursor-pointer transition shadow-2xs inline-flex items-center gap-1.5 shrink-0 ${
+                            className={`inline-flex items-center gap-1.5 py-1 px-2.5 rounded-lg text-xs font-bold cursor-pointer transition shrink-0 ${
                               isPaid
-                                ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border border-emerald-300"
-                                : "bg-rose-100 text-rose-800 hover:bg-rose-200 border border-rose-300 animate-pulse"
+                                ? "text-emerald-600 hover:bg-emerald-50/60"
+                                : "text-rose-500 hover:bg-rose-50/60"
                             }`}
+                            title={isPaid ? "Đã đóng tiền tháng này (Bấm để đổi thành Chưa đóng)" : "Chưa đóng phí tháng này (Bấm để xác nhận Đã đóng)"}
                           >
-                            <i className={`fa-solid ${isPaid ? "fa-circle-check text-emerald-600" : "fa-clock text-rose-600"}`}></i>
+                            <i className={`fa-solid ${isPaid ? "fa-circle-check text-emerald-500" : "fa-clock text-rose-500"}`}></i>
                             <span>{isPaid ? "Đã đóng tiền" : "Chưa đóng"}</span>
                           </button>
                         </div>
@@ -1139,7 +1148,7 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
                         </tr>
                       ) : (
                         filteredTenants.map((t) => {
-                          const isPaid = (t.subscriptionStatus || "PAID").toUpperCase() === "PAID";
+                          const isPaid = isTenantPaidCurrentMonth(t);
                           return (
                             <tr key={t.id} className="hover:bg-slate-50/80 transition">
                               <td className="py-3.5 px-4">
@@ -1192,14 +1201,16 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
 
                               <td className="py-3.5 px-4 text-center">
                                 <button
+                                  type="button"
                                   onClick={() => handleTogglePayment(t)}
-                                  className={`px-3 py-1 rounded-full text-[11px] font-black cursor-pointer transition shadow-2xs inline-flex items-center gap-1.5 ${
+                                  className={`inline-flex items-center gap-1.5 py-1 px-2.5 rounded-lg text-xs font-bold cursor-pointer transition ${
                                     isPaid
-                                      ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border border-emerald-300"
-                                      : "bg-rose-100 text-rose-800 hover:bg-rose-200 border border-rose-300 animate-pulse"
+                                      ? "text-emerald-600 hover:bg-emerald-50/60"
+                                      : "text-rose-500 hover:bg-rose-50/60"
                                   }`}
+                                  title={isPaid ? "Đã đóng tiền tháng này (Bấm để đổi thành Chưa đóng)" : "Chưa đóng phí tháng này (Bấm để xác nhận Đã đóng)"}
                                 >
-                                  <i className={`fa-solid ${isPaid ? "fa-circle-check text-emerald-600" : "fa-clock text-rose-600"}`}></i>
+                                  <i className={`fa-solid ${isPaid ? "fa-circle-check text-emerald-500" : "fa-clock text-rose-500"}`}></i>
                                   <span>{isPaid ? "Đã đóng tiền" : "Chưa đóng"}</span>
                                 </button>
                               </td>
@@ -1336,8 +1347,8 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
                           <p className="font-bold text-slate-900 text-sm leading-snug flex items-center gap-1.5 flex-wrap">
                             <span className="truncate">{u.name || "Chưa đặt tên"}</span>
                             {isCurrentUser && (
-                              <span className="text-[9px] font-black px-1.5 py-0.2 bg-emerald-100 text-emerald-800 rounded-full border border-emerald-200">
-                                Bạn
+                              <span className="text-[10px] font-semibold text-emerald-600">
+                                (Bạn)
                               </span>
                             )}
                           </p>
@@ -1474,8 +1485,8 @@ export function SuperAdminView({ apiRoot, user, token, onOpenLogin, onLogout }) 
                                 <p className="font-bold text-slate-900 leading-snug flex items-center gap-1.5">
                                   <span>{u.name || "Chưa đặt tên"}</span>
                                   {isCurrentUser && (
-                                    <span className="text-[9px] font-black px-1.5 py-0.2 bg-emerald-100 text-emerald-800 rounded-full border border-emerald-200">
-                                      Bạn
+                                    <span className="text-[10px] font-semibold text-emerald-600">
+                                      (Bạn)
                                     </span>
                                   )}
                                 </p>

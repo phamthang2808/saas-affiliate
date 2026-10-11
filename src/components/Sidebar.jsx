@@ -177,9 +177,9 @@ export function Sidebar({
                 <span
                   className={`text-[9px] font-black px-2 py-0.5 rounded-md inline-flex items-center gap-1 uppercase ${
                     user.role === "SUPER_ADMIN"
-                      ? "bg-amber-100 text-amber-900 border border-amber-300"
+                      ? "bg-amber-100 text-amber-900"
                       : user.role === "TENANT_ADMIN"
-                      ? "bg-purple-100 text-purple-900 border border-purple-300"
+                      ? "bg-orange-100 text-orange-900"
                       : "bg-slate-200 text-slate-700"
                   }`}
                 >
@@ -190,7 +190,7 @@ export function Sidebar({
                     </>
                   ) : user.role === "TENANT_ADMIN" ? (
                     <>
-                      <i className="fa-solid fa-user-shield text-purple-600 text-[10px]"></i>
+                      <i className="fa-solid fa-user-shield text-orange-600 text-[10px]"></i>
                       <span>TRƯỞNG NHÓM</span>
                     </>
                   ) : (

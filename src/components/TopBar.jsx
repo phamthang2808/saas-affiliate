@@ -127,7 +127,7 @@ export function TopBar({
               <span className="truncate">{info.title}</span>
             )}
             {currentView === "tenant-admin" && currentTenant && (
-              <span className="hidden lg:inline-block text-[10px] px-2 py-0.5 rounded-md bg-orange-50 text-orange-600 border border-orange-200 font-bold font-mono shrink-0">
+              <span className="hidden lg:inline-block text-[10px] px-2 py-0.5 rounded-md bg-orange-50 text-orange-600 font-bold font-mono shrink-0">
                 /{currentTenant.slug}
               </span>
             )}
@@ -152,7 +152,7 @@ export function TopBar({
             <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-slate-100 p-4 z-50 animate-in fade-in zoom-in-95 duration-150">
               <div className="flex items-center justify-between border-b border-slate-100 pb-2 mb-2">
                 <span className="text-xs font-black text-slate-900 flex items-center gap-1.5">
-                  <i className="fa-solid fa-bell text-emerald-600"></i>
+                  <i className="fa-solid fa-bell text-orange-500"></i>
                   Thông báo hệ thống
                 </span>
                 <button onClick={() => setShowBellPopover(false)} className="text-slate-400 hover:text-slate-600 text-xs">✕</button>

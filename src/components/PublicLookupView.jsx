@@ -607,7 +607,7 @@ export function PublicLookupView({
               </p>
             </div>
           </div>
-          <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-bold border border-orange-200">
+          <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-bold">
             <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></span>
             Tự động 24/7
           </span>
@@ -649,7 +649,7 @@ export function PublicLookupView({
           <div className="flex items-center gap-2 pt-2 text-xs text-slate-600 font-bold border-t border-slate-100">
             <i className="fa-solid fa-circle-check text-emerald-600"></i>
             <span>Đang hiển thị kết quả cho:</span>
-            <span className="bg-orange-50 px-2.5 py-0.5 rounded-lg border border-orange-200 text-orange-800 font-mono">
+            <span className="bg-orange-50 px-2.5 py-0.5 rounded-lg text-orange-800 font-mono">
               {targetName ? `${targetName} (${targetZaloId})` : (targetZaloId || lookupData.query)}
             </span>
           </div>
@@ -741,7 +741,7 @@ export function PublicLookupView({
                   {formatMoney(availableBalance)}
                 </div>
                 {holdingCompletedCommission > 0 && holdingDays > 0 && (
-                  <div className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 border border-amber-200 text-amber-800 text-[9px] font-bold">
+                  <div className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 text-[9px] font-bold">
                     <i className="fa-solid fa-hourglass-half text-[8px] animate-pulse"></i>
                     <span>Giữ {formatMoney(holdingCompletedCommission)} ({holdingDays} ngày)</span>
                   </div>
@@ -752,7 +752,7 @@ export function PublicLookupView({
             {/* Thẻ 4: Đã nhận */}
             <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-xs border border-slate-200 flex flex-col justify-between transition hover:shadow-md">
               <div>
-                <div className="w-9 h-9 rounded-2xl bg-violet-100 text-violet-600 flex items-center justify-center text-sm font-bold mb-3">
+                <div className="w-9 h-9 rounded-2xl bg-orange-100 text-orange-600 flex items-center justify-center text-sm font-bold mb-3">
                   <i className="fa-solid fa-money-bill-transfer"></i>
                 </div>
                 <p className="text-[10px] sm:text-xs font-black uppercase tracking-wide text-slate-500">
@@ -762,7 +762,7 @@ export function PublicLookupView({
                   (Tổng tiền đã rút về bank)
                 </p>
               </div>
-              <div className="text-lg sm:text-2xl font-black text-violet-600 font-outfit truncate">
+              <div className="text-lg sm:text-2xl font-black text-orange-600 font-outfit truncate">
                 {formatMoney(totalWithdrawn)}
               </div>
             </div>
@@ -1106,9 +1106,9 @@ export function PublicLookupView({
                           className={`px-3 py-1 rounded-full text-xs font-extrabold ${
                             isDone
                               ? isOrderEligibleForWithdrawal(order)
-                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                                : "bg-amber-50 text-amber-700 border border-amber-200"
-                              : "bg-amber-50 text-amber-700 border border-amber-200"
+                                ? "bg-emerald-50 text-emerald-700"
+                                : "bg-amber-50 text-amber-700"
+                              : "bg-amber-50 text-amber-700"
                           }`}
                         >
                           {isDone && holdingDays > 0 && !isOrderEligibleForWithdrawal(order)

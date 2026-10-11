@@ -8,7 +8,7 @@ export function GuideView({ currentTenant, onNavigate }) {
     <div className="space-y-6 max-w-4xl mx-auto pb-12">
       {/* Header Card */}
       <div className="bg-white rounded-3xl border border-slate-200/80 p-6 md:p-8 shadow-xs">
-        <div className="inline-flex items-center gap-2 bg-orange-50 border border-orange-200 text-orange-700 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider mb-3">
+        <div className="inline-flex items-center gap-2 bg-orange-50 text-orange-700 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider mb-3">
           <i className="fa-solid fa-book-open text-orange-500"></i> Hướng Dẫn Chi Tiết
         </div>
         <h1 className="text-2xl md:text-3xl font-black text-slate-900 font-display">

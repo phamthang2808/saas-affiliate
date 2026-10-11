@@ -738,17 +738,17 @@ export function MemberDetailModal({
 
   const getStatusBadge = (o) => {
     if (isOrderCompleted(o))
-      return { text: "Hoàn thành", cls: "bg-emerald-50 text-emerald-700 border-emerald-300" };
+      return { text: "Hoàn thành", cls: "bg-emerald-50 text-emerald-700" };
     if (isOrderCancelled(o))
-      return { text: "Hủy", cls: "bg-rose-50 text-rose-700 border-rose-200" };
-    return { text: o.status || "Chờ xử lý", cls: "bg-amber-50 text-amber-700 border-amber-200" };
+      return { text: "Hủy", cls: "bg-rose-50 text-rose-700" };
+    return { text: o.status || "Chờ xử lý", cls: "bg-amber-50 text-amber-700" };
   };
 
   const getPlatformBadge = (o) => {
     const p = getPlatform(o);
-    if (p === "TIKTOK") return { label: "TikTok", cls: "bg-slate-100 text-slate-800 border-slate-200" };
-    if (p === "LAZADA") return { label: "Lazada", cls: "bg-pink-50 text-pink-600 border-pink-100" };
-    return { label: "Shopee", cls: "bg-orange-50 text-orange-600 border-orange-200" };
+    if (p === "TIKTOK") return { label: "TikTok", cls: "bg-slate-100 text-slate-800" };
+    if (p === "LAZADA") return { label: "Lazada", cls: "bg-pink-50 text-pink-600" };
+    return { label: "Shopee", cls: "bg-orange-50 text-orange-600" };
   };
 
   return (
@@ -773,7 +773,7 @@ export function MemberDetailModal({
                   <span className="text-orange-600">{zaloName}</span>
                 </h2>
                 {isLoadingLive && (
-                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
                     <i className="fa-solid fa-rotate animate-spin text-[10px]"></i> Đồng bộ...
                   </span>
                 )}
@@ -1360,7 +1360,7 @@ export function MemberDetailModal({
                           {o.orderId || "—"}
                         </td>
                         <td className="px-3 py-2.5 whitespace-nowrap">
-                          <span className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold border ${pfBadge.cls}`}>
+                          <span className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold ${pfBadge.cls}`}>
                             {pfBadge.label}
                           </span>
                         </td>
@@ -1409,7 +1409,7 @@ export function MemberDetailModal({
                           )}
                         </td>
                         <td className="px-3 py-2.5 text-center whitespace-nowrap">
-                          <span className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold border ${stBadge.cls}`}>
+                          <span className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold ${stBadge.cls}`}>
                             {stBadge.text}
                           </span>
                         </td>
@@ -1542,7 +1542,7 @@ export function MemberDetailModal({
                         value={manualAmount}
                         onChange={(e) => setManualAmount(e.target.value)}
                         placeholder="VD: 50000"
-                        className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-sm font-mono font-bold text-slate-900 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 shadow-2xs"
+                        className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-sm font-mono font-bold text-slate-900 outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 shadow-2xs"
                       />
                       {/* Gợi ý số tiền nhanh */}
                       <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
@@ -1550,7 +1550,7 @@ export function MemberDetailModal({
                           <button
                             type="button"
                             onClick={() => setManualAmount(String(availableBalance))}
-                            className="text-[10px] font-bold text-purple-700 bg-purple-100 hover:bg-purple-200 px-2 py-0.5 rounded-md transition cursor-pointer"
+                            className="text-[10px] font-bold text-orange-700 bg-orange-100 hover:bg-orange-200 px-2 py-0.5 rounded-md transition cursor-pointer"
                           >
                             Toàn bộ khả dụng ({formatMoney(availableBalance)})
                           </button>
@@ -1560,7 +1560,7 @@ export function MemberDetailModal({
                             key={amt}
                             type="button"
                             onClick={() => setManualAmount(String(amt))}
-                            className="text-[10px] font-bold text-slate-600 bg-white border border-slate-200 hover:bg-purple-50 hover:text-purple-700 px-2 py-0.5 rounded-md transition cursor-pointer"
+                            className="text-[10px] font-bold text-slate-600 bg-white border border-slate-200 hover:bg-orange-50 hover:text-orange-600 px-2 py-0.5 rounded-md transition cursor-pointer"
                           >
                             {formatMoney(amt)}
                           </button>
@@ -1577,7 +1577,7 @@ export function MemberDetailModal({
                         value={manualNote}
                         onChange={(e) => setManualNote(e.target.value)}
                         placeholder="VD: Chuyển tiếp thanh toán Web cũ sang Web mới..."
-                        className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-800 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 shadow-2xs"
+                        className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-800 outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 shadow-2xs"
                       />
                       <span className="text-[10px] text-slate-400 mt-1 block">
                         Ghi chú nội dung chuyển khoản để đối soát sau này.
@@ -1594,7 +1594,7 @@ export function MemberDetailModal({
                         value={manualBankName}
                         onChange={(e) => setManualBankName(e.target.value)}
                         placeholder="VD: MBBank, VCB..."
-                        className="w-full bg-white border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 outline-none focus:border-purple-500 shadow-2xs"
+                        className="w-full bg-white border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 outline-none focus:border-orange-500 shadow-2xs"
                       />
                     </div>
                     <div>
@@ -1604,7 +1604,7 @@ export function MemberDetailModal({
                         value={manualAccountNumber}
                         onChange={(e) => setManualAccountNumber(e.target.value)}
                         placeholder="VD: 0987654321..."
-                        className="w-full bg-white border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-mono font-bold text-slate-800 outline-none focus:border-purple-500 shadow-2xs"
+                        className="w-full bg-white border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-mono font-bold text-slate-800 outline-none focus:border-orange-500 shadow-2xs"
                       />
                     </div>
                     <div>
@@ -1614,12 +1614,12 @@ export function MemberDetailModal({
                         value={manualAccountName}
                         onChange={(e) => setManualAccountName(e.target.value.toUpperCase())}
                         placeholder="VD: NGUYEN VAN A..."
-                        className="w-full bg-white border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 uppercase outline-none focus:border-purple-500 shadow-2xs"
+                        className="w-full bg-white border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 uppercase outline-none focus:border-orange-500 shadow-2xs"
                       />
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-end gap-2 pt-2 border-t border-purple-100">
+                  <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
                     <button
                       type="button"
                       onClick={() => setShowManualPayoutForm(false)}
@@ -1630,7 +1630,7 @@ export function MemberDetailModal({
                     <button
                       type="submit"
                       disabled={isCreatingPayout}
-                      className="px-5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-black rounded-xl shadow-md cursor-pointer transition flex items-center gap-1.5 disabled:opacity-50"
+                      className="px-5 py-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white text-xs font-black rounded-xl shadow-md cursor-pointer transition flex items-center gap-1.5 disabled:opacity-50"
                     >
                       {isCreatingPayout ? (
                         <>
@@ -1683,18 +1683,18 @@ export function MemberDetailModal({
                 </div>
               </div>
 
-              <div className="bg-purple-50/70 border border-purple-200/80 rounded-2xl p-3.5 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center text-sm font-bold shrink-0">
+              <div className="bg-orange-50/70 border border-orange-200/80 rounded-2xl p-3.5 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-orange-100 text-orange-700 flex items-center justify-center text-sm font-bold shrink-0">
                   <i className="fa-solid fa-wallet"></i>
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[10px] font-black uppercase text-purple-800 tracking-wide">
+                  <p className="text-[10px] font-black uppercase text-orange-800 tracking-wide">
                     Số dư khả dụng hiện tại
                   </p>
-                  <p className="text-base font-black text-purple-700 font-mono">
+                  <p className="text-base font-black text-orange-600 font-mono">
                     {formatMoney(availableBalance)}
                   </p>
-                  <p className="text-[10px] text-purple-600 font-semibold">
+                  <p className="text-[10px] text-orange-600 font-semibold">
                     Có thể tạo lệnh rút ngay
                   </p>
                 </div>
@@ -1705,14 +1705,14 @@ export function MemberDetailModal({
             <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-xs border border-slate-200 space-y-3">
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <h3 className="font-black text-slate-900 text-sm sm:text-base flex items-center gap-2 font-display">
-                  <i className="fa-solid fa-money-bill-transfer text-purple-600"></i>
+                  <i className="fa-solid fa-money-bill-transfer text-orange-500"></i>
                   <span>Lịch Sử Yêu Cầu Rút Tiền ({memberPayoutsList.length} giao dịch)</span>
                 </h3>
               </div>
 
               {memberPayoutsList.length === 0 ? (
                 <div className="py-12 px-4 text-center rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50">
-                  <div className="w-14 h-14 rounded-3xl bg-purple-100 text-purple-600 flex items-center justify-center text-2xl mx-auto mb-3 shadow-2xs">
+                  <div className="w-14 h-14 rounded-3xl bg-orange-100 text-orange-600 flex items-center justify-center text-2xl mx-auto mb-3 shadow-2xs">
                     <i className="fa-solid fa-money-bill-transfer"></i>
                   </div>
                   <h4 className="text-sm font-black text-slate-800 mb-1">
@@ -1731,7 +1731,7 @@ export function MemberDetailModal({
                       setManualAccountName(accountName || "");
                       setManualNote(`Admin tạo & duyệt quyết toán hoa hồng cho ${zaloName}`);
                     }}
-                    className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-black rounded-xl shadow-md cursor-pointer transition inline-flex items-center gap-2"
+                    className="px-4 py-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white text-xs font-black rounded-xl shadow-md cursor-pointer transition inline-flex items-center gap-2"
                   >
                     <i className="fa-solid fa-plus"></i>
                     <span>Tạo Lệnh Rút Tiền Thủ Công</span>
@@ -1761,7 +1761,7 @@ export function MemberDetailModal({
                         return (
                           <tr key={p.id} className="hover:bg-slate-50/70 transition">
                             <td className="px-3.5 py-3 text-center whitespace-nowrap">
-                              <span className="px-2.5 py-1 bg-purple-100 text-purple-900 font-mono font-black rounded-xl text-xs border border-purple-200 inline-block shadow-2xs">
+                              <span className="px-2.5 py-1 bg-orange-50 text-orange-800 font-mono font-black rounded-xl text-xs inline-block">
                                 #{p.id}
                               </span>
                             </td>
@@ -1795,10 +1795,10 @@ export function MemberDetailModal({
                               <span
                                 className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold ${
                                   isCompleted
-                                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                    ? "bg-emerald-50 text-emerald-700"
                                     : isRejected
-                                    ? "bg-rose-50 text-rose-700 border border-rose-200"
-                                    : "bg-amber-50 text-amber-700 border border-amber-200 animate-pulse"
+                                    ? "bg-rose-50 text-rose-700"
+                                    : "bg-amber-50 text-amber-700 animate-pulse"
                                 }`}
                               >
                                 {isCompleted ? "Đã duyệt" : isRejected ? "Từ chối" : "Chờ duyệt"}

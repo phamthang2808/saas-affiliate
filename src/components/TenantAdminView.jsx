@@ -68,96 +68,96 @@ const TEMPLATE_META = {
   template_link: {
     title: "1. Mẫu tin nhắn Trả Link Mua Sắm Hoàn Tiền (Shopee)",
     badge: "Tự động phản hồi khi thành viên gửi Link Shopee",
-    icon: "fa-solid fa-link text-emerald-600",
+    icon: "fa-solid fa-link text-orange-500",
     desc: "Tin nhắn Bot tự động tạo link hoàn tiền Shopee và phản hồi ngay sau khi thành viên gửi link Shopee vào nhóm Zalo."
   },
   template_link_tiktok: {
     title: "2. Mẫu tin nhắn Trả Link TikTok Shop (Khi có đủ API Key & Creator Username)",
     badge: "Tự động phản hồi khi gửi link TikTok Shop và đã kết nối API",
-    icon: "fa-solid fa-music text-pink-600",
+    icon: "fa-solid fa-music text-orange-500",
     desc: "Tin nhắn Bot tự động tạo link tiếp thị TikTok và lấy hoa hồng chuẩn từ TikTok về khi Kênh đã nhập đủ API Key & Creator Username."
   },
   template_tiktok_not_configured: {
     title: "3. Mẫu tin nhắn Báo Chưa Cấu Hình TikTok Shop (Khi thiếu API Key / Creator Username)",
     badge: "Phản hồi khi gửi link TikTok nhưng chưa kết nối API",
-    icon: "fa-solid fa-triangle-exclamation text-amber-600",
+    icon: "fa-solid fa-triangle-exclamation text-orange-500",
     desc: "Tin nhắn Bot phản hồi khi thành viên gửi link TikTok Shop nhưng Kênh chưa nhập đủ cả 2 thông tin TikTok API Key & Creator Username."
   },
   template_welcome: {
     title: "4. Mẫu tin nhắn Chào Mừng Thành Viên Mới Gia Nhập Nhóm",
     badge: "Tự động khi có người mới vào nhóm Zalo",
-    icon: "fa-solid fa-handshake text-blue-600",
+    icon: "fa-solid fa-handshake text-orange-500",
     desc: "Tin nhắn Bot tag tên chào mừng và hướng dẫn đọc bài ghim khi có thành viên mới vào nhóm."
   },
   template_order_detail: {
     title: "5. Mẫu tin nhắn Danh Sách Các Đơn Hàng Đã Mua (Lệnh /donhang)",
     command: "/donhang hoặc /donhang2, /donhang3...",
-    icon: "fa-solid fa-box text-blue-600",
+    icon: "fa-solid fa-box text-orange-500",
     desc: "Tin nhắn Bot liệt kê danh sách đơn hàng khi gõ /donhang. Sửa mẫu hiển thị từng đơn ngay bên trong khối [don_hang]...[/don_hang] hoặc chèn biến {danh_sach_don}. Biến hỗ trợ: {stt}, {ten_san_pham}, {id} (hoặc {ma_don_hang}), {hoa_hong}, {trang_thai}, {icon_trang_thai}, {trang}, {tong_trang}, {tong_don}, {danh_sach_don}, {link_tra_cuu}."
   },
   template_order_not_found: {
     title: "6. Mẫu tin nhắn Báo Chưa Có Đơn Hàng Nào (Khi Chưa Có Đơn)",
     command: "/donhang hoặc #donhang (khi CHƯA CÓ đơn)",
-    icon: "fa-solid fa-box-open text-rose-600",
+    icon: "fa-solid fa-box-open text-orange-500",
     desc: "Tin nhắn thông báo khi thành viên gõ lệnh /donhang lúc chưa có đơn nào."
   },
   template_wallet: {
     title: "7. Mẫu tin nhắn Thông Tin Ví Hoàn Tiền (Lệnh /vitien)",
     command: "/vitien hoặc #vitien",
-    icon: "fa-solid fa-wallet text-emerald-600",
+    icon: "fa-solid fa-wallet text-orange-500",
     desc: "Tin nhắn Bot hiển thị thông tin Ví khả dụng, Đơn đã hoàn thành (chưa đủ ngày), Đơn chờ đối soát và Đã rút thành công."
   },
   template_lookup: {
     title: "8. Mẫu tin nhắn Tra Cứu Đơn Hàng & Ví Tiền (Link Web 1 Chạm - Lệnh /tracuu)",
     command: "/tracuu hoặc #tracuu",
-    icon: "fa-solid fa-magnifying-glass text-purple-600",
+    icon: "fa-solid fa-magnifying-glass text-orange-500",
     desc: "Tin nhắn Bot phản hồi kèm đường link Web tra cứu cá nhân rút gọn 1 chạm khi thành viên gõ lệnh /tracuu."
   },
   template_save_bank_success: {
     title: "9. Mẫu tin nhắn Lưu Số Tài Khoản Thành Công (ĐÚNG cú pháp)",
     command: "/stk_[NGÂN_HÀNG]_[STK] (khi ĐÚNG cú pháp)",
-    icon: "fa-solid fa-credit-card text-emerald-600",
+    icon: "fa-solid fa-credit-card text-orange-500",
     desc: "Tin nhắn phản hồi khi thành viên lưu hoặc cập nhật thành công số tài khoản ngân hàng nhận tiền."
   },
   template_invalid_bank_syntax: {
     title: "10. Mẫu tin nhắn Báo Sai Cú Pháp Lưu Số Tài Khoản (SAI cú pháp)",
     command: "/stk (khi SAI cú pháp)",
-    icon: "fa-solid fa-credit-card text-rose-500",
+    icon: "fa-solid fa-credit-card text-orange-500",
     desc: "Tin nhắn hướng dẫn lại cú pháp lưu số tài khoản ngân hàng khi người dùng gõ sai cú pháp /stk."
   },
   template_withdraw_success: {
     title: "11. Mẫu tin nhắn Yêu Cầu Rút Tiền Thành Công",
     command: "/ruttien hoặc /rut (khi ĐỦ hạn mức)",
-    icon: "fa-solid fa-paper-plane text-emerald-600",
+    icon: "fa-solid fa-paper-plane text-orange-500",
     desc: "Tin nhắn thông báo khi thành viên lập lệnh rút tiền thành công và gửi thông tin STK chờ Trưởng Nhóm duyệt."
   },
   template_withdraw_zero: {
     title: "12. Mẫu tin nhắn Báo Chưa Đủ Hạn Mức Rút Tiền",
     command: "/ruttien hoặc /rut (khi CHƯA ĐỦ hạn mức)",
-    icon: "fa-solid fa-wallet text-amber-600",
+    icon: "fa-solid fa-wallet text-orange-500",
     desc: "Tin nhắn thông báo khi số dư khả dụng của thành viên chưa đạt hạn mức tối thiểu để lập lệnh rút."
   },
   template_approve_payout: {
     title: "13. Mẫu tin nhắn Thông Báo Duyệt Rút Tiền Trong Nhóm",
     command: "/duyet_[MÃ_ID] (Chỉ Trưởng Nhóm)",
-    icon: "fa-solid fa-circle-check text-purple-600",
+    icon: "fa-solid fa-circle-check text-orange-500",
     desc: "Tin nhắn thông báo trong nhóm Zalo khi Trưởng Nhóm thực hiện lệnh duyệt tiền thành công cho thành viên."
   },
   template_payout_approved: {
     title: "14. Mẫu tin nhắn Riêng Chuyển Tiền Thành Công (Gửi Private cho Khách)",
-    icon: "fa-solid fa-money-bill-transfer text-emerald-600",
+    icon: "fa-solid fa-money-bill-transfer text-orange-500",
     desc: "Tin nhắn riêng Bot gửi tự động cho từng khách hàng khi Trưởng Nhóm bấm ĐÃ DUYỆT trên hệ thống web — thay thế việc nhắn tay. Biến: {ten_zalo}, {so_tien}, {ngan_hang}, {so_tai_khoan}, {ma_giao_dich}."
   },
   template_help: {
     title: "15. Mẫu tin nhắn Trợ Giúp & Danh Sách Các Câu Lệnh",
     command: "/help hoặc #help",
-    icon: "fa-solid fa-circle-question text-indigo-600",
+    icon: "fa-solid fa-circle-question text-orange-500",
     desc: "Danh sách tổng hợp toàn bộ các câu lệnh Bot hỗ trợ để gửi cho thành viên khi họ cần trợ giúp."
   },
   template_invalid_command: {
     title: "16. Mẫu tin nhắn Phản Hồi Khi Gõ Sai Cú Pháp Lệnh",
     badge: "Khi người dùng gõ sai lệnh",
-    icon: "fa-solid fa-triangle-exclamation text-amber-500",
+    icon: "fa-solid fa-triangle-exclamation text-orange-500",
     desc: "Tin nhắn nhắc nhở kèm gợi ý gõ /help khi người dùng gõ một câu lệnh không có trong hệ thống."
   }
 };
@@ -1872,7 +1872,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
           </div>
           <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-1.5">
             {[
-              { key: "settings", icon: "fa-solid fa-sliders", label: "Điều Kiện Rút & Chia" },
+              { key: "settings", icon: "fa-solid fa-gear", label: "Cấu hình" },
               { key: "templates", icon: "fa-solid fa-robot", label: "Mẫu Tin Nhắn Bot" },
               { key: "zalo_bot", icon: "fa-solid fa-qrcode", label: `Kết Nối Bot Zalo (${tenantBots.length})` },
             ].map((tab) => {
@@ -1947,18 +1947,18 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
           {/* HOẠT ĐỘNG CHUNG */}
           <div>
             <h3 className="text-xs font-black text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2 font-display">
-              <i className="fa-solid fa-chart-line text-purple-600"></i>
+              <i className="fa-solid fa-chart-line text-orange-500"></i>
               <span>Hoạt động chung</span>
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { label: "Tổng thành viên Zalo", value: zaloUsers.length, icon: "fa-users", color: "purple" },
-                { label: "Tổng đơn hàng", value: orders.length, icon: "fa-boxes-stacked", color: "rose" },
-                { label: "Yêu cầu rút chờ duyệt", value: pendingPayouts.length + " lệnh", icon: "fa-clock", color: "amber" },
-                { label: "Tiền rút chờ duyệt", value: formatMoney(totalPendingAmount), icon: "fa-money-bill-wave", color: "emerald" },
+                { label: "Tổng thành viên Zalo", value: zaloUsers.length, icon: "fa-users" },
+                { label: "Tổng đơn hàng", value: orders.length, icon: "fa-boxes-stacked" },
+                { label: "Yêu cầu rút chờ duyệt", value: pendingPayouts.length + " lệnh", icon: "fa-clock" },
+                { label: "Tiền rút chờ duyệt", value: formatMoney(totalPendingAmount), icon: "fa-money-bill-wave" },
               ].map((card, i) => (
                 <div key={i} className="bg-white rounded-3xl border border-slate-200/80 p-5 shadow-2xs space-y-2">
-                  <div className="w-10 h-10 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-700 text-lg shadow-inner">
+                  <div className="w-10 h-10 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center text-lg shadow-inner">
                     <i className={`fa-solid ${card.icon}`}></i>
                   </div>
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-wide">{card.label}</p>
@@ -1972,7 +1972,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
           <div className="space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <h3 className="text-xs font-black text-slate-500 uppercase tracking-wider flex items-center gap-2 font-display">
-                <i className="fa-solid fa-coins text-amber-500"></i>
+                <i className="fa-solid fa-coins text-orange-500"></i>
                 <span>Tài chính Shopee {isTiktokEnabled ? "& TikTok " : ""}
                   {overviewFinanceMode === "all" && `(Tất cả ${stats?.validOrdersCount ?? orders.length} đơn hợp lệ)`}
                   {overviewFinanceMode === "completed" && `(Đã đối soát hoàn thành: ${stats?.completedOrdersCount ?? 0} đơn)`}
@@ -1991,7 +1991,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                       : "text-slate-500 hover:text-slate-800"
                   }`}
                 >
-                  <i className="fa-solid fa-layer-group text-violet-500"></i>
+                  <i className="fa-solid fa-layer-group text-orange-500"></i>
                   <span>Tất cả đơn ({stats?.validOrdersCount ?? orders.length})</span>
                 </button>
                 <button
@@ -2072,7 +2072,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
         <div className="bg-white rounded-2xl border border-slate-200/90 p-6 sm:p-8 shadow-xs space-y-6">
           <div className="pb-4 border-b border-slate-100">
             <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <i className="fa-solid fa-qrcode text-emerald-500"></i>
+              <i className="fa-solid fa-qrcode text-orange-500"></i>
               <span>Quản Lý Nick Bot Zalo (Kênh {groupDisplayName})</span>
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
@@ -2083,7 +2083,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
           {tenantBots.length === 0 ? (
             /* CHƯA KẾT NỐI */
             <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-8 text-center space-y-4">
-              <div className="w-14 h-14 rounded-2xl bg-emerald-500 text-white flex items-center justify-center text-2xl mx-auto shadow-sm">
+              <div className="w-14 h-14 rounded-2xl bg-orange-500 text-white flex items-center justify-center text-2xl mx-auto shadow-sm">
                 <i className="fa-solid fa-qrcode"></i>
               </div>
               <div className="space-y-1">
@@ -2098,7 +2098,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                   setShowQrModal(true);
                   handleGenerateQr();
                 }}
-                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-xs cursor-pointer inline-flex items-center gap-2 transition"
+                className="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold text-xs shadow-xs cursor-pointer inline-flex items-center gap-2 transition"
               >
                 <i className="fa-solid fa-plus text-xs"></i>
                 <span>Kết Nối Nick Bot Zalo Mới & Quét QR</span>
@@ -2110,7 +2110,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
               <div key={bot.id} className="bg-slate-50/70 rounded-xl p-5 border border-slate-200 space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex items-center gap-3.5">
-                    <div className="w-12 h-12 rounded-xl bg-emerald-500 text-white font-bold text-xl flex items-center justify-center shrink-0">
+                    <div className="w-12 h-12 rounded-xl bg-orange-500 text-white font-bold text-xl flex items-center justify-center shrink-0">
                       {bot.zaloName ? bot.zaloName.charAt(0).toUpperCase() : "B"}
                     </div>
                     <div>
@@ -2219,7 +2219,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                               </span>
                             </td>
                             <td className="px-4 py-3.5 whitespace-nowrap">
-                              <code className="text-[11px] font-mono font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-200">
+                              <code className="text-[11px] font-mono font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg">
                                 {u.zaloId || u.zalo_id || "—"}
                               </code>
                             </td>
@@ -2238,7 +2238,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                                     )}
                                     {accName && (
                                       <div className="mt-0.5">
-                                        <span className="text-[10px] text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded font-extrabold uppercase whitespace-nowrap tracking-wide border border-orange-100 inline-block">
+                                        <span className="text-[10px] text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded font-extrabold uppercase whitespace-nowrap tracking-wide inline-block">
                                           {accName}
                                         </span>
                                       </div>
@@ -2475,10 +2475,10 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                   payouts.map((p) => (
                     <tr key={p.id} className="hover:bg-slate-50/80 transition">
                       <td className="p-3.5 text-center whitespace-nowrap">
-                        <span className="px-2.5 py-1 bg-purple-100 text-purple-900 font-mono font-black rounded-xl text-xs border border-purple-200 inline-block shadow-2xs">
+                        <span className="px-2.5 py-1 bg-orange-50 text-orange-800 font-mono font-black rounded-xl text-xs inline-block">
                           #{p.id}
                         </span>
-                        <p className="text-[10px] text-purple-600 font-mono font-bold mt-1">/duyet_{p.id}</p>
+                        <p className="text-[10px] text-orange-600 font-mono font-bold mt-1">/duyet_{p.id}</p>
                       </td>
                       <td className="p-3.5">
                         <p className="font-bold text-slate-900">{p.zaloName || p.zaloId}</p>
@@ -2949,7 +2949,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                     <th className="p-3.5 sm:p-4 text-right whitespace-nowrap">Thuế ({taxRate}%)</th>
                     <th className="p-3.5 sm:p-4 text-right whitespace-nowrap">Sau thuế</th>
                     <th className="p-3.5 sm:p-4 text-right text-orange-600 whitespace-nowrap">Khách ({customerSplitRate}%)</th>
-                    <th className="p-3.5 sm:p-4 text-right text-purple-600 whitespace-nowrap">Admin ({adminSplitRate}%)</th>
+                    <th className="p-3.5 sm:p-4 text-right text-orange-600 whitespace-nowrap">Admin ({adminSplitRate}%)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
@@ -2988,7 +2988,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                               <p className="font-bold text-slate-900 text-xs sm:text-xs leading-snug truncate" title={o.productName}>
                                 {o.productName}
                               </p>
-                              <span className="inline-block mt-0.5 text-[10px] sm:text-[11px] text-slate-500 font-mono font-bold bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                              <span className="inline-block mt-0.5 text-[10px] sm:text-[11px] text-slate-500 font-mono font-bold bg-slate-100 px-2 py-0.5 rounded">
                                 ID: {o.orderId}
                               </span>
                             </td>
@@ -3008,7 +3008,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                                     {buyer.name}
                                   </span>
                                   {Boolean(o.isManuallyAssigned) && (
-                                    <span className="inline-flex items-center gap-0.5 text-[9px] font-black text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 shadow-2xs" title="Đơn đã được Admin gán thủ công, vĩnh viễn không bị ghi đè khi import lại Excel">
+                                    <span className="inline-flex items-center gap-0.5 text-[9px] font-black text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded shadow-2xs" title="Đơn đã được Admin gán thủ công, vĩnh viễn không bị ghi đè khi import lại Excel">
                                       <i className="fa-solid fa-lock text-[8px]"></i> Đã gán
                                     </span>
                                   )}
@@ -3030,17 +3030,17 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                               {(() => {
                                 const rawSt = String(o.status || "").trim().toLowerCase();
                                 let badgeLabel = "Chờ xử lý";
-                                let badgeClass = "bg-amber-50 text-amber-700 border border-amber-200";
+                                let badgeClass = "bg-amber-50 text-amber-700";
 
                                 if (rawSt === "3" || rawSt === "300" || rawSt.includes("hủy") || rawSt.includes("cancel") || rawSt.includes("refund")) {
                                   badgeLabel = "Đã hủy";
-                                  badgeClass = "bg-rose-50 text-rose-700 border border-rose-200";
+                                  badgeClass = "bg-rose-50 text-rose-700";
                                 } else if (rawSt === "2" || rawSt === "200" || rawSt.includes("hoàn thành") || rawSt.includes("complete") || rawSt.includes("finish") || rawSt.includes("success") || rawSt.includes("settled") || rawSt.includes("paid")) {
                                   badgeLabel = "Hoàn thành (Đã chốt)";
-                                  badgeClass = "bg-emerald-50 text-emerald-700 border border-emerald-200";
+                                  badgeClass = "bg-emerald-50 text-emerald-700";
                                 } else if (rawSt === "1" || rawSt === "100" || rawSt.includes("chờ") || rawSt.includes("pending") || rawSt.includes("xử lý") || rawSt.includes("unpaid") || rawSt.includes("vận chuyển")) {
                                   badgeLabel = "Chờ xử lý";
-                                  badgeClass = "bg-amber-50 text-amber-700 border border-amber-200";
+                                  badgeClass = "bg-amber-50 text-amber-700";
                                 }
 
                                 const isCompleted = badgeLabel.includes("Hoàn thành");
@@ -3098,7 +3098,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                             <td className="p-3.5 sm:p-4 text-right font-mono font-bold text-rose-500 text-xs sm:text-xs whitespace-nowrap">{formatMoney(taxVal)}</td>
                             <td className="p-3.5 sm:p-4 text-right font-mono font-bold text-slate-800 text-xs sm:text-xs whitespace-nowrap">{formatMoney(afterTaxVal)}</td>
                             <td className="p-3.5 sm:p-4 text-right font-mono font-black text-orange-600 text-xs sm:text-xs whitespace-nowrap">{formatMoney(userFinalVal)}</td>
-                            <td className="p-3.5 sm:p-4 text-right font-mono font-black text-purple-600 text-xs sm:text-xs whitespace-nowrap">{formatMoney(adminProfitVal)}</td>
+                            <td className="p-3.5 sm:p-4 text-right font-mono font-black text-orange-600 text-xs sm:text-xs whitespace-nowrap">{formatMoney(adminProfitVal)}</td>
                           </tr>
                         );
                       })
@@ -3122,7 +3122,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                       <td className="p-3.5 sm:p-4 text-right font-mono font-black text-orange-600 whitespace-nowrap">
                         {formatMoney(totalUserFinalSum)}
                       </td>
-                      <td className="p-3.5 sm:p-4 text-right font-mono font-black text-purple-600 whitespace-nowrap">
+                      <td className="p-3.5 sm:p-4 text-right font-mono font-black text-orange-600 whitespace-nowrap">
                         {formatMoney(totalAdminProfitSum)}
                       </td>
                     </tr>
@@ -3371,7 +3371,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                 <div key={key} className="p-4 sm:p-5 bg-slate-50/60 rounded-xl border border-slate-200 space-y-3 transition">
                   <div className="flex items-center justify-between flex-wrap gap-2">
                     <div className="flex items-center gap-2.5 flex-wrap">
-                      <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-sm shadow-2xs text-orange-500">
+                      <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-sm text-orange-500 shrink-0">
                         <i className={meta.icon || "fa-solid fa-message text-orange-500"}></i>
                       </div>
                       <div>
@@ -3386,12 +3386,12 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
 
                     <div className="flex items-center gap-2 flex-wrap">
                       {meta.command && (
-                        <span className="px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg text-[11px] font-semibold font-mono border border-slate-200/80">
+                        <span className="px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg text-[11px] font-semibold font-mono">
                           Lệnh: {meta.command}
                         </span>
                       )}
                       {meta.badge && (
-                        <span className="px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-[11px] font-semibold">
+                        <span className="px-2.5 py-1 bg-amber-50 text-amber-700 rounded-lg text-[11px] font-semibold">
                           📌 {meta.badge}
                         </span>
                       )}
@@ -3434,373 +3434,420 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
         </div>
       )}
 
-      {/* ===================== TAB 8: ĐIỀU KIỆN RÚT & CHIA (FLAT LIGHT SAAS) ===================== */}
+      {/* ===================== TAB 8: CẤU HÌNH KÊNH (FLAT LIGHT SAAS) ===================== */}
       {activeTab === "settings" && !isLoading && (
-        <form onSubmit={handleSaveSettings} className="bg-white rounded-2xl border border-slate-200/90 p-6 sm:p-8 shadow-xs space-y-7">
+        <form onSubmit={handleSaveSettings} className="space-y-6">
           {/* HEADER FORM */}
-          <div className="flex items-center justify-between flex-wrap gap-4 pb-5 border-b border-slate-100">
+          <div className="bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-6 shadow-xs flex items-center justify-between flex-wrap gap-4">
             <div>
               <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <i className="fa-solid fa-sliders text-orange-500"></i>
-                <span>Cấu Hình Kênh & Hạn Mức Rút Tiền</span>
+                <i className="fa-solid fa-gear text-orange-500"></i>
+                <span>Cấu Hình Kênh (Thiết Lập Chung)</span>
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
-                Thiết lập tỷ lệ hoa hồng chia khách, quy định rút tiền và định dạng trả lời bot của Kênh {groupDisplayName}
+                Thiết lập thông tin kênh, điều kiện rút tiền, tỷ lệ chia hoa hồng và cấu hình bot Zalo của Kênh {groupDisplayName}
               </p>
             </div>
             <button
               type="submit"
               disabled={isSavingSettings}
-              className="px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold text-xs shadow-xs hover:shadow transition cursor-pointer"
+              className="px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold text-xs shadow-xs hover:shadow transition cursor-pointer flex items-center gap-2"
             >
-              {isSavingSettings ? "Đang lưu..." : "Lưu Cấu Hình"}
+              <i className="fa-solid fa-floppy-disk text-xs"></i>
+              <span>{isSavingSettings ? "Đang lưu..." : "Lưu Cấu Hình"}</span>
             </button>
           </div>
 
           {settingsSaveMessage && (
-            <div className="p-3 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-semibold">
-              {settingsSaveMessage}
+            <div className="p-3 bg-emerald-50 text-emerald-800 rounded-xl text-xs font-semibold flex items-center gap-2">
+              <i className="fa-solid fa-circle-check text-emerald-600"></i>
+              <span>{settingsSaveMessage}</span>
             </div>
           )}
 
-          {/* SECTION 1: CÁC THÔNG SỐ CƠ BẢN */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">Tên Nhóm / Thương Hiệu Kênh:</label>
-              <input
-                type="text"
-                value={settings.name}
-                onChange={(e) => setSettings({ ...settings, name: e.target.value })}
-                className="w-full bg-slate-50/50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10 transition"
-              />
+          {/* CARD 1: THÔNG TIN KÊNH & QUẢN TRỊ */}
+          <div className="bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-6 shadow-xs space-y-4">
+            <div className="pb-3 border-b border-slate-100">
+              <h4 className="text-xs font-bold text-slate-900 flex items-center gap-2">
+                <i className="fa-solid fa-store text-orange-500"></i>
+                <span>1. Thông Tin Kênh & Quản Trị</span>
+              </h4>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                Tên nhận diện Kênh, tài khoản Zalo duyệt lệnh và mã Shopee Affiliate tiếp thị
+              </p>
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">Hạn mức rút tối thiểu (VNĐ):</label>
-              <input
-                type="number"
-                value={settings.minWithdrawAmount}
-                onChange={(e) => setSettings({ ...settings, minWithdrawAmount: e.target.value })}
-                className="w-full bg-slate-50/50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10 transition"
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Tên Nhóm / Thương Hiệu Kênh:</label>
+                <input
+                  type="text"
+                  value={settings.name}
+                  onChange={(e) => setSettings({ ...settings, name: e.target.value })}
+                  className="w-full bg-slate-50/50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10 transition"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Zalo ID Trưởng Nhóm (Admin):</label>
+                <input
+                  type="text"
+                  placeholder="Nhập Zalo ID của Trưởng Nhóm..."
+                  value={settings.adminZaloId || ""}
+                  onChange={(e) => setSettings({ ...settings, adminZaloId: e.target.value })}
+                  className="w-full bg-slate-50/50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10 transition"
+                />
+                <span className="text-[11px] text-slate-400 mt-1 block">Dùng để kiểm tra quyền duyệt lệnh /duyet trong nhóm Zalo.</span>
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Mã Shopee Affiliate Publisher ID (Shopee Pub ID):</label>
+                <input
+                  type="text"
+                  placeholder="Ví dụ: 1730052001 hoặc an_1730052001"
+                  value={settings.shopeePubId || ""}
+                  onChange={(e) => setSettings({ ...settings, shopeePubId: e.target.value })}
+                  className="w-full bg-slate-50/50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10 transition"
+                />
+                <span className="text-[11px] text-slate-400 mt-1 block">Mã ID tiếp thị Shopee Affiliate của Trưởng Nhóm dùng để gắn vào link tạo hoa hồng.</span>
+              </div>
+            </div>
+          </div>
+
+          {/* CARD 2: ĐIỀU KIỆN RÚT TIỀN & TỶ LỆ CHIA HOA HỒNG */}
+          <div className="bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-6 shadow-xs space-y-4">
+            <div className="pb-3 border-b border-slate-100 flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <h4 className="text-xs font-bold text-slate-900 flex items-center gap-2">
+                  <i className="fa-solid fa-coins text-orange-500"></i>
+                  <span>2. Điều Kiện Rút Tiền & Tỷ Lệ Chia Hoa Hồng</span>
+                </h4>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Tỷ lệ chia sẻ hoa hồng cho khách mua, quy định hạn mức và thời gian đối soát tiền rút
+                </p>
+              </div>
+              <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-orange-50 text-orange-600">
+                Trưởng nhóm giữ lại: {100 - (Number(settings.customerSplitRate) || 80)}% hoa hồng sau thuế
+              </span>
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">Tỷ lệ chia cho khách mua (%):</label>
-              <input
-                type="number"
-                value={settings.customerSplitRate}
-                onChange={(e) => setSettings({ ...settings, customerSplitRate: e.target.value })}
-                className="w-full bg-slate-50/50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10 transition"
-              />
-              <span className="text-[11px] text-slate-400 mt-1 block">Trưởng nhóm giữ lại: {100 - (Number(settings.customerSplitRate) || 80)}% hoa hồng sau thuế</span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Tỷ lệ chia cho khách mua (%):</label>
+                <input
+                  type="number"
+                  value={settings.customerSplitRate}
+                  onChange={(e) => setSettings({ ...settings, customerSplitRate: e.target.value })}
+                  className="w-full bg-slate-50/50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10 transition"
+                />
+                <span className="text-[11px] text-slate-400 mt-1 block">Khách được hưởng {settings.customerSplitRate || 80}% hoa hồng sau khấu trừ thuế TNCN.</span>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Hạn mức rút tối thiểu (VNĐ):</label>
+                <input
+                  type="number"
+                  value={settings.minWithdrawAmount}
+                  onChange={(e) => setSettings({ ...settings, minWithdrawAmount: e.target.value })}
+                  className="w-full bg-slate-50/50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10 transition"
+                />
+                <span className="text-[11px] text-slate-400 mt-1 block">Số tiền tối thiểu trong Ví Khả Dụng để thành viên lập lệnh rút.</span>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Số ngày giữ đơn sau hoàn thành (ngày):</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={settings.holdingDays}
+                  onChange={(e) => setSettings({ ...settings, holdingDays: e.target.value })}
+                  className="w-full bg-slate-50/50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10 transition"
+                />
+                <span className="text-[11px] text-slate-400 mt-1 block">Sau số ngày này đơn hoàn thành mới chuyển sang Ví Khả Dụng để rút (mặc định 3 ngày Shopee). Nếu cài 0 ngày: Khách được rút ngay khi hoàn thành.</span>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Tỷ lệ trừ thuế TNCN (%):</label>
+                <input
+                  type="number"
+                  value={settings.taxRate}
+                  onChange={(e) => setSettings({ ...settings, taxRate: e.target.value })}
+                  className="w-full bg-slate-50/50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10 transition"
+                />
+                <span className="text-[11px] text-slate-400 mt-1 block">Tỷ lệ khấu trừ thuế theo quy định Shopee Affiliate (mặc định 10%).</span>
+              </div>
+            </div>
+          </div>
+
+          {/* CARD 3: ĐỊNH DẠNG LINK TIẾP THỊ MUA SẮM */}
+          <div className="bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-6 shadow-xs space-y-4">
+            <div className="flex items-center justify-between flex-wrap gap-2 pb-3 border-b border-slate-100">
+              <div>
+                <h4 className="text-xs font-bold text-slate-900 flex items-center gap-2">
+                  <i className="fa-solid fa-link text-orange-500"></i>
+                  <span>3. Định Dạng Link Tiếp Thị Mua Sắm</span>
+                </h4>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Định dạng link hoàn tiền trả về cho thành viên khi chuyển đổi link trong nhóm Zalo
+                </p>
+              </div>
+              <span className={`px-2.5 py-1 rounded-full text-[11px] font-semibold ${
+                settings.useShortLink
+                  ? "bg-orange-50 text-orange-600"
+                  : "bg-slate-100 text-slate-600"
+              }`}>
+                {settings.useShortLink ? "Link Ngắn (Rút gọn)" : "Link Dài Shopee"}
+              </span>
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">Số ngày giữ đơn sau hoàn thành (ngày):</label>
-              <input
-                type="number"
-                min="0"
-                value={settings.holdingDays}
-                onChange={(e) => setSettings({ ...settings, holdingDays: e.target.value })}
-                className="w-full bg-slate-50/50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10 transition"
-              />
-              <span className="text-[11px] text-slate-400 mt-1 block">Sau số ngày này đơn hoàn thành mới chuyển sang Ví Khả Dụng để rút (mặc định 3 ngày Shopee). Nếu cài 0 ngày: Khách được rút ngay khi hoàn thành.</span>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">Tỷ lệ trừ thuế TNCN (%):</label>
-              <input
-                type="number"
-                value={settings.taxRate}
-                onChange={(e) => setSettings({ ...settings, taxRate: e.target.value })}
-                className="w-full bg-slate-50/50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10 transition"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">Zalo ID Trưởng Nhóm (Admin):</label>
-              <input
-                type="text"
-                placeholder="Nhập Zalo ID của Trưởng Nhóm..."
-                value={settings.adminZaloId || ""}
-                onChange={(e) => setSettings({ ...settings, adminZaloId: e.target.value })}
-                className="w-full bg-slate-50/50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10 transition"
-              />
-              <span className="text-[11px] text-slate-400 mt-1 block">Dùng để kiểm tra quyền duyệt lệnh /duyet trong nhóm Zalo.</span>
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">Mã Shopee Affiliate Publisher ID (Shopee Pub ID):</label>
-              <input
-                type="text"
-                placeholder="Ví dụ: 1730052001 hoặc an_1730052001"
-                value={settings.shopeePubId || ""}
-                onChange={(e) => setSettings({ ...settings, shopeePubId: e.target.value })}
-                className="w-full bg-slate-50/50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10 transition"
-              />
-              <span className="text-[11px] text-slate-400 mt-1 block">Mã ID tiếp thị Shopee Affiliate của Trưởng Nhóm dùng để gắn vào link tạo hoa hồng.</span>
-            </div>
-
-            {/* SECTION 2: CẤU HÌNH ĐỊNH DẠNG LINK TIẾP THỊ (FLAT SAAS) */}
-            <div className="md:col-span-2 pt-5 border-t border-slate-100 space-y-3">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <div>
-                  <h4 className="text-xs font-bold text-slate-900 flex items-center gap-2">
-                    <i className="fa-solid fa-link text-orange-500"></i>
-                    <span>Định Dạng Link Tiếp Thị Mua Sắm</span>
-                  </h4>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
-                    Định dạng link hoàn tiền trả về cho thành viên khi chuyển đổi link trong nhóm Zalo
-                  </p>
-                </div>
-                <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <div
+                onClick={() => setSettings({ ...settings, useShortLink: true })}
+                className={`p-3.5 rounded-xl border transition-all cursor-pointer select-none flex items-start gap-3 ${
                   settings.useShortLink
-                    ? "bg-orange-50 text-orange-600 border-orange-200"
-                    : "bg-slate-100 text-slate-600 border-slate-200"
-                }`}>
-                  {settings.useShortLink ? "Link Ngắn (Rút gọn)" : "Link Dài Shopee"}
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                <div
-                  onClick={() => setSettings({ ...settings, useShortLink: true })}
-                  className={`p-3.5 rounded-xl border transition-all cursor-pointer select-none flex items-start gap-3 ${
-                    settings.useShortLink
-                      ? "border-orange-500 bg-orange-50/40 text-orange-950 shadow-2xs"
-                      : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50/50"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="useShortLink"
-                    checked={settings.useShortLink === true}
-                    onChange={() => setSettings({ ...settings, useShortLink: true })}
-                    className="accent-orange-500 mt-0.5 cursor-pointer"
-                  />
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-slate-900">Link Rút Gọn (Khuyên Dùng)</span>
-                      <span className="px-1.5 py-0.2 bg-orange-100 text-orange-700 text-[10px] font-semibold rounded">Mặc định</span>
-                    </div>
-                    <p className="text-[11px] text-slate-500 mt-0.5">
-                      Tự động rút gọn link tiếp thị sang tên miền thương hiệu Kênh
-                    </p>
-                    <div className="mt-2 text-[10px] font-mono text-slate-500 truncate">
-                      https://www.28affihub.store/s/MNx5TJ4
-                    </div>
+                    ? "border-orange-500 bg-orange-50/40 text-orange-950 shadow-2xs"
+                    : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50/50"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="useShortLink"
+                  checked={settings.useShortLink === true}
+                  onChange={() => setSettings({ ...settings, useShortLink: true })}
+                  className="accent-orange-500 mt-0.5 cursor-pointer"
+                />
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-slate-900">Link Rút Gọn (Khuyên Dùng)</span>
+                    <span className="px-1.5 py-0.2 bg-orange-100 text-orange-700 text-[10px] font-semibold rounded">Mặc định</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Tự động rút gọn link tiếp thị sang tên miền thương hiệu Kênh
+                  </p>
+                  <div className="mt-2 text-[10px] font-mono text-slate-500 truncate">
+                    https://www.28affihub.store/s/MNx5TJ4
                   </div>
                 </div>
+              </div>
 
-                <div
-                  onClick={() => setSettings({ ...settings, useShortLink: false })}
-                  className={`p-3.5 rounded-xl border transition-all cursor-pointer select-none flex items-start gap-3 ${
-                    !settings.useShortLink
-                      ? "border-orange-500 bg-orange-50/40 text-orange-950 shadow-2xs"
-                      : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50/50"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="useShortLink"
-                    checked={settings.useShortLink === false}
-                    onChange={() => setSettings({ ...settings, useShortLink: false })}
-                    className="accent-orange-500 mt-0.5 cursor-pointer"
-                  />
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-slate-900">Link Dài Gốc Shopee</span>
-                    </div>
-                    <p className="text-[11px] text-slate-500 mt-0.5">
-                      Sử dụng trực tiếp link tiếp thị dài gốc từ Shopee Affiliate
-                    </p>
-                    <div className="mt-2 text-[10px] font-mono text-slate-500 truncate">
-                      https://s.shopee.vn/an_redir?origin_link=...
-                    </div>
+              <div
+                onClick={() => setSettings({ ...settings, useShortLink: false })}
+                className={`p-3.5 rounded-xl border transition-all cursor-pointer select-none flex items-start gap-3 ${
+                  !settings.useShortLink
+                    ? "border-orange-500 bg-orange-50/40 text-orange-950 shadow-2xs"
+                    : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50/50"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="useShortLink"
+                  checked={settings.useShortLink === false}
+                  onChange={() => setSettings({ ...settings, useShortLink: false })}
+                  className="accent-orange-500 mt-0.5 cursor-pointer"
+                />
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-slate-900">Link Dài Gốc Shopee</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Sử dụng trực tiếp link tiếp thị dài gốc từ Shopee Affiliate
+                  </p>
+                  <div className="mt-2 text-[10px] font-mono text-slate-500 truncate">
+                    https://s.shopee.vn/an_redir?origin_link=...
                   </div>
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* SECTION 3: CẤU HÌNH THÔNG BÁO DUYỆT RÚT TIỀN (FLAT SAAS) */}
-            <div className="md:col-span-2 pt-5 border-t border-slate-100 space-y-3">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <h4 className="text-xs font-bold text-slate-900 flex items-center gap-2">
-                    <i className="fa-solid fa-bell text-orange-500"></i>
-                    <span>Thông Báo Duyệt Rút Tiền (Đồng Thời Tất Cả Nhóm & Riêng)</span>
-                  </h4>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
-                    Khi bật: Duyệt trên web hay gõ <code className="px-1 py-0.5 rounded bg-slate-100 text-orange-600 font-mono text-[10px]">/duyet_ID</code>, bot sẽ gửi tin riêng cho thành viên VÀ tự động thông báo tới tất cả các nhóm Zalo bot đang có mặt
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setSettings({ ...settings, notifyBothPayout: !settings.notifyBothPayout })}
-                  className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200 focus:outline-none cursor-pointer ${
-                    settings.notifyBothPayout ? "bg-emerald-500" : "bg-slate-200"
-                  }`}
-                >
-                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-xs transition-transform duration-200 ${
-                    settings.notifyBothPayout ? "translate-x-6" : "translate-x-1"
-                  }`} />
-                </button>
+          {/* CARD 4: CẤU HÌNH THÔNG BÁO DUYỆT RÚT TIỀN */}
+          <div className="bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-6 shadow-xs space-y-4">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h4 className="text-xs font-bold text-slate-900 flex items-center gap-2">
+                  <i className="fa-solid fa-bell text-orange-500"></i>
+                  <span>4. Thông Báo Duyệt Rút Tiền (Đồng Thời Tất Cả Nhóm & Riêng)</span>
+                </h4>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Khi bật: Duyệt trên web hay gõ <code className="px-1.5 py-0.5 rounded bg-orange-50 text-orange-600 font-mono text-[10px]">/duyet_ID</code>, bot sẽ gửi tin riêng cho thành viên VÀ tự động thông báo tới tất cả các nhóm Zalo bot đang có mặt
+                </p>
               </div>
 
-              {settings.notifyBothPayout && (
-                <div className="pt-1">
-                  <div className="flex items-center gap-2 text-xs text-emerald-700 font-semibold">
-                    <i className="fa-solid fa-circle-check text-[11px]"></i>
-                    <span>Đang BẬT: Bot tự động gửi tin riêng và thông báo tới tất cả các nhóm Zalo</span>
-                  </div>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
-                    Trưởng nhóm không cần nhập ID nhóm Zalo. Bot sẽ tự động quét toàn bộ nhóm đang tham gia.
-                  </p>
-                </div>
-              )}
+              <button
+                type="button"
+                onClick={() => setSettings({ ...settings, notifyBothPayout: !settings.notifyBothPayout })}
+                className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200 focus:outline-none cursor-pointer ${
+                  settings.notifyBothPayout ? "bg-orange-500" : "bg-slate-200"
+                }`}
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-xs transition-transform duration-200 ${
+                  settings.notifyBothPayout ? "translate-x-6" : "translate-x-1"
+                }`} />
+              </button>
             </div>
 
-            {/* SECTION 4: THỜI GIAN BOT TRẢ LỜI TIN NHẮN (FLAT SAAS) */}
-            <div className="md:col-span-2 pt-5 border-t border-slate-100 space-y-3">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <div>
-                  <h4 className="text-xs font-bold text-slate-900 flex items-center gap-2">
-                    <i className="fa-solid fa-stopwatch text-orange-500"></i>
-                    <span>Thời Gian Bot Phản Hồi Tin Nhắn (Delay)</span>
-                  </h4>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
-                    Điều chỉnh độ trễ trả lời tin nhắn tạo link hoàn tiền tự nhiên như người thật
-                  </p>
+            {settings.notifyBothPayout && (
+              <div className="pt-1">
+                <div className="flex items-center gap-2 text-xs text-orange-700 font-semibold">
+                  <i className="fa-solid fa-circle-check text-[11px] text-orange-500"></i>
+                  <span>Đang BẬT: Bot tự động gửi tin riêng và thông báo tới tất cả các nhóm Zalo</span>
                 </div>
-                {/* Badge thả tim phẳng, sạch sẽ */}
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-600 border border-rose-100">
-                  <span>❤️</span> Tự động thả tim tin nhắn Shopee
-                </span>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Trưởng nhóm không cần nhập ID nhóm Zalo. Bot sẽ tự động quét toàn bộ nhóm đang tham gia.
+                </p>
               </div>
+            )}
+          </div>
 
-              <div className="flex items-center gap-5 pt-1 text-xs">
-                <span className="text-slate-500 font-medium">Kiểu thời gian:</span>
-                <label className="flex items-center gap-2 cursor-pointer font-semibold text-slate-800">
-                  <input
-                    type="radio"
-                    name="botReplyDelayMode"
-                    value="FIXED"
-                    checked={settings.botReplyDelayMode === "FIXED"}
-                    onChange={() => setSettings({ ...settings, botReplyDelayMode: "FIXED" })}
-                    className="accent-orange-500"
-                  />
-                  <span>Cố định (Fixed)</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer font-semibold text-slate-800">
-                  <input
-                    type="radio"
-                    name="botReplyDelayMode"
-                    value="RANGE"
-                    checked={settings.botReplyDelayMode === "RANGE"}
-                    onChange={() => setSettings({ ...settings, botReplyDelayMode: "RANGE" })}
-                    className="accent-orange-500"
-                  />
-                  <span>Ngẫu nhiên (Min – Max)</span>
-                </label>
+          {/* CARD 5: THỜI GIAN BOT PHẢN HỒI TIN NHẮN (DELAY & THẢ TIM) */}
+          <div className="bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-6 shadow-xs space-y-4">
+            <div className="flex items-center justify-between flex-wrap gap-2 pb-3 border-b border-slate-100">
+              <div>
+                <h4 className="text-xs font-bold text-slate-900 flex items-center gap-2">
+                  <i className="fa-solid fa-stopwatch text-orange-500"></i>
+                  <span>5. Thời Gian Bot Phản Hồi Tin Nhắn (Delay)</span>
+                </h4>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Điều chỉnh độ trễ trả lời tin nhắn tạo link hoàn tiền tự nhiên như người thật
+                </p>
               </div>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-600">
+                <span>❤️</span> Tự động thả tim tin nhắn Shopee
+              </span>
+            </div>
 
-              {settings.botReplyDelayMode === "FIXED" ? (
-                <div className="max-w-xs pt-1">
+            <div className="flex items-center gap-5 pt-1 text-xs">
+              <span className="text-slate-500 font-medium">Kiểu thời gian:</span>
+              <label className="flex items-center gap-2 cursor-pointer font-semibold text-slate-800">
+                <input
+                  type="radio"
+                  name="botReplyDelayMode"
+                  value="FIXED"
+                  checked={settings.botReplyDelayMode === "FIXED"}
+                  onChange={() => setSettings({ ...settings, botReplyDelayMode: "FIXED" })}
+                  className="accent-orange-500"
+                />
+                <span>Cố định (Fixed)</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer font-semibold text-slate-800">
+                <input
+                  type="radio"
+                  name="botReplyDelayMode"
+                  value="RANGE"
+                  checked={settings.botReplyDelayMode === "RANGE"}
+                  onChange={() => setSettings({ ...settings, botReplyDelayMode: "RANGE" })}
+                  className="accent-orange-500"
+                />
+                <span>Ngẫu nhiên (Min – Max)</span>
+              </label>
+            </div>
+
+            {settings.botReplyDelayMode === "FIXED" ? (
+              <div className="max-w-xs pt-1">
+                <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                  Thời gian chờ (giây):
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="0"
+                    max="60"
+                    value={settings.botReplyDelayFixed}
+                    onChange={(e) => setSettings({ ...settings, botReplyDelayFixed: e.target.value })}
+                    className="w-full bg-slate-50/50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10 transition"
+                  />
+                  <span className="absolute right-3 top-2 text-xs text-slate-400 font-medium">giây</span>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3 max-w-sm pt-1">
+                <div>
                   <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                    Thời gian chờ (giây):
+                    Tối thiểu (giây):
                   </label>
                   <div className="relative">
                     <input
                       type="number"
                       min="0"
                       max="60"
-                      value={settings.botReplyDelayFixed}
-                      onChange={(e) => setSettings({ ...settings, botReplyDelayFixed: e.target.value })}
+                      value={settings.botReplyDelayMin}
+                      onChange={(e) => setSettings({ ...settings, botReplyDelayMin: e.target.value })}
                       className="w-full bg-slate-50/50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10 transition"
                     />
                     <span className="absolute right-3 top-2 text-xs text-slate-400 font-medium">giây</span>
                   </div>
                 </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-3 max-w-sm pt-1">
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                      Tối thiểu (giây):
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        min="0"
-                        max="60"
-                        value={settings.botReplyDelayMin}
-                        onChange={(e) => setSettings({ ...settings, botReplyDelayMin: e.target.value })}
-                        className="w-full bg-slate-50/50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10 transition"
-                      />
-                      <span className="absolute right-3 top-2 text-xs text-slate-400 font-medium">giây</span>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                      Tối đa (giây):
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        min="0"
-                        max="60"
-                        value={settings.botReplyDelayMax}
-                        onChange={(e) => setSettings({ ...settings, botReplyDelayMax: e.target.value })}
-                        className="w-full bg-slate-50/50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10 transition"
-                      />
-                      <span className="absolute right-3 top-2 text-xs text-slate-400 font-medium">giây</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <p className="text-[11px] text-slate-500">
-                💡 Bot sẽ tự động thả tim ❤️ ngay khi có link và chờ thời gian cài đặt trước khi trả lời.
-              </p>
-            </div>
-
-            {/* SECTION 5: CẤU HÌNH API TIKTOK SHOP (FLAT SAAS) */}
-            {isTiktokEnabled && (
-              <div className="md:col-span-2 pt-5 border-t border-slate-100 space-y-3">
                 <div>
-                  <h4 className="text-xs font-bold text-slate-900 flex items-center gap-2">
-                    <i className="fa-brands fa-tiktok text-slate-900"></i>
-                    <span>Kết Nối API TikTok Shop</span>
-                  </h4>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
-                    Cấu hình khóa API kết nối để kéo đơn TikTok Shop tự động cho Kênh này
-                  </p>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">TikTok API Key:</label>
+                  <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                    Tối đa (giây):
+                  </label>
+                  <div className="relative">
                     <input
-                      type="text"
-                      value={settings.tiktokApiKey}
-                      onChange={(e) => setSettings({ ...settings, tiktokApiKey: e.target.value })}
-                      placeholder="Để trống nếu không dùng..."
-                      className="w-full bg-slate-50/50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-mono font-semibold text-slate-800 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10 transition"
+                      type="number"
+                      min="0"
+                      max="60"
+                      value={settings.botReplyDelayMax}
+                      onChange={(e) => setSettings({ ...settings, botReplyDelayMax: e.target.value })}
+                      className="w-full bg-slate-50/50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10 transition"
                     />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">TikTok Creator Username:</label>
-                    <input
-                      type="text"
-                      value={settings.tiktokCreatorUsername}
-                      onChange={(e) => setSettings({ ...settings, tiktokCreatorUsername: e.target.value })}
-                      placeholder="VD: tran_huyen_affiliate..."
-                      className="w-full bg-slate-50/50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-mono font-semibold text-slate-800 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10 transition"
-                    />
+                    <span className="absolute right-3 top-2 text-xs text-slate-400 font-medium">giây</span>
                   </div>
                 </div>
               </div>
             )}
+
+            <p className="text-[11px] text-slate-500">
+              💡 Bot sẽ tự động thả tim ❤️ ngay khi có link và chờ thời gian cài đặt trước khi trả lời.
+            </p>
+          </div>
+
+          {/* CARD 6: CẤU HÌNH API TIKTOK SHOP (NẾU BẬT) */}
+          {isTiktokEnabled && (
+            <div className="bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-6 shadow-xs space-y-4">
+              <div className="pb-3 border-b border-slate-100">
+                <h4 className="text-xs font-bold text-slate-900 flex items-center gap-2">
+                  <i className="fa-brands fa-tiktok text-orange-500"></i>
+                  <span>6. Kết Nối API TikTok Shop</span>
+                </h4>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Cấu hình khóa API kết nối để kéo đơn TikTok Shop tự động cho Kênh này
+                </p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-600 mb-1">TikTok API Key:</label>
+                  <input
+                    type="text"
+                    value={settings.tiktokApiKey}
+                    onChange={(e) => setSettings({ ...settings, tiktokApiKey: e.target.value })}
+                    placeholder="Để trống nếu không dùng..."
+                    className="w-full bg-slate-50/50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-mono font-semibold text-slate-800 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10 transition"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-600 mb-1">TikTok Creator Username:</label>
+                  <input
+                    type="text"
+                    value={settings.tiktokCreatorUsername}
+                    onChange={(e) => setSettings({ ...settings, tiktokCreatorUsername: e.target.value })}
+                    placeholder="VD: tran_huyen_affiliate..."
+                    className="w-full bg-slate-50/50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-mono font-semibold text-slate-800 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10 transition"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* FOOTER ACTION */}
+          <div className="flex items-center justify-end gap-3 pt-2">
+            <button
+              type="submit"
+              disabled={isSavingSettings}
+              className="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold text-xs shadow-xs hover:shadow transition cursor-pointer flex items-center gap-2"
+            >
+              <i className="fa-solid fa-floppy-disk text-xs"></i>
+              <span>{isSavingSettings ? "Đang lưu..." : "Lưu Cấu Hình Kênh"}</span>
+            </button>
           </div>
         </form>
       )}

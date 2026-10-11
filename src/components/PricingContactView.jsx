@@ -51,7 +51,7 @@ export function PricingContactView() {
       )}
       {/* Hero Header */}
       <div className="bg-white rounded-3xl border border-slate-200/80 p-6 md:p-8 shadow-xs text-center space-y-3">
-        <div className="inline-flex items-center gap-2 bg-orange-50 border border-orange-200 text-orange-700 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider">
+        <div className="inline-flex items-center gap-2 bg-orange-50 text-orange-700 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider">
           <i className="fa-solid fa-crown text-amber-500"></i> Bảng Giá & Giải Pháp Hợp Tác Trưởng Nhóm
         </div>
         <h1 className="text-2xl md:text-4xl font-black text-slate-900 font-display">

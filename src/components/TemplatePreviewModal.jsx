@@ -657,9 +657,9 @@ export function TemplatePreviewModal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div className="shrink-0 px-4 py-3 sm:px-5 sm:py-4 bg-purple-700 bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 text-white flex items-center justify-between shadow-md">
+        <div className="shrink-0 px-4 py-3 sm:px-5 sm:py-4 bg-orange-600 bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500 text-white flex items-center justify-between shadow-md">
           <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-white/20 backdrop-blur-md border border-white/25 flex items-center justify-center text-base sm:text-lg shadow-inner shrink-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-base sm:text-lg shadow-inner shrink-0">
               <i className={templateMeta?.icon || "fa-solid fa-message"}></i>
             </div>
             <div className="min-w-0">
@@ -667,11 +667,11 @@ export function TemplatePreviewModal({
                 <h3 className="text-sm sm:text-base font-black font-display tracking-tight text-white truncate">
                   Mô Phỏng Tin Nhắn Zalo Thực Tế
                 </h3>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/20 text-purple-100 border border-white/25">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/20 text-white">
                   {templateMeta?.title?.split(".")[0] || "Mẫu"}
                 </span>
               </div>
-              <p className="text-[11px] sm:text-xs text-purple-200/90 font-medium truncate mt-0.5">
+              <p className="text-[11px] sm:text-xs text-orange-100 font-medium truncate mt-0.5">
                 {templateMeta?.title || templateKey}
               </p>
             </div>
@@ -680,7 +680,7 @@ export function TemplatePreviewModal({
           <button
             type="button"
             onClick={onClose}
-            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/20 hover:bg-white text-white hover:text-purple-900 border border-white/30 shadow-sm flex items-center justify-center transition-all active:scale-95 cursor-pointer shrink-0 ml-2"
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/20 hover:bg-white text-white hover:text-orange-600 shadow-sm flex items-center justify-center transition-all active:scale-95 cursor-pointer shrink-0 ml-2"
             title="Đóng xem trước (Esc)"
             aria-label="Đóng xem trước"
           >
@@ -692,7 +692,7 @@ export function TemplatePreviewModal({
         <div className="shrink-0 px-4 py-2 sm:px-5 sm:py-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between flex-wrap gap-2 text-xs">
           <div className="flex items-center gap-1.5 sm:gap-2">
             <span className="font-bold text-slate-500 text-[11px] sm:text-xs">Lệnh kích hoạt:</span>
-            <span className="font-mono font-bold text-purple-700 bg-purple-100/70 border border-purple-200 px-2 py-0.5 rounded-lg text-[10px] sm:text-[11px]">
+            <span className="font-mono font-bold text-orange-700 bg-orange-100/80 px-2.5 py-0.5 rounded-lg text-[10px] sm:text-[11px]">
               {templateMeta?.command || templateMeta?.badge || "Tự động phản hồi"}
             </span>
           </div>
@@ -705,7 +705,7 @@ export function TemplatePreviewModal({
                 onClick={() => setTestHoldingDays(0)}
                 className={`px-2 py-0.5 rounded-lg text-[10px] font-bold cursor-pointer transition ${
                   testHoldingDays === 0
-                    ? "bg-emerald-600 text-white shadow-2xs"
+                    ? "bg-orange-500 text-white shadow-2xs"
                     : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                 }`}
               >
@@ -716,7 +716,7 @@ export function TemplatePreviewModal({
                 onClick={() => setTestHoldingDays(3)}
                 className={`px-2 py-0.5 rounded-lg text-[10px] font-bold cursor-pointer transition ${
                   testHoldingDays > 0
-                    ? "bg-purple-600 text-white shadow-2xs"
+                    ? "bg-orange-500 text-white shadow-2xs"
                     : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                 }`}
               >
@@ -757,7 +757,7 @@ export function TemplatePreviewModal({
             {/* Tin nhắn từ người dùng / sự kiện kích hoạt */}
             {scenario.systemEvent ? (
               <div className="text-center">
-                <span className="text-[10px] font-bold text-purple-700 bg-purple-50 border border-purple-200 px-3 py-1 rounded-full shadow-2xs">
+                <span className="text-[10px] font-bold text-orange-700 bg-orange-100/80 px-3 py-1 rounded-full shadow-2xs">
                   {scenario.systemEvent}
                 </span>
               </div>
@@ -780,14 +780,14 @@ export function TemplatePreviewModal({
 
             {/* Tin nhắn phản hồi từ Zalo Bot */}
             <div className="flex justify-start items-start gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-purple-600 bg-gradient-to-tr from-purple-600 to-indigo-600 text-white flex items-center justify-center text-xs font-bold shadow-xs shrink-0 mt-0.5">
+              <div className="w-8 h-8 rounded-full bg-orange-500 bg-gradient-to-tr from-orange-500 to-amber-500 text-white flex items-center justify-center text-xs font-bold shadow-xs shrink-0 mt-0.5">
                 <i className="fa-solid fa-robot"></i>
               </div>
 
               <div className="max-w-[88%] sm:max-w-[82%] flex flex-col items-start">
                 <div className="text-[11px] font-bold text-slate-700 mb-1 flex items-center gap-1.5">
                   <span>{groupName} Bot</span>
-                  <span className="text-[9px] font-black bg-purple-100 text-purple-800 px-1.5 py-0.2 rounded-md">
+                  <span className="text-[9px] font-black bg-orange-100 text-orange-800 px-1.5 py-0.2 rounded-md">
                     Trợ lý Bot
                   </span>
                 </div>
@@ -807,7 +807,7 @@ export function TemplatePreviewModal({
           <div className="space-y-3">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <h4 className="text-xs font-black text-slate-900 flex items-center gap-2">
-                <i className="fa-solid fa-table-list text-purple-600"></i>
+                <i className="fa-solid fa-table-list text-orange-500"></i>
                 <span>BẢNG ĐỐI CHIẾU CÁC BIẾN ĐỘNG ({foundPlaceholders.length} biến được dùng trong mẫu này):</span>
               </h4>
               <span className="text-[11px] text-slate-400 font-medium">
@@ -833,10 +833,10 @@ export function TemplatePreviewModal({
                       const isUrl = String(val).startsWith("http");
 
                       return (
-                        <tr key={varKey} className="hover:bg-purple-50/30 transition">
+                        <tr key={varKey} className="hover:bg-orange-50/30 transition">
                           {/* Cột 1: Tên Biến */}
-                          <td className="w-[25%] py-3 px-3.5 font-mono font-bold text-purple-700 align-top break-words">
-                            <span className="inline-block bg-purple-50 text-purple-700 border border-purple-200/80 px-2 py-0.5 rounded-lg text-[11px]">
+                          <td className="w-[25%] py-3 px-3.5 font-mono font-bold text-orange-700 align-top break-words">
+                            <span className="inline-block bg-orange-50 text-orange-700 px-2 py-0.5 rounded-lg text-[11px]">
                               {def?.name || `{${varKey}}`}
                             </span>
                           </td>
@@ -848,11 +848,11 @@ export function TemplatePreviewModal({
                                 {val}
                               </div>
                             ) : isUrl ? (
-                              <div className="bg-purple-50/60 border border-purple-200/80 rounded-lg px-2.5 py-1 text-purple-700 font-mono text-[11px] break-all leading-normal">
+                              <div className="bg-orange-50/60 rounded-lg px-2.5 py-1 text-orange-700 font-mono text-[11px] break-all leading-normal">
                                 {val}
                               </div>
                             ) : (
-                              <span className="inline-block bg-slate-100/90 border border-slate-200 px-2.5 py-1 rounded-lg text-emerald-800 font-mono text-[11px] font-bold break-words">
+                              <span className="inline-block bg-slate-100/90 px-2.5 py-1 rounded-lg text-emerald-800 font-mono text-[11px] font-bold break-words">
                                 {val}
                               </span>
                             )}
@@ -887,12 +887,12 @@ export function TemplatePreviewModal({
         {/* Modal Footer */}
         <div className="shrink-0 px-4 py-3 sm:px-5 sm:py-3.5 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-2.5 sm:gap-3">
           <div className="text-[11px] sm:text-xs text-slate-500 font-medium text-center sm:text-left leading-relaxed">
-            💡 Bạn có thể chỉnh sửa nội dung mẫu ngoài màn hình, bấm <strong className="text-purple-700 font-bold">Ví dụ thực tế</strong> để xem ngay kết quả.
+            💡 Bạn có thể chỉnh sửa nội dung mẫu ngoài màn hình, bấm <strong className="text-orange-600 font-bold">Ví dụ thực tế</strong> để xem ngay kết quả.
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="w-full sm:w-auto px-6 py-2.5 bg-purple-600 hover:bg-purple-700 bg-gradient-to-r from-purple-600 to-indigo-600 active:scale-[0.98] text-white rounded-xl text-xs sm:text-sm font-black transition shadow-md cursor-pointer flex items-center justify-center gap-2 shrink-0"
+            className="w-full sm:w-auto px-6 py-2.5 bg-orange-500 hover:bg-orange-600 bg-gradient-to-r from-orange-500 to-amber-500 active:scale-[0.98] text-white rounded-xl text-xs sm:text-sm font-black transition shadow-md cursor-pointer flex items-center justify-center gap-2 shrink-0"
           >
             <i className="fa-solid fa-check text-xs"></i>
             <span>Đã hiểu & Đóng</span>

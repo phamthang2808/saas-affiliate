@@ -481,6 +481,18 @@ export function MemberDetailModal({
     }
   };
 
+  const currentPageKeys = useMemo(() => {
+    const totalP = Math.ceil(filteredOrders.length / pageSize) || 1;
+    const safeP = Math.min(currentPage, totalP);
+    const start = (safeP - 1) * pageSize;
+    return filteredOrders.slice(start, start + pageSize).map(getOrderKey);
+  }, [filteredOrders, currentPage, pageSize]);
+
+  const isCurrentPageSelected = useMemo(
+    () => currentPageKeys.length > 0 && currentPageKeys.every((k) => selectedOrderIds.has(k)),
+    [currentPageKeys, selectedOrderIds]
+  );
+
   // API Đánh dấu Đã thanh toán / Chưa thanh toán
   const handleMarkPaid = async (action = "PAID", specificOrder = null) => {
     if (!tenantSlug) return;
@@ -753,11 +765,11 @@ export function MemberDetailModal({
 
   return (
     <div
-      className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 z-50 animate-[fadeIn_0.15s_ease-out]"
+      className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 z-50 animate-[fadeIn_0.15s_ease-out]"
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-3xl w-full max-w-5xl max-h-[93vh] overflow-y-auto shadow-2xl border border-slate-100 p-5 sm:p-7 space-y-5"
+        className="bg-white rounded-3xl w-full max-w-[96vw] xl:max-w-[94vw] 2xl:max-w-[1600px] max-h-[94vh] overflow-y-auto shadow-2xl border border-slate-100 p-4 sm:p-6 space-y-4"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -1100,12 +1112,33 @@ export function MemberDetailModal({
                 <option value="PAID">Đã thanh toán</option>
               </select>
 
+              {/* Quick Select Current Page */}
+              {currentPageKeys.length > 0 && (
+                <button
+                  type="button"
+                  onClick={toggleSelectAllCurrentPage}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer border flex items-center gap-1.5 shadow-2xs ${
+                    isCurrentPageSelected
+                      ? "bg-blue-600 text-white border-blue-700 shadow-blue-500/20 ring-2 ring-blue-400/30"
+                      : "bg-blue-50 hover:bg-blue-100 text-blue-800 border-blue-200 hover:border-blue-300"
+                  }`}
+                  title={`Tích chọn / Bỏ chọn toàn bộ ${currentPageKeys.length} đơn trên trang ${safePage} đang xem`}
+                >
+                  <i className={`fa-solid ${isCurrentPageSelected ? "fa-circle-check text-white" : "fa-file-lines text-blue-600"}`}></i>
+                  <span>
+                    {isCurrentPageSelected
+                      ? `Đã chọn trang ${safePage} (${currentPageKeys.length})`
+                      : `Chọn trang này (${currentPageKeys.length} đơn)`}
+                  </span>
+                </button>
+              )}
+
               {/* Quick Select All Filtered */}
               {filteredOrders.length > 0 && (
                 <button
                   type="button"
                   onClick={toggleSelectAllFiltered}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer border flex items-center gap-1.5 shadow-xs ${
+                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer border flex items-center gap-1.5 shadow-2xs ${
                     isAllFilteredSelected
                       ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white border-orange-600 shadow-orange-500/25 ring-2 ring-orange-400/30"
                       : "bg-amber-50 hover:bg-amber-100 text-amber-900 border-amber-300 hover:border-amber-400"
@@ -1116,7 +1149,7 @@ export function MemberDetailModal({
                   <span>
                     {isAllFilteredSelected
                       ? `Đã chọn tất cả (${allFilteredKeys.length} đơn)`
-                      : `Tích chọn tất cả (${filteredOrders.length} đơn - All trang)`}
+                      : `Chọn tất cả (${filteredOrders.length} đơn)`}
                   </span>
                 </button>
               )}
@@ -1157,7 +1190,7 @@ export function MemberDetailModal({
                   </span>
                   <span className="text-xs font-black text-slate-800">
                     Đang chọn {selectedOrderIds.size} / {filteredOrders.length} đơn
-                    {selectedOrderIds.size === filteredOrders.length ? " (Tất cả các trang)" : ` (Trang ${safePage})`}
+                    {selectedOrderIds.size === filteredOrders.length ? " (Tất cả các trang)" : (isCurrentPageSelected ? ` (Toàn bộ trang ${safePage})` : "")}
                   </span>
                 </div>
 
@@ -1223,7 +1256,7 @@ export function MemberDetailModal({
             <table className="w-full text-left text-xs">
               <thead>
                 <tr className="bg-slate-50 border-b-2 border-slate-200">
-                  <th className="px-3 py-3 text-center whitespace-nowrap">
+                  <th className="px-2.5 py-2.5 text-center whitespace-nowrap w-10">
                     <div className="relative inline-flex items-center justify-center gap-0.5">
                       <input
                         type="checkbox"
@@ -1314,15 +1347,15 @@ export function MemberDetailModal({
                       )}
                     </div>
                   </th>
-                  <th className="px-3 py-3 font-black text-slate-700 whitespace-nowrap">Mã đơn</th>
-                  <th className="px-3 py-3 font-black text-slate-700 whitespace-nowrap">Nền tảng</th>
-                  <th className="px-3 py-3 font-black text-slate-700 whitespace-nowrap text-center">Đã TT</th>
-                  <th className="px-3 py-3 font-black text-slate-700">Sản phẩm</th>
-                  <th className="px-3 py-3 font-black text-slate-700 whitespace-nowrap text-right">HH Gốc</th>
-                  <th className="px-3 py-3 font-black text-slate-700 whitespace-nowrap text-right">Sau thuế ({100 - taxRate}%)</th>
-                  <th className="px-3 py-3 font-black text-slate-700 whitespace-nowrap text-right">Khách nhận ({customerSplitRate}%)</th>
-                  <th className="px-3 py-3 font-black text-slate-700 whitespace-nowrap">Thời gian</th>
-                  <th className="px-3 py-3 font-black text-slate-700 whitespace-nowrap text-center">Trạng thái</th>
+                  <th className="px-2.5 py-2.5 font-black text-slate-700 whitespace-nowrap">Mã đơn</th>
+                  <th className="px-2.5 py-2.5 font-black text-slate-700 whitespace-nowrap">Nền tảng</th>
+                  <th className="px-2.5 py-2.5 font-black text-slate-700 whitespace-nowrap text-center">Đã TT</th>
+                  <th className="px-2.5 py-2.5 font-black text-slate-700">Sản phẩm</th>
+                  <th className="px-2.5 py-2.5 font-black text-slate-700 whitespace-nowrap text-right">HH Gốc</th>
+                  <th className="px-2.5 py-2.5 font-black text-slate-700 whitespace-nowrap text-right">Sau thuế ({100 - taxRate}%)</th>
+                  <th className="px-2.5 py-2.5 font-black text-slate-700 whitespace-nowrap text-right">Khách nhận ({customerSplitRate}%)</th>
+                  <th className="px-2.5 py-2.5 font-black text-slate-700 whitespace-nowrap">Thời gian</th>
+                  <th className="px-2.5 py-2.5 font-black text-slate-700 whitespace-nowrap text-center">Trạng thái</th>
                 </tr>
               </thead>
               <tbody>
@@ -1348,7 +1381,7 @@ export function MemberDetailModal({
                           isSelected ? "bg-orange-50/50" : "hover:bg-slate-50/70"
                         }`}
                       >
-                        <td className="px-3 py-2.5 text-center">
+                        <td className="px-2.5 py-2 text-center">
                           <input
                             type="checkbox"
                             checked={isSelected}
@@ -1356,16 +1389,16 @@ export function MemberDetailModal({
                             className="w-4 h-4 rounded text-orange-600 focus:ring-orange-500 border-slate-300 cursor-pointer"
                           />
                         </td>
-                        <td className="px-3 py-2.5 font-mono font-bold text-slate-900 whitespace-nowrap">
+                        <td className="px-2.5 py-2 font-mono font-bold text-slate-900 whitespace-nowrap text-[11px] sm:text-xs">
                           {o.orderId || "—"}
                         </td>
-                        <td className="px-3 py-2.5 whitespace-nowrap">
+                        <td className="px-2.5 py-2 whitespace-nowrap">
                           <span className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold ${pfBadge.cls}`}>
                             {pfBadge.label}
                           </span>
                         </td>
                         {/* Cột Đã TT (Đối chiếu App Script) */}
-                        <td className="px-3 py-2.5 text-center whitespace-nowrap">
+                        <td className="px-2.5 py-2 text-center whitespace-nowrap">
                           {o.paymentStatus === "PAID" ? (
                             <button
                               type="button"
@@ -1386,21 +1419,21 @@ export function MemberDetailModal({
                             </button>
                           )}
                         </td>
-                        <td className="px-3 py-2.5 max-w-[240px]">
+                        <td className="px-2.5 py-2 min-w-[150px] max-w-[280px]">
                           <span className="font-semibold text-slate-800 truncate block text-[11px]" title={o.productName}>
                             {o.productName || "Đơn hàng Affiliate"}
                           </span>
                         </td>
-                        <td className="px-3 py-2.5 text-right font-medium text-slate-500 whitespace-nowrap">
+                        <td className="px-2.5 py-2 text-right font-medium text-slate-500 whitespace-nowrap text-[11px] sm:text-xs">
                           {formatMoney(rawComm)}
                         </td>
-                        <td className="px-3 py-2.5 text-right font-semibold text-amber-600 whitespace-nowrap">
+                        <td className="px-2.5 py-2 text-right font-semibold text-amber-600 whitespace-nowrap text-[11px] sm:text-xs">
                           {formatMoney(afterTax)}
                         </td>
-                        <td className="px-3 py-2.5 text-right font-black text-orange-600 whitespace-nowrap">
+                        <td className="px-2.5 py-2 text-right font-black text-orange-600 whitespace-nowrap text-[11px] sm:text-xs">
                           {formatMoney(finalComm)}
                         </td>
-                        <td className="px-3 py-2.5 whitespace-nowrap text-slate-500 text-[11px] font-mono">
+                        <td className="px-2.5 py-2 whitespace-nowrap text-slate-500 text-[11px] font-mono">
                           <div>{formatDateTime(o.orderDate || o.purchaseTime || o.createdAt)}</div>
                           {(o.completeTime || o.completedAt) && (
                             <div className="text-[10px] text-emerald-600 font-semibold">
@@ -1408,7 +1441,7 @@ export function MemberDetailModal({
                             </div>
                           )}
                         </td>
-                        <td className="px-3 py-2.5 text-center whitespace-nowrap">
+                        <td className="px-2.5 py-2 text-center whitespace-nowrap">
                           <span className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold ${stBadge.cls}`}>
                             {stBadge.text}
                           </span>
@@ -1421,7 +1454,7 @@ export function MemberDetailModal({
               {paginatedOrders.length > 0 && (
                 <tfoot className="bg-slate-100/90 border-t-2 border-slate-300 font-bold text-xs sticky bottom-0 z-10 shadow-xs">
                   <tr className="bg-slate-100/95">
-                    <td colSpan="5" className="px-3 py-3 text-slate-900 font-black">
+                    <td colSpan="5" className="px-2.5 py-2.5 text-slate-900 font-black">
                       <div className="flex items-center gap-1.5">
                         <span className="text-base">📊</span>
                         <span>
@@ -1432,16 +1465,16 @@ export function MemberDetailModal({
                         </span>
                       </div>
                     </td>
-                    <td className="px-3 py-3 text-right font-black text-slate-700 whitespace-nowrap">
+                    <td className="px-2.5 py-2.5 text-right font-black text-slate-700 whitespace-nowrap">
                       {formatMoney(pageTotalRaw)}
                     </td>
-                    <td className="px-3 py-3 text-right font-black text-amber-600 whitespace-nowrap">
+                    <td className="px-2.5 py-2.5 text-right font-black text-amber-600 whitespace-nowrap">
                       {formatMoney(pageTotalAfterTax)}
                     </td>
-                    <td className="px-3 py-3 text-right font-black text-orange-600 whitespace-nowrap">
+                    <td className="px-2.5 py-2.5 text-right font-black text-orange-600 whitespace-nowrap">
                       {formatMoney(pageTotalFinal)}
                     </td>
-                    <td colSpan="2" className="px-3 py-3 text-center text-slate-400 font-bold text-[11px] whitespace-nowrap">
+                    <td colSpan="2" className="px-2.5 py-2.5 text-center text-slate-400 font-bold text-[11px] whitespace-nowrap">
                       Trang {safePage}/{totalPages}
                     </td>
                   </tr>

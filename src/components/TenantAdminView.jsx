@@ -2192,14 +2192,14 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                   <table className="w-full text-left text-xs">
                     <thead>
                       <tr className="bg-slate-50 border-b-2 border-slate-200">
-                        <th className="px-4 py-3.5 font-black text-slate-700 whitespace-nowrap">Tên thành viên</th>
-                        <th className="px-4 py-3.5 font-black text-slate-700 whitespace-nowrap">Zalo ID</th>
-                        <th className="px-4 py-3.5 font-black text-slate-700 whitespace-nowrap min-w-[200px]">Tài khoản nhận tiền</th>
-                        <th className="px-4 py-3.5 font-black text-slate-700 whitespace-nowrap text-right">Chờ xử lý</th>
-                        <th className="px-4 py-3.5 font-black text-slate-700 whitespace-nowrap text-right">Tích lũy hoàn thành</th>
-                        <th className="px-4 py-3.5 font-black text-slate-700 whitespace-nowrap text-right">Khả dụng rút</th>
-                        <th className="px-4 py-3.5 font-black text-slate-700 whitespace-nowrap text-right">Đã rút</th>
-                        <th className="px-4 py-3.5 font-black text-slate-700 whitespace-nowrap text-center">Thao tác</th>
+                        <th className="px-2.5 py-3 font-black text-slate-700 whitespace-nowrap text-xs">Tên thành viên</th>
+                        <th className="px-2 py-3 font-black text-slate-700 whitespace-nowrap text-xs">Zalo ID</th>
+                        <th className="px-2.5 py-3 font-black text-slate-700 whitespace-nowrap text-xs">Tài khoản nhận tiền</th>
+                        <th className="px-2 py-3 font-black text-slate-700 whitespace-nowrap text-right text-xs">Chờ xử lý</th>
+                        <th className="px-2 py-3 font-black text-slate-700 whitespace-nowrap text-right text-xs">Tích lũy</th>
+                        <th className="px-2 py-3 font-black text-slate-700 whitespace-nowrap text-right text-xs">Khả dụng</th>
+                        <th className="px-2 py-3 font-black text-slate-700 whitespace-nowrap text-right text-xs">Đã rút</th>
+                        <th className="px-2 py-3 font-black text-slate-700 whitespace-nowrap text-center text-xs">Thao tác</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -2215,32 +2215,31 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                         const accName = u.accountName || u.account_name || "";
                         return (
                           <tr key={u.id || u.zaloId} className="border-b border-slate-100 hover:bg-orange-50/30 transition">
-                            <td className="px-4 py-3.5 whitespace-nowrap">
-                              <span className="font-black text-slate-900 text-sm truncate block max-w-[170px]" title={u.zaloName || u.zalo_name}>
+                            <td className="px-2.5 py-2.5 whitespace-nowrap">
+                              <span className="font-bold text-slate-900 text-xs truncate block max-w-[130px]" title={u.zaloName || u.zalo_name}>
                                 {u.zaloName || u.zalo_name || "Thành viên Zalo"}
                               </span>
                             </td>
-                            <td className="px-4 py-3.5 whitespace-nowrap">
-                              <code className="text-[11px] font-mono font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg">
+                            <td className="px-2 py-2.5 whitespace-nowrap">
+                              <code className="text-[10px] font-mono font-bold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded-md inline-block max-w-[125px] truncate" title={u.zaloId || u.zalo_id}>
                                 {u.zaloId || u.zalo_id || "—"}
                               </code>
                             </td>
-                            <td className="px-4 py-3 whitespace-nowrap min-w-[130px]">
-                              <div className="flex items-center justify-between gap-2">
+                            <td className="px-2.5 py-2 whitespace-nowrap max-w-[155px]">
+                              <div className="flex items-center justify-between gap-1.5">
                                 {bankN ? (
                                   <div className="min-w-0">
-                                    <div className="font-black text-slate-800 text-xs">
+                                    <div className="font-bold text-slate-800 text-xs truncate max-w-[120px]" title={bankN}>
                                       {bankN}
                                     </div>
                                     {accNum && (
-                                      <div className="text-[11px] font-mono text-slate-600 font-bold mt-0.5 whitespace-nowrap flex items-center gap-1">
-                                        <span className="text-slate-400 font-normal">STK:</span>
-                                        <span>{accNum}</span>
+                                      <div className="text-[10px] font-mono text-slate-600 font-bold whitespace-nowrap">
+                                        STK: {accNum}
                                       </div>
                                     )}
                                     {accName && (
                                       <div className="mt-0.5">
-                                        <span className="text-[10px] text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded font-extrabold uppercase whitespace-nowrap tracking-wide inline-block">
+                                        <span className="text-[9px] text-orange-600 bg-orange-50 px-1 py-0.2 rounded font-extrabold uppercase whitespace-nowrap truncate inline-block max-w-[120px]" title={accName}>
                                           {accName}
                                         </span>
                                       </div>
@@ -2258,27 +2257,36 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                                     accountNumber: accNum,
                                     accountName: accName
                                   })}
-                                  className="p-1.5 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition cursor-pointer shrink-0"
+                                  className="p-1 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded transition cursor-pointer shrink-0"
                                   title="Sửa thông tin STK"
                                 >
-                                  <i className="fa-solid fa-pen text-[11px]"></i>
+                                  <i className="fa-solid fa-pen text-[10px]"></i>
                                 </button>
                               </div>
                             </td>
-                            <td className="px-4 py-3.5 text-right font-mono font-bold text-amber-600 whitespace-nowrap">
+                            <td className="px-2 py-2.5 text-right font-mono font-bold text-amber-600 whitespace-nowrap text-xs">
                               {formatMoney(wallet.pendingCommission)}
                             </td>
-                            <td className="px-4 py-3.5 text-right font-mono font-black text-slate-800 whitespace-nowrap">
+                            <td className="px-2 py-2.5 text-right font-mono font-bold text-slate-800 whitespace-nowrap text-xs">
                               {formatMoney(wallet.completedCommission)}
                             </td>
-                            <td className="px-4 py-3.5 text-right font-mono font-bold text-emerald-600 whitespace-nowrap">
+                            <td className="px-2 py-2.5 text-right font-mono font-bold text-emerald-600 whitespace-nowrap text-xs">
                               {formatMoney(wallet.availableBalance)}
                             </td>
-                            <td className="px-4 py-3.5 text-right font-mono font-semibold text-slate-500 whitespace-nowrap">
+                            <td className="px-2 py-2.5 text-right font-mono font-semibold text-slate-500 whitespace-nowrap text-xs">
                               {formatMoney(wallet.totalWithdrawn)}
                             </td>
-                            <td className="px-4 py-3.5 text-center whitespace-nowrap">
-                              <div className="flex items-center justify-center gap-1.5">
+                            <td className="px-2 py-2.5 text-center whitespace-nowrap">
+                              <div className="flex items-center justify-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedMember(u)}
+                                  className="px-2.5 py-1.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-lg text-[11px] font-bold transition shadow-xs cursor-pointer inline-flex items-center gap-1"
+                                  title="Xem chi tiết ví & đơn hàng"
+                                >
+                                  <i className="fa-solid fa-eye text-[10px]"></i>
+                                  <span>Chi tiết</span>
+                                </button>
                                 <button
                                   type="button"
                                   onClick={() => setEditingMemberBank({
@@ -2288,26 +2296,18 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                                     accountNumber: accNum,
                                     accountName: accName
                                   })}
-                                  className="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 border border-blue-200/80 rounded-xl text-[11px] font-bold transition shadow-2xs cursor-pointer inline-flex items-center gap-1"
+                                  className="w-7 h-7 flex items-center justify-center bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 border border-blue-200/80 rounded-lg text-xs transition shadow-2xs cursor-pointer shrink-0"
                                   title="Sửa thông tin STK nhận tiền"
                                 >
-                                  <i className="fa-solid fa-pen-to-square text-[10px]"></i> Sửa STK
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => setSelectedMember(u)}
-                                  className="px-2.5 py-1.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-xl text-[11px] font-bold transition shadow-xs cursor-pointer inline-flex items-center gap-1"
-                                  title="Xem chi tiết ví & đơn hàng"
-                                >
-                                  <i className="fa-solid fa-eye text-[10px]"></i> Chi tiết
+                                  <i className="fa-solid fa-pen-to-square text-[11px]"></i>
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => handleDeleteMember(u)}
-                                  className="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-700 border border-rose-200/80 rounded-xl text-[11px] font-bold transition shadow-2xs cursor-pointer inline-flex items-center gap-1"
+                                  className="w-7 h-7 flex items-center justify-center bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-700 border border-rose-200/80 rounded-lg text-xs transition shadow-2xs cursor-pointer shrink-0"
                                   title="Xóa thành viên khỏi danh sách"
                                 >
-                                  <i className="fa-regular fa-trash-can text-[10px]"></i> Xóa
+                                  <i className="fa-regular fa-trash-can text-[11px]"></i>
                                 </button>
                               </div>
                             </td>
@@ -2318,30 +2318,30 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                     {currentMembers.length > 0 && (
                       <tfoot className="bg-slate-100/90 border-t-2 border-slate-300 font-bold text-xs sticky bottom-0 z-10 shadow-xs">
                         <tr className="bg-slate-100/95">
-                          <td colSpan="3" className="px-4 py-3.5 text-slate-900 font-black">
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-base">📊</span>
-                              <span>
-                                Tổng cộng trang {currentMemberPage}{" "}
-                                <span className="text-[11px] font-semibold text-slate-500">
-                                  ({currentMembers.length} thành viên)
+                          <td colSpan="3" className="px-2.5 py-2.5 text-slate-900 font-black">
+                            <div className="flex items-center gap-1">
+                              <span className="text-sm">📊</span>
+                              <span className="text-[11px]">
+                                Tổng trang {currentMemberPage}{" "}
+                                <span className="text-[10px] font-semibold text-slate-500">
+                                  ({currentMembers.length} TV)
                                 </span>
                               </span>
                             </div>
                           </td>
-                          <td className="px-4 py-3.5 text-right font-mono font-black text-amber-600 whitespace-nowrap">
+                          <td className="px-2 py-2.5 text-right font-mono font-black text-amber-600 whitespace-nowrap text-xs">
                             {formatMoney(pageTotals.pending)}
                           </td>
-                          <td className="px-4 py-3.5 text-right font-mono font-black text-slate-800 whitespace-nowrap">
+                          <td className="px-2 py-2.5 text-right font-mono font-black text-slate-800 whitespace-nowrap text-xs">
                             {formatMoney(pageTotals.completed)}
                           </td>
-                          <td className="px-4 py-3.5 text-right font-mono font-black text-emerald-600 whitespace-nowrap">
+                          <td className="px-2 py-2.5 text-right font-mono font-black text-emerald-600 whitespace-nowrap text-xs">
                             {formatMoney(pageTotals.available)}
                           </td>
-                          <td className="px-4 py-3.5 text-right font-mono font-black text-slate-500 whitespace-nowrap">
+                          <td className="px-2 py-2.5 text-right font-mono font-black text-slate-500 whitespace-nowrap text-xs">
                             {formatMoney(pageTotals.withdrawn)}
                           </td>
-                          <td className="px-4 py-3.5 text-center text-slate-400 font-bold text-[11px] whitespace-nowrap">
+                          <td className="px-2 py-2.5 text-center text-slate-400 font-bold text-[10px] whitespace-nowrap">
                             Trang {currentMemberPage}/{totalMemberPages}
                           </td>
                         </tr>

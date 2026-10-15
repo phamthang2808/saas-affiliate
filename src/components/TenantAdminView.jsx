@@ -211,6 +211,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
     isTiktokEnabled: activeTenant?.isTiktokEnabled ?? false,
     useShortLink: activeTenant?.useShortLink ?? true,
     notifyBothPayout: activeTenant?.notifyBothPayout ?? false,
+    donhangUnpaidOnly: activeTenant?.donhangUnpaidOnly ?? false,
     zaloGroupId: activeTenant?.zaloGroupId ?? "",
     botReplyDelayMode: "RANGE",
     botReplyDelayFixed: 2,
@@ -361,6 +362,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
           isTiktokEnabled: data.isTiktokEnabled ?? activeTenant?.isTiktokEnabled ?? false,
           useShortLink: data.useShortLink ?? activeTenant?.useShortLink ?? true,
           notifyBothPayout: data.notifyBothPayout ?? activeTenant?.notifyBothPayout ?? false,
+          donhangUnpaidOnly: data.donhangUnpaidOnly ?? activeTenant?.donhangUnpaidOnly ?? false,
           zaloGroupId: data.zaloGroupId ?? activeTenant?.zaloGroupId ?? "",
           botReplyDelayMode: data.botReplyDelayMode || "RANGE",
           botReplyDelayFixed: data.botReplyDelayFixed ?? 2,
@@ -3699,13 +3701,54 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
             )}
           </div>
 
-          {/* CARD 5: THỜI GIAN BOT PHẢN HỒI TIN NHẮN (DELAY & THẢ TIM) */}
+          {/* CARD 5: BỘ LỌC ĐƠN HÀNG LỆNH /DONHANG */}
+          <div className="bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-6 shadow-xs space-y-4">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h4 className="text-xs font-bold text-slate-900 flex items-center gap-2">
+                  <i className="fa-solid fa-cart-shopping text-orange-500"></i>
+                  <span>5. Bộ Lọc Lệnh /donhang (Chỉ Hiện Đơn Chưa Thanh Toán)</span>
+                </h4>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Khi bật: Khách gõ lệnh <code className="px-1.5 py-0.5 rounded bg-orange-50 text-orange-600 font-mono text-[10px]">/donhang</code>, bot chỉ hiển thị các đơn chưa thanh toán (UNPAID). Khi tắt: Bot hiển thị toàn bộ lịch sử đơn hàng như mặc định.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setSettings({ ...settings, donhangUnpaidOnly: !settings.donhangUnpaidOnly })}
+                className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200 focus:outline-none cursor-pointer ${
+                  settings.donhangUnpaidOnly ? "bg-orange-500" : "bg-slate-200"
+                }`}
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-xs transition-transform duration-200 ${
+                  settings.donhangUnpaidOnly ? "translate-x-6" : "translate-x-1"
+                }`} />
+              </button>
+            </div>
+
+            <div className="pt-1">
+              {settings.donhangUnpaidOnly ? (
+                <div className="flex items-center gap-2 text-xs text-orange-700 font-semibold">
+                  <i className="fa-solid fa-circle-check text-[11px] text-orange-500"></i>
+                  <span>Đang BẬT: Lệnh /donhang chỉ hiển thị các đơn chưa thanh toán (giúp thành viên dễ theo dõi đơn cần rút)</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 text-xs text-slate-600 font-medium">
+                  <i className="fa-solid fa-circle-info text-[11px] text-slate-400"></i>
+                  <span>Đang TẮT: Lệnh /donhang hiển thị toàn bộ lịch sử đơn hàng của thành viên</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* CARD 6: THỜI GIAN BOT PHẢN HỒI TIN NHẮN (DELAY & THẢ TIM) */}
           <div className="bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-6 shadow-xs space-y-4">
             <div className="flex items-center justify-between flex-wrap gap-2 pb-3 border-b border-slate-100">
               <div>
                 <h4 className="text-xs font-bold text-slate-900 flex items-center gap-2">
                   <i className="fa-solid fa-stopwatch text-orange-500"></i>
-                  <span>5. Thời Gian Bot Phản Hồi Tin Nhắn (Delay)</span>
+                  <span>6. Thời Gian Bot Phản Hồi Tin Nhắn (Delay)</span>
                 </h4>
                 <p className="text-[11px] text-slate-500 mt-0.5">
                   Điều chỉnh độ trễ trả lời tin nhắn tạo link hoàn tiền tự nhiên như người thật
@@ -3801,13 +3844,13 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
             </p>
           </div>
 
-          {/* CARD 6: CẤU HÌNH API TIKTOK SHOP (NẾU BẬT) */}
+          {/* CARD 7: CẤU HÌNH API TIKTOK SHOP (NẾU BẬT) */}
           {isTiktokEnabled && (
             <div className="bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-6 shadow-xs space-y-4">
               <div className="pb-3 border-b border-slate-100">
                 <h4 className="text-xs font-bold text-slate-900 flex items-center gap-2">
                   <i className="fa-brands fa-tiktok text-orange-500"></i>
-                  <span>6. Kết Nối API TikTok Shop</span>
+                  <span>7. Kết Nối API TikTok Shop</span>
                 </h4>
                 <p className="text-[11px] text-slate-500 mt-0.5">
                   Cấu hình khóa API kết nối để kéo đơn TikTok Shop tự động cho Kênh này

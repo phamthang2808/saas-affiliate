@@ -430,7 +430,11 @@ export default function App() {
         />
 
         {/* View Router */}
-        <main className="flex-1 p-3 sm:p-4 md:p-8 max-w-6xl w-full mx-auto min-w-0">
+        <main className={`flex-1 p-3 sm:p-4 md:p-6 w-full mx-auto min-w-0 ${
+          currentView === "tenant-admin" || currentView === "super-admin"
+            ? "max-w-[97vw] 2xl:max-w-[1750px]"
+            : "max-w-6xl"
+        }`}>
           {/* 1. Trang chủ & Giới thiệu */}
           {currentView === "gioi-thieu" && (
             <LandingIntroView

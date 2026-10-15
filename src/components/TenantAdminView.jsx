@@ -2881,7 +2881,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
 
           {/* RESULTS CONTROL HEADER */}
           <div className="flex items-center justify-between flex-wrap gap-2 px-1">
-            <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-2.5 flex-wrap">
               <p className="text-xs text-slate-500 font-medium">
                 Hiển thị{" "}
                 <span className="font-bold text-slate-800">
@@ -2890,16 +2890,50 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                 / Kết quả {activeTab === "tiktok" ? "TikTok" : "Shopee"}: <strong className="text-orange-600">{filteredOrders.length} đơn</strong>
               </p>
 
+              {/* Nút chọn all đơn cho trang đang xem */}
+              {(() => {
+                const pageOrders = filteredOrders.slice((adminOrderPage - 1) * 50, adminOrderPage * 50);
+                const isPageSelected = pageOrders.length > 0 && pageOrders.every((o) => selectedOrderIds.has(o.id));
+                if (pageOrders.length === 0) return null;
+                return (
+                  <button
+                    type="button"
+                    onClick={() => toggleSelectAllOrders(pageOrders)}
+                    className={`text-xs font-bold px-3 py-1.5 rounded-xl transition cursor-pointer border flex items-center gap-1.5 shadow-2xs ${
+                      isPageSelected
+                        ? "bg-blue-600 text-white border-blue-700 shadow-blue-500/20 ring-2 ring-blue-400/30"
+                        : "bg-blue-50 hover:bg-blue-100 text-blue-800 border-blue-200 hover:border-blue-300"
+                    }`}
+                    title={`Tích chọn / Bỏ chọn toàn bộ ${pageOrders.length} đơn trên trang ${adminOrderPage} đang xem`}
+                  >
+                    <i className={`fa-solid ${isPageSelected ? "fa-circle-check text-white" : "fa-file-lines text-blue-600"} text-xs`}></i>
+                    <span>
+                      {isPageSelected
+                        ? `Đã chọn trang ${adminOrderPage} (${pageOrders.length} đơn)`
+                        : `Chọn trang này (${pageOrders.length} đơn)`}
+                    </span>
+                  </button>
+                );
+              })()}
+
+              {/* Nút chọn tất cả các đơn đang lọc (All trang) */}
               {filteredOrders.length > 0 && (
                 <button
                   type="button"
                   onClick={() => toggleSelectAllFiltered(filteredOrders)}
-                  className="text-xs font-bold text-orange-600 hover:text-orange-700 bg-orange-50 hover:bg-orange-100 border border-orange-200 px-3 py-1 rounded-xl transition cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                  className={`text-xs font-bold px-3 py-1.5 rounded-xl transition cursor-pointer border flex items-center gap-1.5 shadow-2xs ${
+                    filteredOrders.every((o) => selectedOrderIds.has(o.id))
+                      ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white border-orange-600 shadow-orange-500/25 ring-2 ring-orange-400/30"
+                      : "text-orange-700 hover:text-orange-800 bg-orange-50 hover:bg-orange-100 border-orange-200"
+                  }`}
+                  title="Tích chọn TẤT CẢ các đơn trên TẤT CẢ các trang (không cần lật từng trang)"
                 >
-                  <i className="fa-solid fa-list-check text-xs"></i>
-                  {filteredOrders.every((o) => selectedOrderIds.has(o.id))
-                    ? "Bỏ chọn tất cả"
-                    : `Chọn tất cả ${filteredOrders.length} đơn đang lọc`}
+                  <i className={`fa-solid ${filteredOrders.every((o) => selectedOrderIds.has(o.id)) ? "fa-circle-check text-white" : "fa-list-check text-orange-600"} text-xs`}></i>
+                  <span>
+                    {filteredOrders.every((o) => selectedOrderIds.has(o.id))
+                      ? `Đã chọn tất cả (${filteredOrders.length} đơn)`
+                      : `Chọn tất cả ${filteredOrders.length} đơn đang lọc`}
+                  </span>
                 </button>
               )}
             </div>
@@ -2930,10 +2964,10 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
             </div>
 
             <div className="overflow-x-auto w-full max-w-full scrollbar-thin">
-              <table className="w-full min-w-[780px] sm:min-w-[900px] text-left border-collapse text-xs sm:text-xs">
+              <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="bg-slate-100/90 text-slate-600 text-xs font-black uppercase tracking-wider border-b border-slate-200">
-                    <th className="p-2 sm:p-3 text-center w-10">
+                    <th className="px-2 py-3 text-center w-10">
                       <input
                         type="checkbox"
                         className="w-4 h-4 accent-orange-500 cursor-pointer"
@@ -2942,16 +2976,16 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                         title="Chọn tất cả đơn trang này"
                       />
                     </th>
-                    <th className="p-3.5 sm:p-4 whitespace-nowrap">Ngày đơn</th>
-                    <th className="p-3.5 sm:p-4">Sản phẩm / Mã đơn</th>
-                    <th className="p-3.5 sm:p-4 whitespace-nowrap">Người mua</th>
-                    <th className="p-3.5 sm:p-4 whitespace-nowrap">Trạng thái</th>
-                    <th className="p-2 sm:p-3 text-center whitespace-nowrap" title="Đã thanh toán (đối chiếu App Script)">Đã TT</th>
-                    <th className="p-3.5 sm:p-4 text-right whitespace-nowrap">Thô ({activeTab === "tiktok" ? "TikTok" : "Shopee"})</th>
-                    <th className="p-3.5 sm:p-4 text-right whitespace-nowrap">Thuế ({taxRate}%)</th>
-                    <th className="p-3.5 sm:p-4 text-right whitespace-nowrap">Sau thuế</th>
-                    <th className="p-3.5 sm:p-4 text-right text-orange-600 whitespace-nowrap">Khách ({customerSplitRate}%)</th>
-                    <th className="p-3.5 sm:p-4 text-right text-orange-600 whitespace-nowrap">Admin ({adminSplitRate}%)</th>
+                    <th className="px-2.5 py-3 whitespace-nowrap">Ngày đơn</th>
+                    <th className="px-2.5 py-3">Sản phẩm / Mã đơn</th>
+                    <th className="px-2.5 py-3 whitespace-nowrap">Người mua</th>
+                    <th className="px-2.5 py-3 whitespace-nowrap text-center">Trạng thái</th>
+                    <th className="px-2 py-3 text-center whitespace-nowrap" title="Đã thanh toán (đối chiếu App Script)">Đã TT</th>
+                    <th className="px-2.5 py-3 text-right whitespace-nowrap">Thô ({activeTab === "tiktok" ? "TikTok" : "Shopee"})</th>
+                    <th className="px-2.5 py-3 text-right whitespace-nowrap">Thuế ({taxRate}%)</th>
+                    <th className="px-2.5 py-3 text-right whitespace-nowrap">Sau thuế</th>
+                    <th className="px-2.5 py-3 text-right text-orange-600 whitespace-nowrap">Khách ({customerSplitRate}%)</th>
+                    <th className="px-2.5 py-3 text-right text-orange-600 whitespace-nowrap">Admin ({adminSplitRate}%)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
@@ -2975,7 +3009,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
 
                         return (
                           <tr key={o.id} className={`hover:bg-slate-50/80 transition ${selectedOrderIds.has(o.id) ? "bg-orange-50/60" : ""}`}>
-                            <td className="p-2 sm:p-3 text-center">
+                            <td className="px-2 py-2.5 text-center">
                               <input
                                 type="checkbox"
                                 className="w-4 h-4 accent-orange-500 cursor-pointer"
@@ -2983,22 +3017,22 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                                 onChange={() => toggleSelectOrder(o.id)}
                               />
                             </td>
-                            <td className="p-3.5 sm:p-4 text-slate-600 font-bold whitespace-nowrap text-xs sm:text-xs">
+                            <td className="px-2.5 py-2.5 text-slate-600 font-bold whitespace-nowrap text-xs">
                               {o.orderDate ? new Date(o.orderDate).toLocaleDateString("vi-VN") : "—"}
                             </td>
-                            <td className="p-3.5 sm:p-4 min-w-[180px] max-w-[260px]">
-                              <p className="font-bold text-slate-900 text-xs sm:text-xs leading-snug truncate" title={o.productName}>
+                            <td className="px-2.5 py-2.5 min-w-[150px] max-w-[220px]">
+                              <p className="font-bold text-slate-900 text-xs leading-snug truncate" title={o.productName}>
                                 {o.productName}
                               </p>
-                              <span className="inline-block mt-0.5 text-[10px] sm:text-[11px] text-slate-500 font-mono font-bold bg-slate-100 px-2 py-0.5 rounded">
+                              <span className="inline-block mt-0.5 text-[10px] sm:text-[11px] text-slate-500 font-mono font-bold bg-slate-100 px-1.5 py-0.5 rounded">
                                 ID: {o.orderId}
                               </span>
                             </td>
-                            <td className="p-3.5 sm:p-4 min-w-[160px] whitespace-nowrap text-xs sm:text-xs">
+                            <td className="px-2.5 py-2.5 min-w-[125px] max-w-[160px] whitespace-nowrap text-xs">
                               <div className="flex flex-col items-start gap-1">
                                 <div className="flex items-center gap-1.5 flex-wrap">
                                   <span
-                                    className={`font-bold leading-snug ${
+                                    className={`font-bold leading-snug truncate max-w-[130px] block ${
                                       buyer.isZaloName
                                         ? "text-slate-900"
                                         : buyer.isAssigned
@@ -3021,14 +3055,14 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                                     setSelectedOrderToAssign(o);
                                     setAssignZaloId(o.zaloId || buyer.zaloId || "");
                                   }}
-                                  className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-700 hover:text-slate-900 bg-slate-100/90 hover:bg-slate-200/90 px-2.5 py-1 rounded-md border border-slate-200/80 cursor-pointer transition shadow-2xs"
+                                  className="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-700 hover:text-slate-900 bg-slate-100/90 hover:bg-slate-200/90 px-2 py-0.5 rounded-md border border-slate-200/80 cursor-pointer transition shadow-2xs"
                                   title="Đổi / Gán đơn này cho thành viên Zalo"
                                 >
-                                  <i className="fa-solid fa-link text-[10px] text-slate-500"></i> Đổi người nhận
+                                  <i className="fa-solid fa-link text-[9px] text-slate-500"></i> Đổi người nhận
                                 </button>
                               </div>
                             </td>
-                            <td className="p-3.5 sm:p-4 whitespace-nowrap">
+                            <td className="px-2.5 py-2.5 whitespace-nowrap text-center">
                               {(() => {
                                 const rawSt = String(o.status || "").trim().toLowerCase();
                                 let badgeLabel = "Chờ xử lý";
@@ -3049,16 +3083,16 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                                 const completedDateRaw = o.completeTime || o.completedDate || o.completedAt || o.updatedAt || o.orderDate;
 
                                 return (
-                                  <div className="flex flex-col items-start gap-1">
-                                    <span className={`px-3 py-1 rounded-full text-xs font-extrabold whitespace-nowrap inline-block ${badgeClass}`}>
+                                  <div className="flex flex-col items-center gap-0.5">
+                                    <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-extrabold whitespace-nowrap inline-block ${badgeClass}`}>
                                       {badgeLabel}
                                     </span>
                                     {isCompleted && (
                                       <div
-                                        className="text-[11px] font-semibold text-emerald-700/90 flex items-center gap-1.5 mt-0.5"
+                                        className="text-[10px] font-semibold text-emerald-700/90 flex items-center gap-1 mt-0.5"
                                         title={completedDateRaw ? `Ngày hoàn thành: ${new Date(completedDateRaw).toLocaleString("vi-VN")}` : "Ngày hoàn thành"}
                                       >
-                                        <i className="fa-regular fa-calendar-check text-[10px] text-emerald-600"></i>
+                                        <i className="fa-regular fa-calendar-check text-[9px] text-emerald-600"></i>
                                         <span>
                                           {completedDateRaw ? new Date(completedDateRaw).toLocaleDateString("vi-VN") : "—"}
                                         </span>
@@ -3069,7 +3103,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                               })()}
                             </td>
                             {/* CỘT ĐÃ THANH TOÁN (ĐỐI CHIẾU APP SCRIPT) */}
-                            <td className="p-2 sm:p-3 text-center whitespace-nowrap">
+                            <td className="px-2 py-2.5 text-center whitespace-nowrap">
                               {o.paymentStatus === "PAID" ? (
                                 <button
                                   type="button"
@@ -3096,35 +3130,35 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                                 </button>
                               )}
                             </td>
-                            <td className="p-3.5 sm:p-4 text-right font-mono font-bold text-slate-700 text-xs sm:text-xs whitespace-nowrap">{formatMoney(rawVal)}</td>
-                            <td className="p-3.5 sm:p-4 text-right font-mono font-bold text-rose-500 text-xs sm:text-xs whitespace-nowrap">{formatMoney(taxVal)}</td>
-                            <td className="p-3.5 sm:p-4 text-right font-mono font-bold text-slate-800 text-xs sm:text-xs whitespace-nowrap">{formatMoney(afterTaxVal)}</td>
-                            <td className="p-3.5 sm:p-4 text-right font-mono font-black text-orange-600 text-xs sm:text-xs whitespace-nowrap">{formatMoney(userFinalVal)}</td>
-                            <td className="p-3.5 sm:p-4 text-right font-mono font-black text-orange-600 text-xs sm:text-xs whitespace-nowrap">{formatMoney(adminProfitVal)}</td>
+                            <td className="px-2.5 py-2.5 text-right font-mono font-bold text-slate-700 text-xs whitespace-nowrap">{formatMoney(rawVal)}</td>
+                            <td className="px-2.5 py-2.5 text-right font-mono font-bold text-rose-500 text-xs whitespace-nowrap">{formatMoney(taxVal)}</td>
+                            <td className="px-2.5 py-2.5 text-right font-mono font-bold text-slate-800 text-xs whitespace-nowrap">{formatMoney(afterTaxVal)}</td>
+                            <td className="px-2.5 py-2.5 text-right font-mono font-black text-orange-600 text-xs whitespace-nowrap">{formatMoney(userFinalVal)}</td>
+                            <td className="px-2.5 py-2.5 text-right font-mono font-black text-orange-600 text-xs whitespace-nowrap">{formatMoney(adminProfitVal)}</td>
                           </tr>
                         );
                       })
                   )}
                 </tbody>
                 {filteredOrders.length > 0 && (
-                  <tfoot className="bg-slate-100/90 font-bold border-t-2 border-slate-200 text-xs sm:text-xs">
+                  <tfoot className="bg-slate-100/90 font-bold border-t-2 border-slate-200 text-xs">
                     <tr>
-                      <td colSpan={6} className="p-3.5 sm:p-4 font-black text-slate-800 whitespace-nowrap">
+                      <td colSpan={6} className="px-2.5 py-3 font-black text-slate-800 whitespace-nowrap">
                         📊 TỔNG CỘNG ({filteredOrders.length} đơn {activeTab === "tiktok" ? "TikTok" : "Shopee"} đang lọc)
                       </td>
-                      <td className="p-3.5 sm:p-4 text-right font-mono font-black text-slate-800 whitespace-nowrap">
+                      <td className="px-2.5 py-3 text-right font-mono font-black text-slate-800 whitespace-nowrap">
                         {formatMoney(totalRawSum)}
                       </td>
-                      <td className="p-3.5 sm:p-4 text-right font-mono font-black text-rose-600 whitespace-nowrap">
+                      <td className="px-2.5 py-3 text-right font-mono font-black text-rose-600 whitespace-nowrap">
                         {formatMoney(totalTaxSum)}
                       </td>
-                      <td className="p-3.5 sm:p-4 text-right font-mono font-black text-slate-800 whitespace-nowrap">
+                      <td className="px-2.5 py-3 text-right font-mono font-black text-slate-800 whitespace-nowrap">
                         {formatMoney(totalAfterTaxSum)}
                       </td>
-                      <td className="p-3.5 sm:p-4 text-right font-mono font-black text-orange-600 whitespace-nowrap">
+                      <td className="px-2.5 py-3 text-right font-mono font-black text-orange-600 whitespace-nowrap">
                         {formatMoney(totalUserFinalSum)}
                       </td>
-                      <td className="p-3.5 sm:p-4 text-right font-mono font-black text-orange-600 whitespace-nowrap">
+                      <td className="px-2.5 py-3 text-right font-mono font-black text-orange-600 whitespace-nowrap">
                         {formatMoney(totalAdminProfitSum)}
                       </td>
                     </tr>

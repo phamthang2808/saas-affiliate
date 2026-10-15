@@ -1139,13 +1139,13 @@ export function PublicLookupView({
 
                           {/* Badge thanh toán */}
                           {String(order.paymentStatus || "").toUpperCase() === "PAID" ? (
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold bg-blue-500 text-white border border-blue-600 shadow-sm shadow-blue-200">
-                              <i className="fa-solid fa-money-bill-wave text-[10px]"></i>
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold bg-emerald-500 text-white border border-emerald-600 shadow-sm shadow-emerald-200">
+                              <i className="fa-solid fa-circle-dollar-to-slot text-[10px]"></i>
                               Đã thanh toán
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold bg-rose-100 text-rose-600 border border-rose-300 shadow-sm">
-                              <i className="fa-solid fa-circle-xmark text-[10px]"></i>
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold bg-amber-100 text-amber-700 border border-amber-300 shadow-sm">
+                              <i className="fa-solid fa-hourglass-half text-[10px]"></i>
                               Chưa thanh toán
                             </span>
                           )}

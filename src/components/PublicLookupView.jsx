@@ -1119,26 +1119,34 @@ export function PublicLookupView({
                           </div>
                         </div>
                         <div className="flex items-center gap-1.5 flex-wrap justify-end">
-                          <span
-                            className={`px-3 py-1 rounded-full text-xs font-extrabold ${
-                              isDone
-                                ? isOrderEligibleForWithdrawal(order)
-                                  ? "bg-emerald-50 text-emerald-700"
-                                  : "bg-amber-50 text-amber-700"
-                                : "bg-amber-50 text-amber-700"
-                            }`}
-                          >
-                            {isDone && holdingDays > 0 && !isOrderEligibleForWithdrawal(order)
-                              ? `Đang giữ (${holdingDays} ngày)`
-                              : order.status || "Chờ xử lý"}
-                          </span>
-                          {String(order.paymentStatus || "").toUpperCase() === "PAID" ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-extrabold border border-emerald-200">
-                              <i className="fa-solid fa-circle-check text-[9px]"></i> Đã TT
+                          {/* Badge trạng thái đơn */}
+                          {isDone && holdingDays > 0 && !isOrderEligibleForWithdrawal(order) ? (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold bg-amber-100 text-amber-700 border border-amber-300 shadow-sm">
+                              <i className="fa-solid fa-hourglass-half fa-spin-pulse text-[10px]"></i>
+                              Đang giữ ({holdingDays} ngày)
+                            </span>
+                          ) : isDone ? (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold bg-emerald-500 text-white border border-emerald-600 shadow-sm shadow-emerald-200">
+                              <i className="fa-solid fa-circle-check text-[10px]"></i>
+                              Hoàn thành
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-rose-50 text-rose-600 text-[10px] font-extrabold border border-rose-200">
-                              <i className="fa-solid fa-clock text-[9px]"></i> Chưa TT
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold bg-amber-100 text-amber-700 border border-amber-300 shadow-sm">
+                              <i className="fa-solid fa-truck-fast text-[10px]"></i>
+                              {order.status || "Chờ xử lý"}
+                            </span>
+                          )}
+
+                          {/* Badge thanh toán */}
+                          {String(order.paymentStatus || "").toUpperCase() === "PAID" ? (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold bg-blue-500 text-white border border-blue-600 shadow-sm shadow-blue-200">
+                              <i className="fa-solid fa-money-bill-wave text-[10px]"></i>
+                              Đã thanh toán
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold bg-rose-100 text-rose-600 border border-rose-300 shadow-sm">
+                              <i className="fa-solid fa-circle-xmark text-[10px]"></i>
+                              Chưa thanh toán
                             </span>
                           )}
                         </div>

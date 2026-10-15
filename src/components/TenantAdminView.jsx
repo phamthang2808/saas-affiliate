@@ -3036,7 +3036,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                                   badgeLabel = "Đã hủy";
                                   badgeClass = "bg-rose-50 text-rose-700";
                                 } else if (rawSt === "2" || rawSt === "200" || rawSt.includes("hoàn thành") || rawSt.includes("complete") || rawSt.includes("finish") || rawSt.includes("success") || rawSt.includes("settled") || rawSt.includes("paid")) {
-                                  badgeLabel = "Hoàn thành (Đã chốt)";
+                                  badgeLabel = "Hoàn thành";
                                   badgeClass = "bg-emerald-50 text-emerald-700";
                                 } else if (rawSt === "1" || rawSt === "100" || rawSt.includes("chờ") || rawSt.includes("pending") || rawSt.includes("xử lý") || rawSt.includes("unpaid") || rawSt.includes("vận chuyển")) {
                                   badgeLabel = "Chờ xử lý";

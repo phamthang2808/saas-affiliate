@@ -17,6 +17,7 @@ export function PublicLookupView({
   const [errorMessage, setErrorMessage] = useState("");
   const [platformFilter, setPlatformFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [paymentFilter, setPaymentFilter] = useState("ALL"); // ALL | PAID | UNPAID
   const [localSearch, setLocalSearch] = useState("");
 
   // Toast Notification state
@@ -506,6 +507,11 @@ export function PublicLookupView({
       const st = (o.status || "").toLowerCase();
       if (statusFilter === "COMPLETED" && !st.includes("hoàn thành")) return false;
       if (statusFilter === "PENDING" && !st.includes("chờ") && !st.includes("vận chuyển")) return false;
+    }
+    if (paymentFilter !== "ALL") {
+      const isPaid = String(o.paymentStatus || "").toUpperCase() === "PAID";
+      if (paymentFilter === "PAID" && !isPaid) return false;
+      if (paymentFilter === "UNPAID" && isPaid) return false;
     }
     if (localSearch.trim()) {
       const q = localSearch.toLowerCase();
@@ -1043,6 +1049,16 @@ export function PublicLookupView({
                   <option value="PENDING">Chờ xử lý</option>
                 </select>
 
+                <select
+                  value={paymentFilter}
+                  onChange={(e) => setPaymentFilter(e.target.value)}
+                  className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-800 outline-hidden"
+                >
+                  <option value="ALL">Tất cả thanh toán</option>
+                  <option value="PAID">✅ Đã thanh toán</option>
+                  <option value="UNPAID">⏳ Chưa thanh toán</option>
+                </select>
+
                 <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs font-bold">
                   <button
                     onClick={() => setPlatformFilter("ALL")}
@@ -1102,19 +1118,30 @@ export function PublicLookupView({
                             </span>
                           </div>
                         </div>
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs font-extrabold ${
-                            isDone
-                              ? isOrderEligibleForWithdrawal(order)
-                                ? "bg-emerald-50 text-emerald-700"
+                        <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-extrabold ${
+                              isDone
+                                ? isOrderEligibleForWithdrawal(order)
+                                  ? "bg-emerald-50 text-emerald-700"
+                                  : "bg-amber-50 text-amber-700"
                                 : "bg-amber-50 text-amber-700"
-                              : "bg-amber-50 text-amber-700"
-                          }`}
-                        >
-                          {isDone && holdingDays > 0 && !isOrderEligibleForWithdrawal(order)
-                            ? `Đang giữ (${holdingDays} ngày)`
-                            : order.status || "Chờ xử lý"}
-                        </span>
+                            }`}
+                          >
+                            {isDone && holdingDays > 0 && !isOrderEligibleForWithdrawal(order)
+                              ? `Đang giữ (${holdingDays} ngày)`
+                              : order.status || "Chờ xử lý"}
+                          </span>
+                          {String(order.paymentStatus || "").toUpperCase() === "PAID" ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-extrabold border border-emerald-200">
+                              <i className="fa-solid fa-circle-check text-[9px]"></i> Đã TT
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-rose-50 text-rose-600 text-[10px] font-extrabold border border-rose-200">
+                              <i className="fa-solid fa-clock text-[9px]"></i> Chưa TT
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       <p className="text-xs sm:text-sm font-bold text-slate-800 leading-snug line-clamp-2">

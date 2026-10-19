@@ -48,9 +48,10 @@ export function PricingContactView() {
         "Hoạt động tự động 24/7 trong nhóm Zalo, phản hồi tức thì 1-2 giây không cần trực máy.",
         "Tự nhận biết thành viên gửi link trong nhóm để bạn dễ dàng theo dõi hoạt động mua sắm.",
         "Tin nhắn tối ưu mua hàng: Tự động tag tên người gửi, định dạng link ngắn gọn, kích thích bấm mua.",
-        "Vận hành siêu nhẹ nhàng: Không tốn thời gian quản lý đối soát ví, tập trung tối đa đẩy số."
+        "Vận hành siêu nhẹ nhàng: Không tốn thời gian quản lý đối soát ví, tập trung tối đa đẩy số.",
+        "Kích hoạt nhanh chóng: Setup nhóm Zalo chỉ sau 5 phút, hỗ trợ kỹ thuật trọn gói A-Z."
       ],
-      ctaText: "Liên Hệ Zalo Admin Phạm Thắng",
+      ctaText: "Liên Hệ Admin Phạm Thắng",
       ctaClass: "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black shadow-md shadow-blue-500/25",
     },
     {
@@ -71,7 +72,7 @@ export function PricingContactView() {
         "Tùy biến chính sách kênh: Tự cài đặt tỷ lệ chia hoa hồng (80/20, 70/30), trừ thuế TNCN & ngày giữ tiền.",
         "Tùy chỉnh mẫu tin nhắn Bot: Trưởng nhóm tự do chỉnh sửa mẫu tin nhắn phản hồi, lời chào và thông báo theo phong cách riêng."
       ],
-      ctaText: "Liên Hệ Zalo Admin Phạm Thắng",
+      ctaText: "Liên Hệ Admin Phạm Thắng",
       ctaClass: "bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black shadow-md shadow-orange-500/25",
     },
     {
@@ -92,7 +93,7 @@ export function PricingContactView() {
         "Hạ tầng & Cơ sở dữ liệu riêng biệt: Vận hành ổn định, tải trang siêu tốc, bảo mật tuyệt đối không lo nghẽn mạng.",
         "Hỗ trợ trỏ tên miền & cài đặt chứng chỉ bảo mật SSL (HTTPS) miễn phí trọn đời."
       ],
-      ctaText: "Liên Hệ Zalo Admin Phạm Thắng",
+      ctaText: "Liên Hệ Admin Phạm Thắng",
       ctaClass: "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black shadow-md shadow-blue-500/25",
     },
     {
@@ -113,7 +114,7 @@ export function PricingContactView() {
         "Thông Báo Biến Động Số Dư Tự Động: Bot tự động gửi tin nhắn riêng cho khách khi đơn hoàn thành hoặc có lệnh duyệt thanh toán.",
         "Hỗ Trợ Kỹ Thuật VIP 1-1 Riêng Biệt: Ưu tiên cập nhật tính năng mới nhất, setup trọn gói A-Z & hỗ trợ kỹ thuật trực tiếp 24/7."
       ],
-      ctaText: "Liên Hệ Zalo Admin Phạm Thắng",
+      ctaText: "Liên Hệ Admin Phạm Thắng",
       ctaClass: "bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 text-slate-950 font-black shadow-md shadow-amber-500/25",
     }
   ];
@@ -213,7 +214,7 @@ export function PricingContactView() {
                   <span className="text-xs text-slate-400 font-semibold">{pkg.period}</span>
                 </div>
 
-                <div className="space-y-2.5 text-xs text-slate-700 font-medium">
+                <div className="space-y-2.5 text-xs text-slate-700 font-medium min-h-[220px] flex flex-col justify-start">
                   {pkg.features.map((feat, idx) => (
                     <div key={idx} className="flex items-start gap-2">
                       <i
@@ -238,18 +239,15 @@ export function PricingContactView() {
                   href="https://zalo.me/0888728256"
                   target="_blank"
                   rel="noreferrer"
-                  onClick={(e) => {
-                    window.open("https://zalo.me/0888728256", "_blank", "noopener,noreferrer");
-                  }}
-                  className={`w-full py-3 px-2 rounded-xl transition text-center flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 no-underline shadow-md ${pkg.ctaClass}`}
+                  className={`w-full py-3 px-3 rounded-xl transition text-center flex items-center justify-center gap-2 cursor-pointer active:scale-95 no-underline shadow-md ${pkg.ctaClass}`}
                 >
                   <svg viewBox="0 0 48 48" className="w-5 h-5 shrink-0" xmlns="http://www.w3.org/2000/svg">
                     <circle cx="24" cy="24" r="23" fill={isVip ? "#0f172a" : "#0068FF"}/>
                     <path d="M12.5 24c0-6.35 5.15-11.5 11.5-11.5s11.5 5.15 11.5 11.5-5.15 11.5-11.5 11.5c-2.05 0-3.97-.54-5.64-1.48L11.5 35.5l1.67-4.3C12.38 29.35 12.5 26.75 12.5 24z" fill="#ffffff" fillOpacity="0.25"/>
                     <text x="24" y="28.5" fill={isVip ? "#eab308" : "#ffffff"} fontFamily="system-ui, -apple-system, sans-serif" fontSize="12" fontWeight="900" textAnchor="middle">Zalo</text>
                   </svg>
-                  <span className="text-[12px] sm:text-[12.5px] font-extrabold whitespace-nowrap tracking-tight">
-                    Liên Hệ Zalo Admin Phạm Thắng
+                  <span className="text-[13px] font-black whitespace-nowrap tracking-tight">
+                    {pkg.ctaText || "Liên Hệ Admin Phạm Thắng"}
                   </span>
                 </a>
               </div>

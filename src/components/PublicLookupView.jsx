@@ -792,37 +792,57 @@ export function PublicLookupView({
               </div>
             </div>
 
-            {/* Thẻ Ngân hàng ngắn gọn hoặc Form chỉnh sửa */}
+            {/* Thẻ Ngân hàng thiết kế mới: Phong cách Thẻ Tài Khoản Ngân Hàng chuyên nghiệp */}
             {!isEditingBank ? (
-              <div className="bg-slate-50/90 rounded-2xl p-4 border border-slate-200/80 flex items-center justify-between gap-3 flex-wrap shadow-2xs">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center text-base font-bold shadow-2xs">
-                    <i className="fa-solid fa-building-columns"></i>
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-extrabold text-slate-900 text-sm">
-                        {bankName || "Chưa lưu ngân hàng"}
-                      </span>
-                      {accountName && (
-                        <span className="px-2 py-0.5 rounded-md bg-orange-100 text-orange-800 text-[10px] font-black uppercase tracking-wide">
-                          {accountName}
-                        </span>
-                      )}
+              <div className="bg-gradient-to-br from-slate-50 via-white to-amber-50/40 rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-2xs space-y-3.5">
+                {/* Dòng 1: Ngân hàng bên trái - Nút Sửa thông tin cố định ở góc trên bên phải */}
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white flex items-center justify-center text-lg font-bold shadow-md shadow-orange-500/20 shrink-0">
+                      <i className="fa-solid fa-building-columns"></i>
                     </div>
-                    <p className="text-xs text-slate-500 font-mono font-bold mt-0.5">
-                      STK: {accountNumber || "Chưa có số tài khoản"}
-                    </p>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-black text-slate-900 text-sm sm:text-base tracking-tight truncate">
+                          {bankName || "Chưa lưu ngân hàng"}
+                        </span>
+                        <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-[10px] font-black uppercase tracking-wide shrink-0">
+                          Tài khoản nhận tiền
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 font-medium truncate">
+                        Tài khoản nhận hoa hồng hoàn tiền tự động
+                      </p>
+                    </div>
                   </div>
+
+                  {/* Nút sửa thông tin luôn ở góc trên bên phải */}
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingBank(true)}
+                    className="shrink-0 px-3.5 py-1.5 rounded-xl bg-white border border-slate-200 hover:border-orange-300 text-slate-700 hover:text-orange-600 hover:bg-orange-50/60 text-xs font-extrabold transition flex items-center gap-1.5 shadow-2xs cursor-pointer active:scale-95"
+                    title="Chỉnh sửa số tài khoản / ngân hàng"
+                  >
+                    <i className="fa-solid fa-pen-to-square text-[11px] text-orange-500"></i>
+                    <span>Sửa thông tin</span>
+                  </button>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => setIsEditingBank(true)}
-                  className="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-orange-600 text-xs font-bold transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
-                >
-                  <i className="fa-solid fa-pen-to-square text-[11px]"></i> Sửa thông tin
-                </button>
+                {/* Dòng 2: Khối thông tin chi tiết (Số tài khoản & Tên chủ tài khoản) */}
+                <div className="bg-white/90 rounded-xl p-3 sm:p-3.5 border border-slate-200/80 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0">STK:</span>
+                    <span className="text-sm sm:text-base font-black font-mono text-slate-900 tracking-wider select-all">
+                      {accountNumber || "Chưa có số tài khoản"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 sm:justify-end">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0">CHỦ TK:</span>
+                    <span className="text-xs sm:text-sm font-black text-slate-800 uppercase tracking-wide">
+                      {accountName || "Chưa lưu tên"}
+                    </span>
+                  </div>
+                </div>
               </div>
             ) : (
               <form
@@ -956,67 +976,100 @@ export function PublicLookupView({
                   e.preventDefault();
                   initiateAction("PAYOUT");
                 }}
-                className="bg-orange-50/60 rounded-2xl p-4 border border-orange-200 space-y-3"
+                className="bg-gradient-to-br from-amber-50/60 via-orange-50/30 to-white rounded-2xl p-4 sm:p-5 border border-orange-200 space-y-3.5 shadow-2xs"
               >
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                  <label className="block text-xs font-extrabold text-orange-900">
-                    Nhập số tiền muốn rút (Khả dụng: <span className="text-orange-600 font-black">{formatMoney(availableBalance)}</span>):
+                {/* Header: Tiêu đề & Khả dụng */}
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <label className="text-xs font-black text-slate-800 flex items-center gap-1.5">
+                    <i className="fa-solid fa-money-bill-transfer text-orange-500"></i>
+                    <span>Nhập số tiền muốn rút:</span>
                   </label>
-                  <div className="flex items-center gap-1.5 flex-wrap">
+                  <div className="text-xs font-bold text-slate-500 flex items-center gap-1">
+                    <span>Khả dụng:</span>
+                    <span className="text-orange-600 font-black font-mono text-sm">
+                      {formatMoney(availableBalance)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Ô input số tiền tích hợp nút Rút tất cả */}
+                <div className="relative flex items-center bg-white rounded-2xl border-2 border-orange-200 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-200/50 transition shadow-2xs overflow-hidden">
+                  <span className="pl-4 pr-1 text-slate-400 font-black text-base select-none">₫</span>
+                  <input
+                    type="number"
+                    value={withdrawAmount}
+                    onChange={(e) => setWithdrawAmount(e.target.value)}
+                    placeholder="VD: 50000 (Tối thiểu 10.000đ)"
+                    className="flex-1 py-3 px-2 text-base font-black font-mono text-slate-900 placeholder:text-slate-400 placeholder:font-normal placeholder:text-xs outline-none bg-transparent"
+                  />
+                  <div className="pr-2 flex items-center gap-1 shrink-0">
                     <button
                       type="button"
                       onClick={() => setWithdrawAmount(availableBalance.toString())}
-                      className="px-2.5 py-1 bg-white hover:bg-orange-100 text-orange-700 border border-orange-200 rounded-lg text-[10px] font-black cursor-pointer shadow-2xs transition"
+                      className="px-3 py-1.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-xl text-xs font-black cursor-pointer shadow-xs transition flex items-center gap-1 active:scale-95"
+                      title="Rút toàn bộ số dư khả dụng"
                     >
-                      ⚡ Rút tất cả
+                      <i className="fa-solid fa-bolt text-[10px]"></i>
+                      <span>Rút tất cả</span>
                     </button>
+                  </div>
+                </div>
+
+                {/* Các nút chọn nhanh & Ghi chú */}
+                <div className="flex items-center justify-between flex-wrap gap-2 text-[11px]">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-slate-400 font-semibold text-[10px]">Gợi ý:</span>
                     {availableBalance >= 50000 && (
                       <button
                         type="button"
                         onClick={() => setWithdrawAmount("50000")}
-                        className="px-2.5 py-1 bg-white hover:bg-orange-100 text-orange-700 border border-orange-200 rounded-lg text-[10px] font-black cursor-pointer shadow-2xs transition"
+                        className="px-2.5 py-1 bg-white hover:bg-orange-50 text-slate-700 hover:text-orange-600 border border-slate-200 rounded-lg text-[11px] font-bold cursor-pointer transition shadow-2xs"
                       >
-                        50k
+                        50.000đ
                       </button>
                     )}
                     {availableBalance >= 100000 && (
                       <button
                         type="button"
                         onClick={() => setWithdrawAmount("100000")}
-                        className="px-2.5 py-1 bg-white hover:bg-orange-100 text-orange-700 border border-orange-200 rounded-lg text-[10px] font-black cursor-pointer shadow-2xs transition"
+                        className="px-2.5 py-1 bg-white hover:bg-orange-50 text-slate-700 hover:text-orange-600 border border-slate-200 rounded-lg text-[11px] font-bold cursor-pointer transition shadow-2xs"
                       >
-                        100k
+                        100.000đ
+                      </button>
+                    )}
+                    {availableBalance >= 200000 && (
+                      <button
+                        type="button"
+                        onClick={() => setWithdrawAmount("200000")}
+                        className="px-2.5 py-1 bg-white hover:bg-orange-50 text-slate-700 hover:text-orange-600 border border-slate-200 rounded-lg text-[11px] font-bold cursor-pointer transition shadow-2xs"
+                      >
+                        200.000đ
                       </button>
                     )}
                   </div>
+                  <span className="text-[11px] text-slate-400 font-medium ml-auto">
+                    * Rút tối thiểu 10.000đ
+                  </span>
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <input
-                    type="number"
-                    value={withdrawAmount}
-                    onChange={(e) => setWithdrawAmount(e.target.value)}
-                    placeholder="VD: 50000 (Tối thiểu 10.000đ)"
-                    className="flex-1 px-4 py-3 bg-white border border-orange-200 rounded-xl text-sm font-bold text-slate-900 focus:border-orange-500 outline-hidden font-mono shadow-2xs"
-                  />
-                  <button
-                    type="submit"
-                    disabled={isSubmittingWithdraw}
-                    className="px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black text-xs uppercase tracking-wide rounded-xl shadow-md shadow-orange-500/20 active:scale-[0.98] transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 shrink-0"
-                  >
-                    {isSubmittingWithdraw ? (
-                      <i className="fa-solid fa-circle-notch fa-spin"></i>
-                    ) : (
-                      <>
-                        <i className="fa-solid fa-paper-plane text-xs"></i>
-                        <span>Tạo yêu cầu rút tiền</span>
-                      </>
-                    )}
-                  </button>
-                </div>
+                {/* Nút Tạo yêu cầu rút tiền */}
+                <button
+                  type="submit"
+                  disabled={isSubmittingWithdraw}
+                  className="w-full py-3.5 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-500 hover:from-orange-600 hover:to-amber-600 text-white font-black text-xs sm:text-sm uppercase tracking-wider rounded-2xl shadow-md shadow-orange-500/25 active:scale-[0.98] transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  {isSubmittingWithdraw ? (
+                    <i className="fa-solid fa-circle-notch fa-spin"></i>
+                  ) : (
+                    <>
+                      <i className="fa-solid fa-paper-plane text-xs"></i>
+                      <span>TẠO YÊU CẦU RÚT TIỀN</span>
+                    </>
+                  )}
+                </button>
 
                 {withdrawError && (
-                  <p className="text-xs font-bold text-rose-600">{withdrawError}</p>
+                  <p className="text-xs font-bold text-rose-600 text-center">{withdrawError}</p>
                 )}
               </form>
             )}
@@ -1118,35 +1171,35 @@ export function PublicLookupView({
                             </span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-1.5 flex-wrap justify-end">
-                          {/* Badge trạng thái đơn */}
+                        <div className="flex items-center gap-2 flex-wrap justify-end">
+                          {/* 1. Trạng thái Đơn hàng: Dạng nhãn thông tin nhẹ nhàng (Soft Pill), KHÔNG viền đậm, KHÔNG đổ bóng button */}
                           {isDone && holdingDays > 0 && !isOrderEligibleForWithdrawal(order) ? (
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold bg-amber-100 text-amber-700 border border-amber-300 shadow-sm">
-                              <i className="fa-solid fa-hourglass-half fa-spin-pulse text-[10px]"></i>
-                              Đang giữ ({holdingDays} ngày)
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-amber-50 text-amber-700">
+                              <i className="fa-solid fa-hourglass-half text-[10px] text-amber-600"></i>
+                              <span>Đang giữ ({holdingDays} ngày)</span>
                             </span>
                           ) : isDone ? (
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold bg-emerald-500 text-white border border-emerald-600 shadow-sm shadow-emerald-200">
-                              <i className="fa-solid fa-circle-check text-[10px]"></i>
-                              Hoàn thành
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-50 text-emerald-700">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
+                              <span>Hoàn thành</span>
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold bg-amber-100 text-amber-700 border border-amber-300 shadow-sm">
-                              <i className="fa-solid fa-truck-fast text-[10px]"></i>
-                              {order.status || "Chờ xử lý"}
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-amber-50 text-amber-700">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block"></span>
+                              <span>{order.status || "Chờ xử lý"}</span>
                             </span>
                           )}
 
-                          {/* Badge thanh toán */}
+                          {/* 2. Trạng thái Thanh toán: KHÁC MÀU với trạng thái đơn! Dùng Xanh dương (Sky/Blue) và Xám nhạt, KHÔNG border button */}
                           {String(order.paymentStatus || "").toUpperCase() === "PAID" ? (
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold bg-emerald-500 text-white border border-emerald-600 shadow-sm shadow-emerald-200">
-                              <i className="fa-solid fa-circle-dollar-to-slot text-[10px]"></i>
-                              Đã thanh toán
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-sky-50 text-sky-700">
+                              <i className="fa-solid fa-wallet text-[10px] text-sky-500"></i>
+                              <span>Đã thanh toán</span>
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold bg-amber-100 text-amber-700 border border-amber-300 shadow-sm">
-                              <i className="fa-solid fa-hourglass-half text-[10px]"></i>
-                              Chưa thanh toán
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-100 text-slate-600">
+                              <i className="fa-regular fa-clock text-[10px] text-slate-400"></i>
+                              <span>Chưa thanh toán</span>
                             </span>
                           )}
                         </div>

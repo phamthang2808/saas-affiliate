@@ -58,6 +58,7 @@ const CANONICAL_TEMPLATE_KEYS = [
   "template_invalid_bank_syntax",
   "template_withdraw_success",
   "template_withdraw_zero",
+  "template_withdraw_no_bank",
   "template_approve_payout",
   "template_payout_approved",
   "template_help",
@@ -137,25 +138,31 @@ const TEMPLATE_META = {
     icon: "fa-solid fa-wallet text-orange-500",
     desc: "Tin nhắn thông báo khi số dư khả dụng của thành viên chưa đạt hạn mức tối thiểu để lập lệnh rút."
   },
+  template_withdraw_no_bank: {
+    title: "13. Mẫu tin nhắn Báo Chưa Cập Nhật Tài Khoản Ngân Hàng Khi Rút Tiền",
+    command: "/ruttien hoặc /rut (khi CHƯA CẬP NHẬT STK)",
+    icon: "fa-solid fa-building-columns text-orange-500",
+    desc: "Tin nhắn hướng dẫn cú pháp /stk và gửi link Web tra cứu 1 chạm khi thành viên gõ /ruttien nhưng chưa lưu số tài khoản ngân hàng."
+  },
   template_approve_payout: {
-    title: "13. Mẫu tin nhắn Thông Báo Duyệt Rút Tiền Trong Nhóm",
+    title: "14. Mẫu tin nhắn Thông Báo Duyệt Rút Tiền Trong Nhóm",
     command: "/duyet_[MÃ_ID] (Chỉ Trưởng Nhóm)",
     icon: "fa-solid fa-circle-check text-orange-500",
     desc: "Tin nhắn thông báo trong nhóm Zalo khi Trưởng Nhóm thực hiện lệnh duyệt tiền thành công cho thành viên."
   },
   template_payout_approved: {
-    title: "14. Mẫu tin nhắn Riêng Chuyển Tiền Thành Công (Gửi Private cho Khách)",
+    title: "15. Mẫu tin nhắn Riêng Chuyển Tiền Thành Công (Gửi Private cho Khách)",
     icon: "fa-solid fa-money-bill-transfer text-orange-500",
     desc: "Tin nhắn riêng Bot gửi tự động cho từng khách hàng khi Trưởng Nhóm bấm ĐÃ DUYỆT trên hệ thống web — thay thế việc nhắn tay. Biến: {ten_zalo}, {so_tien}, {ngan_hang}, {so_tai_khoan}, {ma_giao_dich}."
   },
   template_help: {
-    title: "15. Mẫu tin nhắn Trợ Giúp & Danh Sách Các Câu Lệnh",
+    title: "16. Mẫu tin nhắn Trợ Giúp & Danh Sách Các Câu Lệnh",
     command: "/help hoặc #help",
     icon: "fa-solid fa-circle-question text-orange-500",
     desc: "Danh sách tổng hợp toàn bộ các câu lệnh Bot hỗ trợ để gửi cho thành viên khi họ cần trợ giúp."
   },
   template_invalid_command: {
-    title: "16. Mẫu tin nhắn Phản Hồi Khi Gõ Sai Cú Pháp Lệnh",
+    title: "17. Mẫu tin nhắn Phản Hồi Khi Gõ Sai Cú Pháp Lệnh",
     badge: "Khi người dùng gõ sai lệnh",
     icon: "fa-solid fa-triangle-exclamation text-orange-500",
     desc: "Tin nhắn nhắc nhở kèm gợi ý gõ /help khi người dùng gõ một câu lệnh không có trong hệ thống."
@@ -178,6 +185,7 @@ const getStandardBotTemplates = (tenant) => {
     template_invalid_bank_syntax: `@{ten_zalo} ⚠️ Cú pháp không hợp lệ. Vui lòng sử dụng định dạng: /stk_[Tên ngân hàng]_[Số tài khoản] (Ví dụ: /stk_MB_0987654321)`,
     template_withdraw_success: `@{ten_zalo} 🎉 ĐÃ TẠO YÊU CẦU RÚT TIỀN THÀNH CÔNG!\n\n💸 Số tiền rút: {so_tien_rut}đ\n🏦 Về tài khoản: {ngan_hang} - {so_tai_khoan} ({chu_tai_khoan})\n⏳ Trạng thái: Đang chờ Admin {ten_nhom} duyệt giao dịch.`,
     template_withdraw_zero: `@{ten_zalo} ⚠️ Số dư khả dụng của bạn hiện là {so_du_vi}đ (chưa đủ hạn mức rút tối thiểu 10.000đ).\n💡 Bạn hãy gõ /tracuu để kiểm tra chi tiết trạng thái ví nhé!`,
+    template_withdraw_no_bank: `@{ten_zalo} ⚠️ Bạn chưa cập nhật tài khoản ngân hàng nhận tiền!\n👉 Hãy cập nhật bằng cú pháp: /stk_[NGÂN_HÀNG]_[STK]_[TÊN_CHỦ_TK]\nVí dụ: /stk_MB_123456789_NGUYEN VAN A\nHoặc cập nhật 1 chạm trên Web: {link_tra_cuu}`,
     template_approve_payout: `@{ten_zalo} Đã duyệt và hoàn thành rút tiền cho giao dịch {ma_giao_dich}! Thành viên @{ten_thanh_vien} đã nhận tiền thành công.`,
     template_payout_approved: `✅ @{ten_zalo} ơi!\n\n💸 ${groupName} đã chuyển tiền thành công cho bạn:\n💰 Số tiền: {so_tien}\n🏦 Tài khoản: {ngan_hang} - {so_tai_khoan}\n\n🎉 Cảm ơn bạn đã đồng hành cùng ${groupName}! Hẹn gặp lại bạn ở những đơn tiếp theo nhé!`,
     template_help: `@{ten_zalo} 🤖 CÁC LỆNH BOT HỖ TRỢ SĂN SALE & HOÀN TIỀN:\n\n💳 /vitien hoặc #vitien — Xem ví tiền & hoa hồng hiện có\n🛒 /donhang hoặc #donhang — Xem danh sách các đơn đã đặt\n🔍 /tracuu hoặc #tracuu — Link tra cứu chi tiết bảo mật cá nhân\n🏦 /stk_[NGÂN_HÀNG]_[STK] — Lưu STK nhận tiền (VD: /stk_MB_0888728256)\n💸 /ruttien hoặc /rut — Yêu cầu rút toàn bộ hoa hồng khả dụng\n⚡ /duyet_[MÃ_ID] — Lệnh duyệt tiền (Chỉ Trưởng Nhóm)\n\n💡 Mẹo: Bạn chỉ cần gửi LINK sản phẩm Shopee/TikTok vào nhóm, bot sẽ tự động tạo link hoàn tiền ngay! 🥰`,

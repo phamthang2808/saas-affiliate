@@ -414,6 +414,11 @@ const TRIGGER_SCENARIOS = {
     userTime: "09:46",
     botTime: "09:46"
   },
+  template_withdraw_no_bank: {
+    userMsg: "/ruttien",
+    userTime: "09:46",
+    botTime: "09:46"
+  },
   template_approve_payout: {
     userMsg: "/duyet_PO-8291",
     userTime: "09:47",

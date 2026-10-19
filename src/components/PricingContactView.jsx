@@ -51,7 +51,7 @@ export function PricingContactView() {
         "Vận hành siêu nhẹ nhàng: Không tốn thời gian quản lý đối soát ví, tập trung tối đa đẩy số."
       ],
       ctaText: "Liên Hệ Zalo Admin Phạm Thắng",
-      ctaClass: "bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold border border-slate-200/80",
+      ctaClass: "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black shadow-md shadow-blue-500/25",
     },
     {
       id: "299k",
@@ -72,7 +72,7 @@ export function PricingContactView() {
         "Tùy chỉnh mẫu tin nhắn Bot: Trưởng nhóm tự do chỉnh sửa mẫu tin nhắn phản hồi, lời chào và thông báo theo phong cách riêng."
       ],
       ctaText: "Liên Hệ Zalo Admin Phạm Thắng",
-      ctaClass: "bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-black shadow-md shadow-orange-500/25",
+      ctaClass: "bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black shadow-md shadow-orange-500/25",
     },
     {
       id: "399k",
@@ -93,7 +93,7 @@ export function PricingContactView() {
         "Hỗ trợ trỏ tên miền & cài đặt chứng chỉ bảo mật SSL (HTTPS) miễn phí trọn đời."
       ],
       ctaText: "Liên Hệ Zalo Admin Phạm Thắng",
-      ctaClass: "bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold border border-slate-200/80",
+      ctaClass: "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black shadow-md shadow-blue-500/25",
     },
     {
       id: "499k",
@@ -166,7 +166,7 @@ export function PricingContactView() {
           return (
             <div
               key={pkg.id}
-              className={`bg-white rounded-3xl p-6 flex flex-col justify-between space-y-6 relative transition-all duration-300 ${
+              className={`bg-white rounded-3xl p-4.5 sm:p-5 xl:p-6 flex flex-col justify-between space-y-5 relative transition-all duration-300 ${
                 isFeatured
                   ? "border-2 border-orange-500 shadow-xl shadow-orange-500/10 ring-4 ring-orange-500/10 md:-translate-y-1"
                   : isVip
@@ -233,23 +233,24 @@ export function PricingContactView() {
                 </div>
               </div>
 
-              <div className="pt-4 space-y-2">
+              <div className="pt-3">
                 <a
                   href="https://zalo.me/0888728256"
                   target="_blank"
                   rel="noreferrer"
-                  className={`w-full py-3.5 font-extrabold text-xs rounded-xl transition text-center flex items-center justify-center gap-2 cursor-pointer active:scale-95 ${pkg.ctaClass}`}
+                  onClick={(e) => {
+                    window.open("https://zalo.me/0888728256", "_blank", "noopener,noreferrer");
+                  }}
+                  className={`w-full py-3 px-2 rounded-xl transition text-center flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 no-underline shadow-md ${pkg.ctaClass}`}
                 >
-                  <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-black shrink-0">Z</span>
-                  <span>Liên Hệ Zalo Admin Phạm Thắng</span>
-                </a>
-                <a
-                  href="https://zalo.me/0888728256"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="block text-center text-[11px] font-bold text-slate-400 hover:text-slate-700 transition"
-                >
-                  💬 Chat Zalo tư vấn: 0888.728.256
+                  <svg viewBox="0 0 48 48" className="w-5 h-5 shrink-0" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="24" cy="24" r="23" fill={isVip ? "#0f172a" : "#0068FF"}/>
+                    <path d="M12.5 24c0-6.35 5.15-11.5 11.5-11.5s11.5 5.15 11.5 11.5-5.15 11.5-11.5 11.5c-2.05 0-3.97-.54-5.64-1.48L11.5 35.5l1.67-4.3C12.38 29.35 12.5 26.75 12.5 24z" fill="#ffffff" fillOpacity="0.25"/>
+                    <text x="24" y="28.5" fill={isVip ? "#eab308" : "#ffffff"} fontFamily="system-ui, -apple-system, sans-serif" fontSize="12" fontWeight="900" textAnchor="middle">Zalo</text>
+                  </svg>
+                  <span className="text-[12px] sm:text-[12.5px] font-extrabold whitespace-nowrap tracking-tight">
+                    Liên Hệ Zalo Admin Phạm Thắng
+                  </span>
                 </a>
               </div>
             </div>

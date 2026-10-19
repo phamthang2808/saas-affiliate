@@ -39,18 +39,18 @@ export function PricingContactView() {
       tag: "GÓI CHUYỂN ĐỔI 24/7",
       price: "199.000đ",
       period: "/ tháng",
-      desc: "Tự động chuyển đổi link tiếp thị liên kết Shopee & TikTok Shop 24/7 trực tiếp trong nhóm Zalo",
+      desc: "Tự động chuyển đổi link Shopee, ShopeeFood, TikTok & Lazada 24/7 trực tiếp trong nhóm Zalo",
       featured: false,
       isVip: false,
       badge: null,
       features: [
-        "Tự động đổi link mua sắm Shopee & TikTok Shop sang link nhận 100% hoa hồng về tài khoản của bạn.",
+        "Tự động đổi link Shopee, ShopeeFood, TikTok & Lazada sang link nhận 100% hoa hồng về tài khoản của bạn.",
         "Hoạt động tự động 24/7 trong nhóm Zalo, phản hồi tức thì 1-2 giây không cần trực máy.",
         "Tự nhận biết thành viên gửi link trong nhóm để bạn dễ dàng theo dõi hoạt động mua sắm.",
         "Tin nhắn tối ưu mua hàng: Tự động tag tên người gửi, định dạng link ngắn gọn, kích thích bấm mua.",
         "Vận hành siêu nhẹ nhàng: Không tốn thời gian quản lý đối soát ví, tập trung tối đa đẩy số."
       ],
-      ctaText: "Đăng Ký Gói 199k",
+      ctaText: "Liên Hệ Zalo Admin",
       ctaClass: "bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold border border-slate-200/80",
     },
     {
@@ -66,12 +66,12 @@ export function PricingContactView() {
       features: [
         "Bao gồm toàn bộ tính năng chuyển đổi link 24/7 của gói Auto Link.",
         "Cấp Cổng Tra Cứu Khách Hàng chuyên nghiệp trên nền tảng SaaS (28affihub.store/ten-kenh).",
-        "Đầy đủ 16 lệnh Bot Zalo thông minh: Khách tự tra cứu ví (/vitien), đơn (/donhang), rút tiền (/ruttien).",
+        "Bộ lệnh Bot Zalo thông minh: Khách tự tra cứu ví (/vitien), đơn hàng (/donhang), rút tiền (/ruttien)...",
         "Dashboard Quản Trị Trưởng Nhóm: Đăng nhập đối soát đơn, quản lý thành viên & duyệt thanh toán 1-click.",
         "Tùy biến chính sách kênh: Tự cài đặt tỷ lệ chia hoa hồng (80/20, 70/30), trừ thuế TNCN & ngày giữ tiền.",
-        "Duyệt rút tiền tức thì qua Zalo: Trưởng nhóm duyệt chi trả siêu tốc bằng lệnh /duyet_[MÃ_ID]."
+        "Tùy chỉnh mẫu tin nhắn Bot: Trưởng nhóm tự do chỉnh sửa mẫu tin nhắn phản hồi, lời chào và thông báo theo phong cách riêng."
       ],
-      ctaText: "Đăng Ký Gói 299k (Ưu Đãi)",
+      ctaText: "Liên Hệ Zalo Admin",
       ctaClass: "bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-black shadow-md shadow-orange-500/25",
     },
     {
@@ -80,7 +80,7 @@ export function PricingContactView() {
       tag: "TÊN MIỀN RIÊNG BIỆT",
       price: "399.000đ",
       period: "/ tháng",
-      desc: "Sở hữu Website Affiliate hoàn tiền độc lập, chạy trên Tên Miền Riêng biệt (Mô hình Website Mai Lan)",
+      desc: "Sở hữu Website Affiliate hoàn tiền độc lập, vận hành trên Tên Miền Riêng biệt của bạn",
       featured: false,
       isVip: false,
       badge: null,
@@ -88,11 +88,11 @@ export function PricingContactView() {
         "Website Riêng Biệt & Tên Miền Riêng: Cài đặt Web chạy trên domain thương hiệu của bạn (hoantiencuaban.com).",
         "Nhận diện thương hiệu độc quyền 100%: Tùy biến toàn bộ Logo, màu sắc giao diện & banner mang bản sắc riêng.",
         "Hệ thống Web Tra Cứu & Tích Lũy Ví chuyên sâu: Trải nghiệm hoàn hảo trên cả Mobile App Web và Desktop.",
-        "Bảng Quản Trị Admin Web Độc Lập: Phân loại sản phẩm, quản lý đơn Shopee/TikTok & xử lý thanh toán.",
+        "Bảng Quản Trị Admin Web Độc Lập: Phân loại sản phẩm, quản lý đơn Shopee, ShopeeFood, TikTok, Lazada & xử lý thanh toán.",
         "Hạ tầng & Cơ sở dữ liệu riêng biệt: Vận hành ổn định, tải trang siêu tốc, bảo mật tuyệt đối không lo nghẽn mạng.",
         "Hỗ trợ trỏ tên miền & cài đặt chứng chỉ bảo mật SSL (HTTPS) miễn phí trọn đời."
       ],
-      ctaText: "Đăng Ký Gói 399k",
+      ctaText: "Liên Hệ Zalo Admin",
       ctaClass: "bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold border border-slate-200/80",
     },
     {
@@ -101,19 +101,19 @@ export function PricingContactView() {
       tag: "COMBO VIP 2 TRONG 1",
       price: "499.000đ",
       period: "/ tháng",
-      desc: "Giải pháp tối cao: Chuyển đổi link trực tiếp ngay trên Web & Bot Zalo 24/7, kết hợp tên miền riêng & liên kết Google (Mô hình Trần Huyền)",
+      desc: "Giải pháp tối cao: Chuyển đổi link trực tiếp ngay trên Web & Bot Zalo 24/7, kết hợp tên miền riêng & liên kết Google",
       featured: false,
       isVip: true,
       badge: "VIP 2 Trong 1",
       features: [
-        "Chuyển đổi link Đa Nền Tảng (Web & Zalo): Hỗ trợ khách tự dán link chuyển đổi nhận hoàn tiền ngay trên Website và tự động chuyển đổi trong nhóm Zalo 24/7.",
+        "Chuyển đổi link Đa Nền Tảng (Web & Zalo): Hỗ trợ khách tự dán link chuyển đổi nhận hoàn tiền ngay trên Website và tự động chuyển đổi trong nhóm Zalo 24/7 (Shopee, ShopeeFood, TikTok, Lazada).",
         "Website Tên Miền Riêng Độc Quyền: Cài đặt Web chạy trên domain thương hiệu của bạn, giao diện chuẩn SEO và tương thích 100% di động.",
         "Liên kết Tài khoản Song Song: Thành viên Đăng nhập Google 1 chạm trên Web & Liên kết tài khoản Zalo ID mượt mà.",
         "Đồng bộ hóa Ví & Đơn hàng 2 chiều: Khách tra cứu trên Web hay gõ lệnh Zalo (/vitien, /donhang) đều nhận cùng số dư chuẩn 100%.",
         "Thông Báo Biến Động Số Dư Tự Động: Bot tự động gửi tin nhắn riêng cho khách khi đơn hoàn thành hoặc có lệnh duyệt thanh toán.",
         "Hỗ Trợ Kỹ Thuật VIP 1-1 Riêng Biệt: Ưu tiên cập nhật tính năng mới nhất, setup trọn gói A-Z & hỗ trợ kỹ thuật trực tiếp 24/7."
       ],
-      ctaText: "Đăng Ký Gói VIP 499k",
+      ctaText: "Liên Hệ Zalo Admin",
       ctaClass: "bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 text-slate-950 font-black shadow-md shadow-amber-500/25",
     }
   ];
@@ -152,7 +152,7 @@ export function PricingContactView() {
           Bảng Giá Dịch Vụ Cho Thuê Bot Zalo Affiliate & Hệ Thống Website Hoàn Tiền
         </h1>
         <p className="text-xs md:text-sm text-slate-500 max-w-3xl mx-auto font-medium leading-relaxed">
-          Giải pháp công nghệ chuyên biệt cho KOC, Hot Tiktoker, Group Admin & Trưởng Nhóm Affiliate Shopee, TikTok Shop:
+          Giải pháp công nghệ chuyên biệt cho KOC, Group Admin & Trưởng Nhóm Affiliate Shopee, ShopeeFood, TikTok Shop & Lazada:
           Sở hữu cổng tra cứu đơn hàng, ví tiền và Bot Zalo tự động 100%, nâng cao doanh số và tối đa hoa hồng.
         </p>
       </div>
@@ -203,7 +203,7 @@ export function PricingContactView() {
                   >
                     {pkg.tag}
                   </span>
-                  <h3 className="text-xl font-black text-slate-900 mt-2 font-display">{pkg.name}</h3>
+                  <h3 className="text-base sm:text-[17px] font-black text-slate-900 mt-2 font-display whitespace-nowrap">{pkg.name}</h3>
                   <p className="text-xs text-slate-500 mt-1 leading-snug">{pkg.desc}</p>
                 </div>
 
@@ -239,20 +239,21 @@ export function PricingContactView() {
               </div>
 
               <div className="pt-4 space-y-2">
-                <button
-                  type="button"
-                  onClick={() => handleSelectPackage(pkg.id)}
+                <a
+                  href="https://zalo.me/0888728256"
+                  target="_blank"
+                  rel="noreferrer"
                   className={`w-full py-3 font-extrabold text-xs rounded-xl transition text-center block cursor-pointer active:scale-95 ${pkg.ctaClass}`}
                 >
-                  {pkg.ctaText}
-                </button>
+                  <i className="fa-solid fa-comments mr-1.5"></i> {pkg.ctaText}
+                </a>
                 <a
                   href="https://zalo.me/0888728256"
                   target="_blank"
                   rel="noreferrer"
                   className="block text-center text-[11px] font-bold text-slate-400 hover:text-slate-700 transition"
                 >
-                  💬 Hoặc chat Zalo ngay: 0888.728.256
+                  💬 Chat Zalo tư vấn: 0888.728.256
                 </a>
               </div>
             </div>

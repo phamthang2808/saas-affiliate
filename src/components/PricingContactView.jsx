@@ -4,8 +4,7 @@ export function PricingContactView() {
   const [formData, setFormData] = useState({
     name: "",
     zalo: "",
-    facebook: "",
-    shopeePubId: "",
+    package: "299k",
     note: "",
   });
   const [submitted, setSubmitted] = useState(false);
@@ -14,6 +13,14 @@ export function PricingContactView() {
   const notify = (msg, type = "success") => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 4000);
+  };
+
+  const handleSelectPackage = (pkgId) => {
+    setFormData((prev) => ({ ...prev, package: pkgId }));
+    const formElement = document.getElementById("tu-van-form");
+    if (formElement) {
+      formElement.scrollIntoView({ behavior: "smooth" });
+    }
   };
 
   const handleSubmit = (e) => {
@@ -25,8 +32,94 @@ export function PricingContactView() {
     setSubmitted(true);
   };
 
+  const PACKAGES = [
+    {
+      id: "199k",
+      name: "Zalo Bot Auto Link",
+      tag: "GÓI CHUYỂN ĐỔI 24/7",
+      price: "199.000đ",
+      period: "/ tháng",
+      desc: "Tự động chuyển đổi link tiếp thị liên kết Shopee & TikTok Shop 24/7 trực tiếp trong nhóm Zalo",
+      featured: false,
+      isVip: false,
+      badge: null,
+      features: [
+        "Tự động đổi link mua sắm Shopee & TikTok Shop sang link nhận 100% hoa hồng về tài khoản của bạn.",
+        "Hoạt động tự động 24/7 trong nhóm Zalo, phản hồi tức thì 1-2 giây không cần trực máy.",
+        "Tự nhận biết thành viên gửi link trong nhóm để bạn dễ dàng theo dõi hoạt động mua sắm.",
+        "Tin nhắn tối ưu mua hàng: Tự động tag tên người gửi, định dạng link ngắn gọn, kích thích bấm mua.",
+        "Vận hành siêu nhẹ nhàng: Không tốn thời gian quản lý đối soát ví, tập trung tối đa đẩy số."
+      ],
+      ctaText: "Đăng Ký Gói 199k",
+      ctaClass: "bg-slate-100 hover:bg-slate-200 text-slate-800",
+    },
+    {
+      id: "299k",
+      name: "SaaS Zalo Bot Affiliate",
+      tag: "GÓI SAAS PHỔ BIẾN NHẤT",
+      price: "299.000đ",
+      period: "/ tháng",
+      desc: "Bot Zalo + Nền tảng SaaS: Cổng tra cứu ví hoa hồng cho khách & Dashboard quản trị Kênh riêng",
+      featured: true,
+      isVip: false,
+      badge: "Phổ biến nhất",
+      features: [
+        "Bao gồm toàn bộ tính năng chuyển đổi link 24/7 của gói Auto Link.",
+        "Cấp Cổng Tra Cứu Khách Hàng chuyên nghiệp trên nền tảng SaaS (28affihub.store/ten-kenh).",
+        "Đầy đủ 16 lệnh Bot Zalo thông minh: Khách tự tra cứu ví (/vitien), đơn (/donhang), rút tiền (/ruttien).",
+        "Dashboard Quản Trị Trưởng Nhóm: Đăng nhập đối soát đơn, quản lý thành viên & duyệt thanh toán 1-click.",
+        "Tùy biến chính sách kênh: Tự cài đặt tỷ lệ chia hoa hồng (80/20, 70/30), trừ thuế TNCN & ngày giữ tiền.",
+        "Duyệt rút tiền tức thì qua Zalo: Trưởng nhóm duyệt chi trả siêu tốc bằng lệnh /duyet_[MÃ_ID]."
+      ],
+      ctaText: "Đăng Ký Gói 299k (Ưu Đãi)",
+      ctaClass: "bg-white hover:bg-orange-50 text-orange-600 shadow-md",
+    },
+    {
+      id: "399k",
+      name: "Web Brand Độc Lập",
+      tag: "TÊN MIỀN RIÊNG BIỆT",
+      price: "399.000đ",
+      period: "/ tháng",
+      desc: "Sở hữu Website Affiliate hoàn tiền độc lập, chạy trên Tên Miền Riêng biệt (Mô hình Website Mai Lan)",
+      featured: false,
+      isVip: false,
+      badge: null,
+      features: [
+        "Website Riêng Biệt & Tên Miền Riêng: Cài đặt Web chạy trên domain thương hiệu của bạn (hoantiencuaban.com).",
+        "Nhận diện thương hiệu độc quyền 100%: Tùy biến toàn bộ Logo, màu sắc giao diện & banner mang bản sắc riêng.",
+        "Hệ thống Web Tra Cứu & Tích Lũy Ví chuyên sâu: Trải nghiệm hoàn hảo trên cả Mobile App Web và Desktop.",
+        "Bảng Quản Trị Admin Web Độc Lập: Phân loại sản phẩm, quản lý đơn Shopee/TikTok & xử lý thanh toán.",
+        "Hạ tầng & Cơ sở dữ liệu riêng biệt: Vận hành ổn định, tải trang siêu tốc, bảo mật tuyệt đối không lo nghẽn mạng.",
+        "Hỗ trợ trỏ tên miền & cài đặt chứng chỉ bảo mật SSL (HTTPS) miễn phí trọn đời."
+      ],
+      ctaText: "Đăng Ký Gói 399k",
+      ctaClass: "bg-slate-100 hover:bg-slate-200 text-slate-800",
+    },
+    {
+      id: "499k",
+      name: "Omnichannel All-in-One",
+      tag: "HỆ SINH THÁI CAO CẤP",
+      price: "499.000đ",
+      period: "/ tháng",
+      desc: "Giải pháp tối cao: Kết hợp cả Website Tên Miền Riêng + Bot Zalo 24/7, liên kết Google & Zalo (Mô hình Trần Huyền)",
+      featured: false,
+      isVip: true,
+      badge: "VIP Toàn Diện",
+      features: [
+        "Hệ sinh thái Hợp Nhất Đa Kênh: Kết nối đồng thời cả Website tên miền riêng biệt và Bot Zalo chạy 24/7.",
+        "Liên kết Tài khoản Song Song: Thành viên Đăng nhập Google 1 chạm trên Web & Liên kết tài khoản Zalo ID.",
+        "Đồng bộ hóa Ví & Đơn hàng 2 chiều: Khách tra cứu trên Web hay gõ lệnh Zalo đều nhận cùng số dư chuẩn 100%.",
+        "Hệ thống Thông Báo Biến Động Số Dư: Bot tự động gửi tin nhắn riêng cho khách khi đơn hoàn thành hoặc duyệt tiền.",
+        "Tùy biến Mẫu Tin Nhắn Bot & Quy tắc nghiệp vụ độc quyền theo kịch bản kinh doanh riêng của bạn.",
+        "Hỗ Trợ Kỹ Thuật VIP 1-1 Riêng Biệt: Ưu tiên cập nhật tính năng mới nhất & hỗ trợ kỹ thuật trực tiếp 24/7."
+      ],
+      ctaText: "Đăng Ký Gói VIP 499k",
+      ctaClass: "bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-slate-950 font-black shadow-md",
+    }
+  ];
+
   return (
-    <div className="space-y-6 max-w-5xl mx-auto pb-12 relative">
+    <div className="space-y-8 max-w-7xl mx-auto pb-16 relative">
       {/* Toast Banner */}
       {toast && (
         <div className={`fixed top-5 right-5 z-[9999] flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl border text-xs font-black transition-all animate-fade-in ${
@@ -49,161 +142,205 @@ export function PricingContactView() {
           </button>
         </div>
       )}
+
       {/* Hero Header */}
-      <div className="bg-white rounded-3xl border border-slate-200/80 p-6 md:p-8 shadow-xs text-center space-y-3">
-        <div className="inline-flex items-center gap-2 bg-orange-50 text-orange-700 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider">
-          <i className="fa-solid fa-crown text-amber-500"></i> Bảng Giá & Giải Pháp Hợp Tác Trưởng Nhóm
+      <div className="bg-white rounded-3xl border border-slate-200/80 p-6 md:p-10 shadow-xs text-center space-y-3">
+        <div className="inline-flex items-center gap-2 bg-orange-50 text-orange-700 px-3.5 py-1.5 rounded-full text-xs font-black uppercase tracking-wider">
+          <i className="fa-solid fa-crown text-amber-500"></i> Bảng Giá & Nền Tảng Hợp Tác Trưởng Nhóm
         </div>
         <h1 className="text-2xl md:text-4xl font-black text-slate-900 font-display">
-          Bảng Giá Dịch Vụ Cho Thuê Bot Zalo Affiliate & Tạo Website Hoàn Tiền Riêng
+          Bảng Giá Dịch Vụ Cho Thuê Bot Zalo Affiliate & Hệ Thống Website Hoàn Tiền
         </h1>
-        <p className="text-xs md:text-sm text-slate-500 max-w-2xl mx-auto font-medium">
-          Giải pháp công nghệ chuyên biệt cho KOC, Hot Tiktoker, Group Admin & Trưởng Nhóm Affiliate Shopee, TikTok Shop: Sở hữu cổng tra cứu đơn hàng, ví tiền và Bot Zalo tự động 100%.
+        <p className="text-xs md:text-sm text-slate-500 max-w-3xl mx-auto font-medium leading-relaxed">
+          Giải pháp công nghệ chuyên biệt cho KOC, Hot Tiktoker, Group Admin & Trưởng Nhóm Affiliate Shopee, TikTok Shop:
+          Sở hữu cổng tra cứu đơn hàng, ví tiền và Bot Zalo tự động 100%, nâng cao doanh số và tối đa hoa hồng.
         </p>
       </div>
 
-      {/* Pricing Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Package 1: Khởi Đầu */}
-        <div className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs flex flex-col justify-between space-y-6">
-          <div className="space-y-4">
-            <div>
-              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 bg-slate-100 px-2.5 py-1 rounded-md">
-                Gói Trưởng Nhóm Cơ Bản
-              </span>
-              <h3 className="text-xl font-black text-slate-900 mt-2 font-display">Starter Hub</h3>
-              <p className="text-xs text-slate-500 mt-1">Phù hợp Trưởng nhóm mới bắt đầu làm hoàn tiền Shopee & TikTok</p>
+      {/* 4 Pricing Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
+        {PACKAGES.map((pkg) => {
+          if (pkg.featured) {
+            return (
+              <div
+                key={pkg.id}
+                className="rounded-3xl p-6 shadow-xl flex flex-col justify-between space-y-6 relative overflow-hidden text-white"
+                style={{
+                  background: "linear-gradient(135deg, #f97316 0%, #ea580c 100%)",
+                  border: "2px solid #fdba74",
+                }}
+              >
+                {pkg.badge && (
+                  <div className="absolute top-3 right-3 bg-white text-orange-600 text-[10px] font-black uppercase px-3 py-1 rounded-full shadow-xs">
+                    {pkg.badge}
+                  </div>
+                )}
+
+                <div className="space-y-4">
+                  <div>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-orange-100 bg-white/20 px-2.5 py-1 rounded-md">
+                      {pkg.tag}
+                    </span>
+                    <h3 className="text-xl font-black text-white mt-2 font-display">{pkg.name}</h3>
+                    <p className="text-xs text-orange-100 mt-1 leading-snug">{pkg.desc}</p>
+                  </div>
+
+                  <div className="pt-2 pb-1 border-y border-white/20">
+                    <span className="text-3xl font-black font-mono tracking-tight text-white">{pkg.price}</span>
+                    <span className="text-xs text-orange-100 font-semibold">{pkg.period}</span>
+                  </div>
+
+                  <div className="space-y-2.5 text-xs text-white font-medium">
+                    {pkg.features.map((feat, idx) => (
+                      <div key={idx} className="flex items-start gap-2">
+                        <i className="fa-solid fa-circle-check text-amber-200 text-xs shrink-0 mt-0.5"></i>
+                        <span className="leading-relaxed">{feat}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="pt-4 space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => handleSelectPackage(pkg.id)}
+                    className={`w-full py-3 font-black text-xs rounded-xl shadow-md transition text-center block cursor-pointer active:scale-95 ${pkg.ctaClass}`}
+                  >
+                    {pkg.ctaText}
+                  </button>
+                  <a
+                    href="https://zalo.me/0888728256"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block text-center text-[11px] font-bold text-orange-100 hover:text-white transition"
+                  >
+                    💬 Hoặc chat Zalo ngay: 0888.728.256
+                  </a>
+                </div>
+              </div>
+            );
+          }
+
+          if (pkg.isVip) {
+            return (
+              <div
+                key={pkg.id}
+                className="bg-slate-900 text-white rounded-3xl p-6 border-2 border-slate-700/80 shadow-xl flex flex-col justify-between space-y-6 relative overflow-hidden"
+              >
+                {pkg.badge && (
+                  <div className="absolute top-3 right-3 bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 text-[10px] font-black uppercase px-3 py-1 rounded-full shadow-xs">
+                    {pkg.badge}
+                  </div>
+                )}
+
+                <div className="space-y-4">
+                  <div>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-amber-300 bg-amber-500/20 border border-amber-400/30 px-2.5 py-1 rounded-md">
+                      {pkg.tag}
+                    </span>
+                    <h3 className="text-xl font-black text-white mt-2 font-display">{pkg.name}</h3>
+                    <p className="text-xs text-slate-400 mt-1 leading-snug">{pkg.desc}</p>
+                  </div>
+
+                  <div className="pt-2 pb-1 border-y border-slate-800">
+                    <span className="text-3xl font-black font-mono tracking-tight text-amber-400">{pkg.price}</span>
+                    <span className="text-xs text-slate-400 font-semibold">{pkg.period}</span>
+                  </div>
+
+                  <div className="space-y-2.5 text-xs text-slate-300 font-medium">
+                    {pkg.features.map((feat, idx) => (
+                      <div key={idx} className="flex items-start gap-2">
+                        <i className="fa-solid fa-crown text-amber-400 text-xs shrink-0 mt-0.5"></i>
+                        <span className="leading-relaxed">{feat}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="pt-4 space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => handleSelectPackage(pkg.id)}
+                    className={`w-full py-3 font-black text-xs rounded-xl shadow-md transition text-center block cursor-pointer active:scale-95 ${pkg.ctaClass}`}
+                  >
+                    {pkg.ctaText}
+                  </button>
+                  <a
+                    href="https://zalo.me/0888728256"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block text-center text-[11px] font-bold text-slate-400 hover:text-amber-300 transition"
+                  >
+                    💬 Hoặc chat Zalo ngay: 0888.728.256
+                  </a>
+                </div>
+              </div>
+            );
+          }
+
+          return (
+            <div
+              key={pkg.id}
+              className="bg-white rounded-3xl border border-slate-200/90 p-6 shadow-xs flex flex-col justify-between space-y-6 hover:shadow-md transition"
+            >
+              <div className="space-y-4">
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md">
+                    {pkg.tag}
+                  </span>
+                  <h3 className="text-xl font-black text-slate-900 mt-2 font-display">{pkg.name}</h3>
+                  <p className="text-xs text-slate-500 mt-1 leading-snug">{pkg.desc}</p>
+                </div>
+
+                <div className="pt-2 pb-1 border-y border-slate-100">
+                  <span className="text-3xl font-black font-mono tracking-tight text-slate-900">{pkg.price}</span>
+                  <span className="text-xs text-slate-400 font-semibold">{pkg.period}</span>
+                </div>
+
+                <div className="space-y-2.5 text-xs text-slate-600 font-medium">
+                  {pkg.features.map((feat, idx) => (
+                    <div key={idx} className="flex items-start gap-2">
+                      <i className="fa-solid fa-check text-emerald-500 text-xs shrink-0 mt-0.5"></i>
+                      <span className="leading-relaxed">{feat}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-4 space-y-2">
+                <button
+                  type="button"
+                  onClick={() => handleSelectPackage(pkg.id)}
+                  className={`w-full py-3 font-extrabold text-xs rounded-xl transition text-center block cursor-pointer active:scale-95 ${pkg.ctaClass}`}
+                >
+                  {pkg.ctaText}
+                </button>
+                <a
+                  href="https://zalo.me/0888728256"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="block text-center text-[11px] font-bold text-slate-400 hover:text-slate-700 transition"
+                >
+                  💬 Hoặc chat Zalo ngay: 0888.728.256
+                </a>
+              </div>
             </div>
-
-            <div className="border-t border-slate-100 pt-4 space-y-2.5 text-xs text-slate-600 font-medium">
-              <div className="flex items-center gap-2">
-                <i className="fa-solid fa-check text-emerald-500"></i> Cấp 1 Cổng tra cứu riêng (<code className="text-orange-600 font-mono">28affihub.com/tenban</code>)
-              </div>
-              <div className="flex items-center gap-2">
-                <i className="fa-solid fa-check text-emerald-500"></i> 1 Bot Zalo tự động tạo link hoàn tiền
-              </div>
-              <div className="flex items-center gap-2">
-                <i className="fa-solid fa-check text-emerald-500"></i> Trang Trưởng Nhóm duyệt rút tiền & quản lý đơn
-              </div>
-              <div className="flex items-center gap-2">
-                <i className="fa-solid fa-check text-emerald-500"></i> Tự động tính thuế & chia tỷ lệ 8-2
-              </div>
-              <div className="flex items-center gap-2 text-slate-400">
-                <i className="fa-solid fa-xmark text-slate-300"></i> Chưa hỗ trợ Tên miền .com/.vn riêng
-              </div>
-            </div>
-          </div>
-
-          <a
-            href="https://zalo.me/0888728256"
-            target="_blank"
-            rel="noreferrer"
-            className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-900 font-extrabold text-xs rounded-xl transition text-center block"
-          >
-            Liên Hệ Tư Vấn Zalo
-          </a>
-        </div>
-
-        {/* Package 2: Chuyên Nghiệp (Highlight) */}
-        <div
-          className="rounded-3xl p-6 shadow-xl flex flex-col justify-between space-y-6 relative overflow-hidden text-white"
-          style={{
-            background: "linear-gradient(135deg, #f97316 0%, #ea580c 100%)",
-            border: "2px solid #fdba74",
-          }}
-        >
-          <div className="absolute top-3 right-3 bg-white text-orange-600 text-[9px] font-black uppercase px-2.5 py-1 rounded-full shadow-xs">
-            Phổ biến nhất
-          </div>
-
-          <div className="space-y-4">
-            <div>
-              <span className="text-[10px] font-black uppercase tracking-wider text-orange-100 bg-white/20 px-2.5 py-1 rounded-md">
-                Gói Nhóm Lớn
-              </span>
-              <h3 className="text-xl font-black text-white mt-2 font-display">Pro Brand Hub</h3>
-              <p className="text-xs text-orange-100 mt-1">Hệ thống trọn gói tên miền riêng & tùy biến giao diện</p>
-            </div>
-
-            <div className="border-t border-white/20 pt-4 space-y-2.5 text-xs text-white font-medium">
-              <div className="flex items-center gap-2">
-                <i className="fa-solid fa-circle-check text-amber-200"></i> Hỗ trợ Tên miền riêng (<code className="bg-white/20 px-1 rounded font-mono">hoantiencuaban.com</code>)
-              </div>
-              <div className="flex items-center gap-2">
-                <i className="fa-solid fa-circle-check text-amber-200"></i> Bot Zalo chạy trên Server riêng 24/7
-              </div>
-              <div className="flex items-center gap-2">
-                <i className="fa-solid fa-circle-check text-amber-200"></i> Tùy chỉnh màu sắc & tên thương hiệu riêng
-              </div>
-              <div className="flex items-center gap-2">
-                <i className="fa-solid fa-circle-check text-amber-200"></i> Cấu hình tỷ lệ chia % và thuế linh hoạt
-              </div>
-              <div className="flex items-center gap-2">
-                <i className="fa-solid fa-circle-check text-amber-200"></i> Bảo trì & hỗ trợ kỹ thuật 24/7 trực tiếp
-              </div>
-            </div>
-          </div>
-
-          <a
-            href="https://zalo.me/0888728256"
-            target="_blank"
-            rel="noreferrer"
-            className="w-full py-3 bg-white text-orange-600 hover:bg-orange-50 font-black text-xs rounded-xl shadow-md transition text-center block"
-          >
-            Đăng Ký Thuê Ngay (Ưu Đãi)
-          </a>
-        </div>
-
-        {/* Package 3: Doanh Nghiệp */}
-        <div className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs flex flex-col justify-between space-y-6">
-          <div className="space-y-4">
-            <div>
-              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 bg-slate-100 px-2.5 py-1 rounded-md">
-                Agency / MCN
-              </span>
-              <h3 className="text-xl font-black text-slate-900 mt-2 font-display">Enterprise Hub</h3>
-              <p className="text-xs text-slate-500 mt-1">Dành cho công ty truyền thông & hệ thống đa Trưởng Nhóm</p>
-            </div>
-
-            <div className="border-t border-slate-100 pt-4 space-y-2.5 text-xs text-slate-600 font-medium">
-              <div className="flex items-center gap-2">
-                <i className="fa-solid fa-check text-emerald-500"></i> Không giới hạn số lượng Trưởng Nhóm
-              </div>
-              <div className="flex items-center gap-2">
-                <i className="fa-solid fa-check text-emerald-500"></i> Tích hợp API Shopee / TikTok Shop tự động
-              </div>
-              <div className="flex items-center gap-2">
-                <i className="fa-solid fa-check text-emerald-500"></i> Cơ sở dữ liệu riêng biệt tốc độ cao
-              </div>
-              <div className="flex items-center gap-2">
-                <i className="fa-solid fa-check text-emerald-500"></i> Xuất hóa đơn & hợp đồng dịch vụ
-              </div>
-            </div>
-          </div>
-
-          <a
-            href="https://zalo.me/0888728256"
-            target="_blank"
-            rel="noreferrer"
-            className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-900 font-extrabold text-xs rounded-xl transition text-center block"
-          >
-            Liên Hệ Báo Giá Doanh Nghiệp
-          </a>
-        </div>
+          );
+        })}
       </div>
 
       {/* Contact Form & Direct Zalo Box */}
-      <div className="bg-white rounded-3xl border border-slate-200/80 p-6 md:p-8 shadow-xs">
+      <div id="tu-van-form" className="bg-white rounded-3xl border border-slate-200/80 p-6 md:p-10 shadow-xs">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
           <div className="space-y-4">
             <div className="inline-flex items-center gap-2 bg-orange-50 text-orange-700 px-3 py-1 rounded-full text-xs font-black uppercase">
-              <i className="fa-solid fa-headset text-orange-500"></i> Hỗ Trợ Trực Tiếp
+              <i className="fa-solid fa-headset text-orange-500"></i> Hỗ Trợ Trực Tiếp 24/7
             </div>
             <h3 className="text-xl md:text-2xl font-black text-slate-900 font-display">
               Liên Hệ Trực Tiếp Với Đội Ngũ Phát Triển 28AffiHub
             </h3>
             <p className="text-xs text-slate-600 leading-relaxed font-medium">
-              Chúng tôi luôn sẵn sàng lắng nghe nhu cầu và setup hệ thống cho Trưởng Nhóm trong vòng 15 phút.
+              Chúng tôi luôn sẵn sàng lắng nghe nhu cầu và setup hệ thống bot & website hoàn tiền riêng cho Trưởng Nhóm trong vòng 15 phút.
             </p>
 
             <div className="space-y-3 pt-2 text-xs font-bold text-slate-700">
@@ -213,38 +350,55 @@ export function PricingContactView() {
                 rel="noreferrer"
                 className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 hover:bg-orange-50/50 border border-slate-200/60 transition cursor-pointer"
               >
-                <div className="w-8 h-8 rounded-xl bg-blue-500 text-white flex items-center justify-center text-sm font-black shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-blue-500 text-white flex items-center justify-center text-sm font-black shrink-0">
                   Z
                 </div>
                 <div>
-                  <div className="text-[10px] text-slate-400 font-bold uppercase">ZALO HỖ TRỢ / BÁO GIÁ</div>
-                  <div className="text-slate-900 font-black">0888.728.256 (Phạm Thắng)</div>
+                  <div className="text-[10px] text-slate-400 font-bold uppercase">ZALO HỖ TRỢ / BÁO GIÁ TRỰC TIẾP</div>
+                  <div className="text-slate-900 font-black text-sm">0888.728.256 (Phạm Thắng)</div>
                 </div>
               </a>
 
               <div className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 border border-slate-200/60">
-                <div className="w-8 h-8 rounded-xl bg-orange-500 text-white flex items-center justify-center text-sm">
+                <div className="w-9 h-9 rounded-xl bg-orange-500 text-white flex items-center justify-center text-sm shrink-0">
                   <i className="fa-solid fa-envelope"></i>
                 </div>
                 <div>
-                  <div className="text-[10px] text-slate-400 font-bold uppercase">EMAIL LIÊN HỆ</div>
-                  <div className="text-slate-900 font-black">thangcutehuhu2808@gmail.com</div>
+                  <div className="text-[10px] text-slate-400 font-bold uppercase">EMAIL HỖ TRỢ KỸ THUẬT</div>
+                  <div className="text-slate-900 font-black text-sm">thangcutehuhu2808@gmail.com</div>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Quick Request Form */}
-          <div className="bg-slate-50 rounded-2xl border border-slate-200/80 p-6">
-            <h4 className="font-extrabold text-slate-900 text-sm mb-4">Gửi Yêu Cầu Tư Vấn Setup Nhóm</h4>
+          <div className="bg-slate-50 rounded-2xl border border-slate-200/80 p-6 sm:p-7">
+            <h4 className="font-extrabold text-slate-900 text-sm mb-4 flex items-center gap-2">
+              <i className="fa-solid fa-paper-plane text-orange-500"></i>
+              <span>Gửi Yêu Cầu Tư Vấn & Setup Hệ Thống</span>
+            </h4>
             {submitted ? (
               <div className="p-6 bg-emerald-50 border border-emerald-200 rounded-2xl text-center space-y-2 text-emerald-800">
                 <i className="fa-solid fa-circle-check text-3xl text-emerald-500"></i>
                 <p className="font-extrabold text-sm">Cảm ơn sếp đã gửi thông tin!</p>
-                <p className="text-xs text-emerald-600">Đội ngũ kỹ thuật 28AffiHub sẽ liên hệ qua Zalo trong ít phút.</p>
+                <p className="text-xs text-emerald-600">Đội ngũ kỹ thuật 28AffiHub sẽ liên hệ qua Zalo trong ít phút để kích hoạt Kênh.</p>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-3">
+              <form onSubmit={handleSubmit} className="space-y-3.5">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-500 mb-1">Gói dịch vụ bạn quan tâm</label>
+                  <select
+                    value={formData.package}
+                    onChange={(e) => setFormData({ ...formData, package: e.target.value })}
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-orange-500"
+                  >
+                    <option value="199k">Gói 199.000đ/tháng — Zalo Bot Auto Link (Chuyển đổi 24/7)</option>
+                    <option value="299k">Gói 299.000đ/tháng — SaaS Zalo Bot Affiliate (Phổ biến nhất)</option>
+                    <option value="399k">Gói 399.000đ/tháng — Web Brand Độc Lập (Tên miền riêng)</option>
+                    <option value="499k">Gói 499.000đ/tháng — Omnichannel All-in-One (Web + Zalo + Google Auth)</option>
+                  </select>
+                </div>
+
                 <div>
                   <label className="block text-[11px] font-bold text-slate-500 mb-1">Họ và tên của bạn</label>
                   <input
@@ -253,7 +407,7 @@ export function PricingContactView() {
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     placeholder="VD: Nguyễn Văn A..."
-                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-orange-500"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-orange-500"
                   />
                 </div>
 
@@ -265,24 +419,24 @@ export function PricingContactView() {
                     value={formData.zalo}
                     onChange={(e) => setFormData({ ...formData, zalo: e.target.value })}
                     placeholder="VD: 0988xxxxxx..."
-                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-orange-500"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-orange-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-500 mb-1">Tên nhóm mong muốn</label>
+                  <label className="block text-[11px] font-bold text-slate-500 mb-1">Tên nhóm / Tên miền mong muốn</label>
                   <textarea
                     rows={2}
                     value={formData.note}
                     onChange={(e) => setFormData({ ...formData, note: e.target.value })}
-                    placeholder="VD: Mình muốn tạo nhóm hoantien28.store/nhuy và 1 bot Zalo..."
+                    placeholder="VD: Mình muốn tạo kênh hoantien28.store/nhuy hoặc tên miền hoantiencuaban.com..."
                     className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 outline-none focus:border-orange-500"
                   />
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full py-3 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black text-xs rounded-xl shadow-md transition cursor-pointer"
+                  className="w-full py-3 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black text-xs rounded-xl shadow-md transition cursor-pointer active:scale-95"
                 >
                   Gửi Yêu Cầu Cho Đội Kỹ Thuật
                 </button>

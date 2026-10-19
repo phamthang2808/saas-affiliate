@@ -666,6 +666,137 @@ export function MemberDetailModal({
     }
   };
 
+  // API Xóa yêu cầu rút tiền
+  const handleDeletePayout = async (payoutId, payoutInfo) => {
+    if (!tenantSlug) return;
+    const amountStr = payoutInfo?.amount ? formatMoney(payoutInfo.amount) : "";
+    if (
+      !window.confirm(
+        `⚠️ Bạn có chắc chắn muốn XÓA lệnh rút tiền #${payoutId}${amountStr ? ` (${amountStr})` : ""}?
+\nThao tác này sẽ xóa vĩnh viễn lệnh rút tiền khỏi hệ thống và không thể hoàn tác!`
+      )
+    ) {
+      return;
+    }
+
+    setProcessingPayoutId(payoutId);
+    try {
+      const res = await fetch(`${apiRoot}/api/saas/admin/${tenantSlug}/payouts/${payoutId}`, {
+        method: "DELETE",
+        headers: authHeaders || {},
+      });
+      const data = await res.json();
+      if (res.ok) {
+        const msg = data.message || `Đã xóa lệnh rút tiền #${payoutId}`;
+        if (showNotification) showNotification("🗑️ " + msg, "success");
+        else alert("🗑️ " + msg);
+        await refreshLiveData();
+        if (onOrdersUpdated) onOrdersUpdated();
+      } else {
+        const errMsg = data.message || "Lỗi khi xóa lệnh rút tiền";
+        if (showNotification) showNotification("❌ " + errMsg, "error");
+        else alert("❌ " + errMsg);
+      }
+    } catch (err) {
+      if (showNotification) showNotification("❌ Lỗi máy chủ: " + err.message, "error");
+      else alert("❌ Lỗi: " + err.message);
+    } finally {
+      setProcessingPayoutId(null);
+    }
+  };
+
+  // API Xóa 1 đơn hàng cụ thể
+  const handleDeleteSingleOrder = async (orderId, orderCode) => {
+    if (!tenantSlug) return;
+    const codeDisplay = orderCode || `#${orderId}`;
+    if (
+      !window.confirm(
+        `⚠️ Bạn có chắc chắn muốn XÓA đơn hàng ${codeDisplay}?
+\nThao tác này sẽ xóa vĩnh viễn đơn hàng khỏi hệ thống và không thể hoàn tác!`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`${apiRoot}/api/saas/admin/${tenantSlug}/orders/${orderId}`, {
+        method: "DELETE",
+        headers: authHeaders || {},
+      });
+      const data = await res.json();
+      if (res.ok) {
+        const msg = data.message || `Đã xóa đơn hàng ${codeDisplay}`;
+        if (showNotification) showNotification("🗑️ " + msg, "success");
+        else alert("🗑️ " + msg);
+        setSelectedOrderIds((prev) => {
+          const next = new Set(prev);
+          next.delete(getOrderKey({ id: orderId, orderId: orderCode }));
+          return next;
+        });
+        await refreshLiveData();
+        if (onOrdersUpdated) onOrdersUpdated();
+      } else {
+        const errMsg = data.message || "Lỗi khi xóa đơn hàng";
+        if (showNotification) showNotification("❌ " + errMsg, "error");
+        else alert("❌ " + errMsg);
+      }
+    } catch (err) {
+      if (showNotification) showNotification("❌ Lỗi máy chủ: " + err.message, "error");
+      else alert("❌ Lỗi: " + err.message);
+    }
+  };
+
+  // API Xóa nhiều đơn hàng đã chọn
+  const handleDeleteSelectedOrders = async () => {
+    if (!tenantSlug) return;
+    if (selectedOrdersList.length === 0) {
+      if (showNotification) showNotification("⚠️ Vui lòng tích chọn ít nhất 1 đơn hàng!", "error");
+      else alert("Vui lòng tích chọn ít nhất 1 đơn hàng!");
+      return;
+    }
+
+    if (
+      !window.confirm(
+        `⚠️ BẠN CÓ CHẮC CHẮN MUỐN XÓA ${selectedOrdersList.length} ĐƠN HÀNG ĐÃ CHỌN?\n\nThao tác này sẽ xóa vĩnh viễn các đơn hàng này khỏi hệ thống và không thể hoàn tác!`
+      )
+    ) {
+      return;
+    }
+
+    const orderDbIds = selectedOrdersList.map((o) => o.id).filter(Boolean);
+    if (orderDbIds.length === 0) {
+      if (showNotification) showNotification("❌ Không tìm thấy ID đơn hàng hợp lệ để xóa!", "error");
+      return;
+    }
+
+    try {
+      const res = await fetch(`${apiRoot}/api/saas/admin/${tenantSlug}/orders/delete-multiple`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(authHeaders || {}),
+        },
+        body: JSON.stringify({ orderIds: orderDbIds }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        const msg = data.message || `Đã xóa ${orderDbIds.length} đơn hàng thành công!`;
+        if (showNotification) showNotification("🗑️ " + msg, "success");
+        else alert("🗑️ " + msg);
+        setSelectedOrderIds(new Set());
+        await refreshLiveData();
+        if (onOrdersUpdated) onOrdersUpdated();
+      } else {
+        const errMsg = data.message || "Lỗi khi xóa đơn hàng";
+        if (showNotification) showNotification("❌ " + errMsg, "error");
+        else alert("❌ " + errMsg);
+      }
+    } catch (err) {
+      if (showNotification) showNotification("❌ Lỗi máy chủ: " + err.message, "error");
+      else alert("❌ Lỗi: " + err.message);
+    }
+  };
+
   // API Tạo & Duyệt lệnh rút tiền thủ công (Admin tự chi trả)
   const handleCreateManualPayout = async (e) => {
     e.preventDefault();
@@ -1242,6 +1373,16 @@ export function MemberDetailModal({
 
                 <button
                   type="button"
+                  onClick={handleDeleteSelectedOrders}
+                  className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-700 border border-rose-200 text-xs font-bold rounded-xl transition cursor-pointer flex items-center gap-1.5"
+                  title="Xóa toàn bộ các đơn hàng đang chọn khỏi hệ thống"
+                >
+                  <i className="fa-solid fa-trash-can text-[11px]"></i>
+                  <span>Xóa đã chọn ({selectedOrderIds.size})</span>
+                </button>
+
+                <button
+                  type="button"
                   onClick={() => setSelectedOrderIds(new Set())}
                   className="text-xs text-slate-400 hover:text-slate-600 font-bold px-2 py-1 cursor-pointer"
                 >
@@ -1356,12 +1497,13 @@ export function MemberDetailModal({
                   <th className="px-2.5 py-2.5 font-black text-slate-700 whitespace-nowrap text-right">Khách nhận ({customerSplitRate}%)</th>
                   <th className="px-2.5 py-2.5 font-black text-slate-700 whitespace-nowrap">Thời gian</th>
                   <th className="px-2.5 py-2.5 font-black text-slate-700 whitespace-nowrap text-center">Trạng thái</th>
+                  <th className="px-2 py-2.5 font-black text-slate-700 whitespace-nowrap text-center">Thao tác</th>
                 </tr>
               </thead>
               <tbody>
                 {paginatedOrders.length === 0 ? (
                   <tr>
-                    <td colSpan="10" className="px-4 py-10 text-center text-slate-400 font-bold">
+                    <td colSpan="11" className="px-4 py-10 text-center text-slate-400 font-bold">
                       Không có đơn hàng nào phù hợp với bộ lọc này.
                     </td>
                   </tr>
@@ -1446,6 +1588,16 @@ export function MemberDetailModal({
                             {stBadge.text}
                           </span>
                         </td>
+                        <td className="px-2 py-2 text-center whitespace-nowrap">
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteSingleOrder(o.id, o.orderId)}
+                            className="w-7 h-7 inline-flex items-center justify-center rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition cursor-pointer"
+                            title={`Xóa đơn hàng ${o.orderId || o.id}`}
+                          >
+                            <i className="fa-solid fa-trash-can text-xs"></i>
+                          </button>
+                        </td>
                       </tr>
                     );
                   })
@@ -1474,7 +1626,7 @@ export function MemberDetailModal({
                     <td className="px-2.5 py-2.5 text-right font-black text-orange-600 whitespace-nowrap">
                       {formatMoney(pageTotalFinal)}
                     </td>
-                    <td colSpan="2" className="px-2.5 py-2.5 text-center text-slate-400 font-bold text-[11px] whitespace-nowrap">
+                    <td colSpan="3" className="px-2.5 py-2.5 text-center text-slate-400 font-bold text-[11px] whitespace-nowrap">
                       Trang {safePage}/{totalPages}
                     </td>
                   </tr>
@@ -1838,37 +1990,48 @@ export function MemberDetailModal({
                               </span>
                             </td>
                             <td className="px-3.5 py-3 text-right whitespace-nowrap">
-                              {isPending ? (
-                                <div className="flex items-center justify-end gap-1.5">
-                                  <button
-                                    type="button"
-                                    disabled={isProcessing}
-                                    onClick={() => handleApprovePayout(p.id)}
-                                    className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-black text-xs cursor-pointer shadow-2xs transition disabled:opacity-50 flex items-center gap-1"
-                                    title="Xác nhận Đã Chuyển Tiền"
-                                  >
-                                    <i className="fa-solid fa-check text-[10px]"></i>
-                                    <span>Duyệt CK</span>
-                                  </button>
-                                  <button
-                                    type="button"
-                                    disabled={isProcessing}
-                                    onClick={() => handleRejectPayout(p.id)}
-                                    className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg font-bold text-xs border border-rose-200 cursor-pointer transition disabled:opacity-50"
-                                    title="Từ chối yêu cầu rút tiền"
-                                  >
-                                    Từ chối
-                                  </button>
-                                </div>
-                              ) : isCompleted ? (
-                                <span className="text-[11px] font-bold text-emerald-600 inline-flex items-center gap-1">
-                                  <i className="fa-solid fa-check-double text-[10px]"></i> Đã CK
-                                </span>
-                              ) : (
-                                <span className="text-[11px] font-bold text-rose-500">
-                                  Đã hủy
-                                </span>
-                              )}
+                              <div className="flex items-center justify-end gap-1.5">
+                                {isPending ? (
+                                  <>
+                                    <button
+                                      type="button"
+                                      disabled={isProcessing}
+                                      onClick={() => handleApprovePayout(p.id)}
+                                      className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-black text-xs cursor-pointer shadow-2xs transition disabled:opacity-50 flex items-center gap-1"
+                                      title="Xác nhận Đã Chuyển Tiền"
+                                    >
+                                      <i className="fa-solid fa-check text-[10px]"></i>
+                                      <span>Duyệt CK</span>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      disabled={isProcessing}
+                                      onClick={() => handleRejectPayout(p.id)}
+                                      className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg font-bold text-xs border border-rose-200 cursor-pointer transition disabled:opacity-50"
+                                      title="Từ chối yêu cầu rút tiền"
+                                    >
+                                      Từ chối
+                                    </button>
+                                  </>
+                                ) : isCompleted ? (
+                                  <span className="text-[11px] font-bold text-emerald-600 inline-flex items-center gap-1">
+                                    <i className="fa-solid fa-check-double text-[10px]"></i> Đã CK
+                                  </span>
+                                ) : (
+                                  <span className="text-[11px] font-bold text-rose-500">
+                                    Đã hủy
+                                  </span>
+                                )}
+                                <button
+                                  type="button"
+                                  disabled={isProcessing}
+                                  onClick={() => handleDeletePayout(p.id, p)}
+                                  className="w-7 h-7 inline-flex items-center justify-center rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition cursor-pointer"
+                                  title="Xóa lệnh rút tiền này"
+                                >
+                                  <i className="fa-solid fa-trash-can text-xs"></i>
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         );

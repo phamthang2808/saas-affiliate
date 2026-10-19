@@ -271,6 +271,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
   // Modal Gán / Liên kết đơn hàng
   const [selectedOrderToAssign, setSelectedOrderToAssign] = useState(null);
   const [assignZaloId, setAssignZaloId] = useState("");
+  const [assignSearchQuery, setAssignSearchQuery] = useState("");
   const [isSubmittingAssign, setIsSubmittingAssign] = useState(false);
 
   // Import Excel & TikTok Sync state
@@ -803,6 +804,115 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
     }
   };
 
+  const handleDeletePayout = async (payoutId, payoutInfo) => {
+    if (!activeTenant?.slug) {
+      showNotification("❌ Chưa xác định được Kênh Trưởng Nhóm!", "error");
+      return;
+    }
+    const amountStr = payoutInfo?.amount ? formatMoney(payoutInfo.amount) : "";
+    if (
+      !window.confirm(
+        `⚠️ Bạn có chắc chắn muốn XÓA lệnh rút tiền #${payoutId}${amountStr ? ` (${amountStr})` : ""}?
+\nThao tác này sẽ xóa vĩnh viễn lệnh rút tiền khỏi hệ thống và không thể hoàn tác!`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`${apiRoot}/api/saas/admin/${activeTenant.slug}/payouts/${payoutId}`, {
+        method: "DELETE",
+        headers: authHeaders,
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showNotification("🗑️ " + (data.message || `Đã xóa lệnh rút tiền #${payoutId} thành công!`), "success");
+        setPayouts((prev) => prev.filter((p) => p.id !== payoutId));
+        fetchTenantData();
+      } else {
+        showNotification("❌ " + (data.message || "Lỗi khi xóa lệnh rút tiền"), "error");
+      }
+    } catch (err) {
+      showNotification("❌ Lỗi kết nối máy chủ: " + err.message, "error");
+    }
+  };
+
+  const handleDeleteSingleOrder = async (orderId, orderCode) => {
+    if (!activeTenant?.slug) {
+      showNotification("❌ Chưa xác định được Kênh Trưởng Nhóm!", "error");
+      return;
+    }
+    const codeDisplay = orderCode || `#${orderId}`;
+    if (
+      !window.confirm(
+        `⚠️ Bạn có chắc chắn muốn XÓA đơn hàng ${codeDisplay}?
+\nThao tác này sẽ xóa vĩnh viễn đơn hàng này khỏi hệ thống và không thể hoàn tác!`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`${apiRoot}/api/saas/admin/${activeTenant.slug}/orders/${orderId}`, {
+        method: "DELETE",
+        headers: authHeaders,
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showNotification("🗑️ " + (data.message || `Đã xóa đơn hàng ${codeDisplay} thành công!`), "success");
+        setOrders((prev) => prev.filter((o) => o.id !== orderId));
+        setSelectedOrderIds((prev) => {
+          const next = new Set(prev);
+          next.delete(orderId);
+          return next;
+        });
+        fetchTenantData();
+      } else {
+        showNotification("❌ " + (data.message || "Lỗi khi xóa đơn hàng"), "error");
+      }
+    } catch (err) {
+      showNotification("❌ Lỗi kết nối máy chủ: " + err.message, "error");
+    }
+  };
+
+  const handleDeleteSelectedOrders = async () => {
+    if (!activeTenant?.slug) {
+      showNotification("❌ Chưa xác định được Kênh Trưởng Nhóm!", "error");
+      return;
+    }
+    if (selectedOrderIds.size === 0) {
+      showNotification("⚠️ Vui lòng tích chọn ít nhất 1 đơn hàng để xóa!", "error");
+      return;
+    }
+
+    if (
+      !window.confirm(
+        `⚠️ BẠN CÓ CHẮC CHẮN MUỐN XÓA ${selectedOrderIds.size} ĐƠN HÀNG ĐÃ CHỌN?\n\nThao tác này sẽ xóa vĩnh viễn các đơn hàng này khỏi hệ thống và không thể hoàn tác!`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`${apiRoot}/api/saas/admin/${activeTenant.slug}/orders/delete-multiple`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders },
+        body: JSON.stringify({ orderIds: Array.from(selectedOrderIds) }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showNotification("🗑️ " + (data.message || `Đã xóa ${selectedOrderIds.size} đơn hàng thành công!`), "success");
+        setOrders((prev) => prev.filter((o) => !selectedOrderIds.has(o.id)));
+        setSelectedOrderIds(new Set());
+        fetchTenantData();
+      } else {
+        showNotification("❌ " + (data.message || "Lỗi khi xóa các đơn hàng đã chọn"), "error");
+      }
+    } catch (err) {
+      showNotification("❌ Lỗi kết nối máy chủ: " + err.message, "error");
+    }
+  };
+
   const handleDeleteMember = async (member) => {
     if (!activeTenant?.slug || !member) return;
     const name = member.zaloName || member.zalo_name || member.zaloId || "thành viên này";
@@ -942,6 +1052,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
         showNotification("✅ " + (data.message || "Đã gán đơn hàng cho thành viên thành công! 🎉"), "success");
         setSelectedOrderToAssign(null);
         setAssignZaloId("");
+        setAssignSearchQuery("");
         fetchTenantData();
       } else {
         showNotification("❌ " + (data.message || "Lỗi gán đơn hàng"), "error");
@@ -1352,6 +1463,32 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
       );
     });
   }, [zaloUsers, memberSearch]);
+
+  // Danh sách thành viên lọc cho Modal Gán Đơn hàng
+  const filteredAssignUsers = useMemo(() => {
+    const list = Array.isArray(zaloUsers) ? zaloUsers : [];
+    const q = String(assignSearchQuery || "").toLowerCase().trim();
+    if (!q) return list;
+    const qNoAccent = removeAccents(q);
+
+    return list.filter((u) => {
+      if (!u) return false;
+      const zaloId = String(u.zaloId || u.zalo_id || "").toLowerCase();
+      const zaloName = String(u.zaloName || u.zalo_name || "").toLowerCase();
+      const bankName = String(u.bankName || u.bank_name || "").toLowerCase();
+      const accountNumber = String(u.accountNumber || u.account_number || "").toLowerCase();
+      const accountName = String(u.accountName || u.account_name || "").toLowerCase();
+
+      return (
+        zaloId.includes(q) ||
+        zaloName.includes(q) ||
+        bankName.includes(q) ||
+        accountNumber.includes(q) ||
+        accountName.includes(q) ||
+        removeAccents(zaloName).includes(qNoAccent)
+      );
+    });
+  }, [zaloUsers, assignSearchQuery]);
 
   const memberItemsPerPage = 20;
   const totalMemberPages = Math.max(1, Math.ceil(filteredMembers.length / memberItemsPerPage));
@@ -2522,6 +2659,14 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                             </button>
                           </>
                         )}
+                        <button
+                          type="button"
+                          onClick={() => handleDeletePayout(p.id, p)}
+                          className="px-2.5 py-1.5 bg-slate-100 hover:bg-rose-50 text-slate-500 hover:text-rose-600 rounded-xl font-bold text-xs cursor-pointer border border-slate-200 hover:border-rose-200 transition inline-flex items-center gap-1"
+                          title="Xóa lệnh rút tiền này"
+                        >
+                          <i className="fa-solid fa-trash-can text-[11px]"></i> Xóa
+                        </button>
                       </td>
                     </tr>
                   ))
@@ -2986,12 +3131,13 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                     <th className="px-2.5 py-3 text-right whitespace-nowrap">Sau thuế</th>
                     <th className="px-2.5 py-3 text-right text-orange-600 whitespace-nowrap">Khách ({customerSplitRate}%)</th>
                     <th className="px-2.5 py-3 text-right text-orange-600 whitespace-nowrap">Admin ({adminSplitRate}%)</th>
+                    <th className="px-2 py-3 text-center whitespace-nowrap">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
                   {filteredOrders.length === 0 ? (
                     <tr>
-                      <td colSpan={11} className="p-12 text-center text-slate-400 font-bold">
+                      <td colSpan={12} className="p-12 text-center text-slate-400 font-bold">
                         <i className="fa-solid fa-folder-open text-2xl text-slate-300 mb-2 block"></i>
                         Không tìm thấy đơn hàng nào khớp với bộ lọc
                       </td>
@@ -3054,6 +3200,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                                   onClick={() => {
                                     setSelectedOrderToAssign(o);
                                     setAssignZaloId(o.zaloId || buyer.zaloId || "");
+                                    setAssignSearchQuery("");
                                   }}
                                   className="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-700 hover:text-slate-900 bg-slate-100/90 hover:bg-slate-200/90 px-2 py-0.5 rounded-md border border-slate-200/80 cursor-pointer transition shadow-2xs"
                                   title="Đổi / Gán đơn này cho thành viên Zalo"
@@ -3135,6 +3282,16 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                             <td className="px-2.5 py-2.5 text-right font-mono font-bold text-slate-800 text-xs whitespace-nowrap">{formatMoney(afterTaxVal)}</td>
                             <td className="px-2.5 py-2.5 text-right font-mono font-black text-orange-600 text-xs whitespace-nowrap">{formatMoney(userFinalVal)}</td>
                             <td className="px-2.5 py-2.5 text-right font-mono font-black text-orange-600 text-xs whitespace-nowrap">{formatMoney(adminProfitVal)}</td>
+                            <td className="px-2 py-2.5 text-center whitespace-nowrap">
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteSingleOrder(o.id, o.orderId)}
+                                className="w-7 h-7 inline-flex items-center justify-center rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition cursor-pointer"
+                                title={`Xóa đơn hàng ${o.orderId || o.id}`}
+                              >
+                                <i className="fa-solid fa-trash-can text-xs"></i>
+                              </button>
+                            </td>
                           </tr>
                         );
                       })
@@ -3161,6 +3318,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                       <td className="px-2.5 py-3 text-right font-mono font-black text-orange-600 whitespace-nowrap">
                         {formatMoney(totalAdminProfitSum)}
                       </td>
+                      <td className="px-2 py-3"></td>
                     </tr>
                   </tfoot>
                 )}
@@ -3294,6 +3452,15 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                     title="Bỏ đánh dấu thanh toán (chuyển về Chưa thanh toán)"
                   >
                     <i className="fa-solid fa-rotate-left text-[11px]"></i> Chưa thanh toán
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleDeleteSelectedOrders}
+                    className="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-700 font-bold rounded-2xl text-xs transition cursor-pointer flex items-center gap-1.5 border border-rose-200"
+                    title="Xóa toàn bộ các đơn hàng đang chọn khỏi hệ thống"
+                  >
+                    <i className="fa-solid fa-trash-can text-[11px]"></i> Xóa đã chọn ({selectedOrderIds.size})
                   </button>
 
                   <button
@@ -4122,43 +4289,223 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
         </div>
       )}
 
-      {/* MODAL GÁN ĐƠN HÀNG */}
+      {/* MODAL GÁN ĐƠN HÀNG CHO THÀNH VIÊN ZALO */}
       {selectedOrderToAssign && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-xl border border-slate-100 animate-scale-up">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-100 animate-scale-up">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-base font-black text-slate-900">Gán Đơn Hàng Cho Thành Viên Zalo</h3>
-              <button onClick={() => setSelectedOrderToAssign(null)} className="text-slate-400 hover:text-slate-600">
-                <i className="fa-solid fa-xmark text-lg"></i>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center text-sm">
+                  <i className="fa-solid fa-link"></i>
+                </div>
+                <h3 className="text-base font-black text-slate-900 font-display">Gán Đơn Hàng Cho Thành Viên Zalo</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedOrderToAssign(null);
+                  setAssignSearchQuery("");
+                }}
+                className="w-8 h-8 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center cursor-pointer transition"
+              >
+                <i className="fa-solid fa-xmark text-base"></i>
               </button>
             </div>
 
-            <div className="space-y-2 text-xs">
-              <p><span className="text-slate-400">Mã đơn:</span> <strong className="font-mono">{selectedOrderToAssign.orderId}</strong></p>
-              <p><span className="text-slate-400">Sản phẩm:</span> <strong>{selectedOrderToAssign.productName}</strong></p>
+            <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3 space-y-1.5 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 font-bold uppercase text-[10px]">Mã đơn:</span>
+                <span className="font-mono font-black text-orange-600 bg-orange-50 px-2 py-0.5 rounded-lg border border-orange-100">
+                  {selectedOrderToAssign.orderId}
+                </span>
+              </div>
+              <div>
+                <span className="text-slate-400 font-bold uppercase text-[10px] block mb-0.5">Sản phẩm:</span>
+                <p className="font-bold text-slate-800 line-clamp-2 leading-snug" title={selectedOrderToAssign.productName}>
+                  {selectedOrderToAssign.productName || "Đơn hàng Affiliate"}
+                </p>
+              </div>
+              {selectedOrderToAssign.zaloId && (
+                <div className="flex items-center justify-between pt-1 border-t border-slate-200/60 text-[11px]">
+                  <span className="text-slate-500">Đang gán cho:</span>
+                  <span className="font-bold text-slate-700 font-mono">
+                    {(() => {
+                      const cur = zaloUsers.find((u) => u.zaloId === selectedOrderToAssign.zaloId);
+                      return cur?.zaloName ? `${cur.zaloName} (${cur.zaloId})` : selectedOrderToAssign.zaloId;
+                    })()}
+                  </span>
+                </div>
+              )}
             </div>
 
             <form onSubmit={handleAssignOrder} className="space-y-4">
               <div>
-                <label className="block text-xs font-black text-slate-700 mb-1">Chọn hoặc nhập Zalo ID thành viên:</label>
-                <input
-                  type="text"
-                  value={assignZaloId}
-                  onChange={(e) => setAssignZaloId(e.target.value)}
-                  placeholder="Nhập Zalo ID..."
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs font-bold outline-none mb-2"
-                />
-                <select
-                  onChange={(e) => setAssignZaloId(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs font-bold text-slate-800 outline-none cursor-pointer"
-                >
-                  <option value="">-- Hoặc chọn từ danh sách Zalo User --</option>
-                  {zaloUsers.map((u) => (
-                    <option key={u.id} value={u.zaloId}>
-                      {u.zaloName || "Khách Zalo"} (Zalo ID: {u.zaloId})
-                    </option>
-                  ))}
-                </select>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-black text-slate-700">
+                    Chọn hoặc tìm thành viên Zalo:
+                  </label>
+                  <span className="text-[11px] font-bold text-slate-400">
+                    {filteredAssignUsers.length} / {zaloUsers.length} thành viên
+                  </span>
+                </div>
+
+                {/* THẺ HIỂN THỊ THÀNH VIÊN ĐANG ĐƯỢC CHỌN */}
+                {(() => {
+                  const selUser = zaloUsers.find((u) => u.zaloId === assignZaloId);
+                  if (selUser) {
+                    return (
+                      <div className="p-3 mb-2.5 bg-gradient-to-r from-orange-50 to-amber-50 border-2 border-orange-400/90 rounded-2xl flex items-center justify-between gap-3 shadow-2xs animate-fade-in">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 text-white flex items-center justify-center font-black text-sm shrink-0 shadow-sm">
+                            {(selUser.zaloName || "Z").charAt(0).toUpperCase()}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-xs font-black text-slate-900 truncate">
+                                {selUser.zaloName || "Khách Zalo"}
+                              </span>
+                              <span className="text-[9px] font-black text-orange-800 bg-orange-200/80 px-1.5 py-0.2 rounded-full">
+                                ✓ Đã chọn
+                              </span>
+                            </div>
+                            <p className="text-[10px] font-mono text-slate-600 truncate">
+                              Zalo ID: <span className="font-bold text-slate-800">{selUser.zaloId}</span>
+                            </p>
+                            {selUser.accountNumber && (
+                              <p className="text-[10px] text-slate-500 truncate">
+                                🏦 {selUser.bankName} - {selUser.accountNumber}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setAssignZaloId("")}
+                          className="px-2.5 py-1 text-[11px] font-bold text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition cursor-pointer border border-slate-200 hover:border-rose-200 shrink-0 bg-white"
+                          title="Bỏ chọn để tìm người khác"
+                        >
+                          Đổi
+                        </button>
+                      </div>
+                    );
+                  }
+                  if (assignZaloId) {
+                    return (
+                      <div className="p-2.5 mb-2.5 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between gap-2">
+                        <div className="min-w-0 text-xs">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase">Zalo ID nhập tay:</span>
+                          <p className="font-mono font-bold text-slate-800 truncate">{assignZaloId}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setAssignZaloId("")}
+                          className="text-xs text-rose-500 font-bold hover:underline cursor-pointer"
+                        >
+                          Xóa
+                        </button>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+
+                {/* Ô TÌM KIẾM NHANH THEO TÊN HOẶC ZALO ID */}
+                <div className="relative">
+                  <i className="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                  <input
+                    type="text"
+                    value={assignSearchQuery}
+                    onChange={(e) => setAssignSearchQuery(e.target.value)}
+                    placeholder="🔍 Gõ tên Zalo (VD: Đức Danh, Hà Phương...) hoặc Zalo ID..."
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-9 pr-9 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-orange-500 focus:bg-white transition shadow-2xs"
+                  />
+                  {assignSearchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setAssignSearchQuery("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs p-1 cursor-pointer"
+                      title="Xóa tìm kiếm"
+                    >
+                      <i className="fa-solid fa-circle-xmark"></i>
+                    </button>
+                  )}
+                </div>
+
+                {/* DANH SÁCH THÀNH VIÊN CUỘN MƯỢT (SCROLLABLE LIST) */}
+                <div className="mt-2 border border-slate-200 rounded-2xl max-h-56 overflow-y-auto divide-y divide-slate-100 bg-white shadow-inner scrollbar-thin">
+                  {filteredAssignUsers.length === 0 ? (
+                    <div className="p-4 text-center text-xs text-slate-400 space-y-2">
+                      <i className="fa-solid fa-user-slash text-xl text-slate-300 block mb-1"></i>
+                      <p>Không tìm thấy thành viên nào khớp với "<strong>{assignSearchQuery}</strong>"</p>
+                      {assignSearchQuery.trim() && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAssignZaloId(assignSearchQuery.trim());
+                          }}
+                          className="px-3 py-1.5 bg-orange-50 hover:bg-orange-100 text-orange-700 text-xs font-bold rounded-xl border border-orange-200 cursor-pointer transition inline-flex items-center gap-1.5"
+                        >
+                          <i className="fa-solid fa-plus text-[10px]"></i> Gán Zalo ID "{assignSearchQuery.trim()}"
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    filteredAssignUsers.map((u) => {
+                      const isSelected = assignZaloId === u.zaloId;
+                      return (
+                        <div
+                          key={u.id || u.zaloId}
+                          onClick={() => setAssignZaloId(u.zaloId)}
+                          className={`w-full text-left p-2.5 px-3.5 flex items-center justify-between gap-3 transition cursor-pointer select-none ${
+                            isSelected
+                              ? "bg-orange-50/90 text-orange-950 font-bold"
+                              : "hover:bg-slate-50 text-slate-700"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 ${
+                              isSelected ? "bg-orange-500 text-white shadow-xs" : "bg-slate-100 text-slate-600"
+                            }`}>
+                              {(u.zaloName || "Z").charAt(0).toUpperCase()}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-bold text-xs text-slate-900 truncate">
+                                {u.zaloName || "Khách Zalo"}
+                              </p>
+                              <p className="text-[10px] font-mono text-slate-400 truncate">
+                                Zalo ID: {u.zaloId}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="shrink-0">
+                            {isSelected ? (
+                              <span className="text-orange-600 text-xs font-black inline-flex items-center gap-1">
+                                <i className="fa-solid fa-circle-check"></i> Đang chọn
+                              </span>
+                            ) : (
+                              <span className="text-[11px] font-semibold text-slate-400 hover:text-orange-600">
+                                Chọn →
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+
+                {/* Input nhập tay Zalo ID nếu muốn gõ ID bất kỳ */}
+                <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                  <span className="text-slate-400 font-medium">Hoặc gõ tay Zalo ID bất kỳ:</span>
+                  <input
+                    type="text"
+                    value={assignZaloId}
+                    onChange={(e) => setAssignZaloId(e.target.value.trim())}
+                    placeholder="VD: 117644270527..."
+                    className="w-48 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 text-xs font-mono font-bold text-slate-800 outline-none focus:border-orange-500"
+                  />
+                </div>
               </div>
 
               <div className="flex items-center justify-between pt-2 border-t border-slate-100">
@@ -4178,15 +4525,18 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => setSelectedOrderToAssign(null)}
+                    onClick={() => {
+                      setSelectedOrderToAssign(null);
+                      setAssignSearchQuery("");
+                    }}
                     className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl cursor-pointer"
                   >
                     Hủy
                   </button>
                   <button
                     type="submit"
-                    disabled={isSubmittingAssign}
-                    className="px-5 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-black rounded-xl shadow-md cursor-pointer"
+                    disabled={isSubmittingAssign || !assignZaloId}
+                    className="px-5 py-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white text-xs font-black rounded-xl shadow-md cursor-pointer transition disabled:opacity-50"
                   >
                     {isSubmittingAssign ? "Đang gán..." : "Xác nhận gán đơn"}
                   </button>

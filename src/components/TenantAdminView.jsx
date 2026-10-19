@@ -3083,16 +3083,29 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
               )}
             </div>
 
-            <button
-              onClick={() => handleExportOrdersExcel(activeTab === "tiktok" ? "TikTok" : "Shopee")}
-              className={`px-4 py-2 text-white rounded-2xl text-xs font-black transition flex items-center gap-2 shadow-md cursor-pointer ${
-                activeTab === "tiktok"
-                  ? "bg-slate-900 hover:bg-black shadow-slate-900/20"
-                  : "bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 shadow-orange-500/20"
-              }`}
-            >
-              <i className="fa-solid fa-file-excel text-sm"></i> Xuất Excel {activeTab === "tiktok" ? "TikTok" : "Shopee"} ({filteredOrders.length})
-            </button>
+            <div className="flex items-center gap-2 flex-wrap">
+              {selectedOrderIds.size > 0 && (
+                <button
+                  type="button"
+                  onClick={handleDeleteSelectedOrders}
+                  className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl text-xs font-black transition flex items-center gap-2 shadow-md shadow-rose-500/20 cursor-pointer animate-pulse"
+                  title="Xóa tất cả các đơn hàng đang được tích chọn"
+                >
+                  <i className="fa-solid fa-trash-can text-sm"></i> Xóa {selectedOrderIds.size} đơn đã chọn
+                </button>
+              )}
+
+              <button
+                onClick={() => handleExportOrdersExcel(activeTab === "tiktok" ? "TikTok" : "Shopee")}
+                className={`px-4 py-2 text-white rounded-2xl text-xs font-black transition flex items-center gap-2 shadow-md cursor-pointer ${
+                  activeTab === "tiktok"
+                    ? "bg-slate-900 hover:bg-black shadow-slate-900/20"
+                    : "bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 shadow-orange-500/20"
+                }`}
+              >
+                <i className="fa-solid fa-file-excel text-sm"></i> Xuất Excel {activeTab === "tiktok" ? "TikTok" : "Shopee"} ({filteredOrders.length})
+              </button>
+            </div>
           </div>
 
           {/* TABLE OF ORDERS (BẢNG HÀNG NGANG ĐỒNG BỘ TRÊN ĐIỆN THOẠI VÀ LAPTOP) */}

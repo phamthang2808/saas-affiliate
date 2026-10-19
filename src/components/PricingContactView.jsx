@@ -97,14 +97,14 @@ export function PricingContactView() {
     },
     {
       id: "499k",
-      name: "Omnichannel All-in-One",
-      tag: "HỆ SINH THÁI CAO CẤP",
+      name: "Web & Zalo Bot (2 Trong 1)",
+      tag: "COMBO VIP 2 TRONG 1",
       price: "499.000đ",
       period: "/ tháng",
       desc: "Giải pháp tối cao: Chuyển đổi link trực tiếp ngay trên Web & Bot Zalo 24/7, kết hợp tên miền riêng & liên kết Google (Mô hình Trần Huyền)",
       featured: false,
       isVip: true,
-      badge: "VIP Toàn Diện",
+      badge: "VIP 2 Trong 1",
       features: [
         "Chuyển đổi link Đa Nền Tảng (Web & Zalo): Hỗ trợ khách tự dán link chuyển đổi nhận hoàn tiền ngay trên Website và tự động chuyển đổi trong nhóm Zalo 24/7.",
         "Website Tên Miền Riêng Độc Quyền: Cài đặt Web chạy trên domain thương hiệu của bạn, giao diện chuẩn SEO và tương thích 100% di động.",

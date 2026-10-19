@@ -37,12 +37,12 @@ export function PricingContactView() {
       id: "199k",
       name: "Zalo Bot Auto Link",
       tag: "GÓI CHUYỂN ĐỔI 24/7",
+      tagIcon: "fa-solid fa-bolt",
       price: "199.000đ",
       period: "/ tháng",
       desc: "Tự động chuyển đổi link Shopee, ShopeeFood, TikTok & Lazada 24/7 trực tiếp trong nhóm Zalo",
       featured: false,
       isVip: false,
-      badge: null,
       features: [
         "Tự động đổi link Shopee, ShopeeFood, TikTok & Lazada sang link nhận 100% hoa hồng về tài khoản của bạn.",
         "Hoạt động tự động 24/7 trong nhóm Zalo, phản hồi tức thì 1-2 giây không cần trực máy.",
@@ -50,19 +50,19 @@ export function PricingContactView() {
         "Tin nhắn tối ưu mua hàng: Tự động tag tên người gửi, định dạng link ngắn gọn, kích thích bấm mua.",
         "Vận hành siêu nhẹ nhàng: Không tốn thời gian quản lý đối soát ví, tập trung tối đa đẩy số."
       ],
-      ctaText: "Liên Hệ Zalo Admin",
+      ctaText: "Liên Hệ Zalo Admin Phạm Thắng",
       ctaClass: "bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold border border-slate-200/80",
     },
     {
       id: "299k",
       name: "SaaS Zalo Bot Affiliate",
       tag: "GÓI SAAS PHỔ BIẾN NHẤT",
+      tagIcon: "fa-solid fa-fire",
       price: "299.000đ",
       period: "/ tháng",
       desc: "Bot Zalo + Nền tảng SaaS: Cổng tra cứu ví hoa hồng cho khách & Dashboard quản trị Kênh riêng",
       featured: true,
       isVip: false,
-      badge: "Phổ biến nhất",
       features: [
         "Bao gồm toàn bộ tính năng chuyển đổi link 24/7 của gói Auto Link.",
         "Cấp Cổng Tra Cứu Khách Hàng chuyên nghiệp trên nền tảng SaaS (28affihub.store/ten-kenh).",
@@ -71,19 +71,19 @@ export function PricingContactView() {
         "Tùy biến chính sách kênh: Tự cài đặt tỷ lệ chia hoa hồng (80/20, 70/30), trừ thuế TNCN & ngày giữ tiền.",
         "Tùy chỉnh mẫu tin nhắn Bot: Trưởng nhóm tự do chỉnh sửa mẫu tin nhắn phản hồi, lời chào và thông báo theo phong cách riêng."
       ],
-      ctaText: "Liên Hệ Zalo Admin",
+      ctaText: "Liên Hệ Zalo Admin Phạm Thắng",
       ctaClass: "bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-black shadow-md shadow-orange-500/25",
     },
     {
       id: "399k",
       name: "Web Brand Độc Lập",
       tag: "TÊN MIỀN RIÊNG BIỆT",
+      tagIcon: "fa-solid fa-globe",
       price: "399.000đ",
       period: "/ tháng",
       desc: "Sở hữu Website Affiliate hoàn tiền độc lập, vận hành trên Tên Miền Riêng biệt của bạn",
       featured: false,
       isVip: false,
-      badge: null,
       features: [
         "Website Riêng Biệt & Tên Miền Riêng: Cài đặt Web chạy trên domain thương hiệu của bạn (hoantiencuaban.com).",
         "Nhận diện thương hiệu độc quyền 100%: Tùy biến toàn bộ Logo, màu sắc giao diện & banner mang bản sắc riêng.",
@@ -92,19 +92,19 @@ export function PricingContactView() {
         "Hạ tầng & Cơ sở dữ liệu riêng biệt: Vận hành ổn định, tải trang siêu tốc, bảo mật tuyệt đối không lo nghẽn mạng.",
         "Hỗ trợ trỏ tên miền & cài đặt chứng chỉ bảo mật SSL (HTTPS) miễn phí trọn đời."
       ],
-      ctaText: "Liên Hệ Zalo Admin",
+      ctaText: "Liên Hệ Zalo Admin Phạm Thắng",
       ctaClass: "bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold border border-slate-200/80",
     },
     {
       id: "499k",
       name: "Web & Zalo Bot (2 Trong 1)",
-      tag: "COMBO VIP 2 TRONG 1",
+      tag: "VIP 2 TRONG 1",
+      tagIcon: "fa-solid fa-crown",
       price: "499.000đ",
       period: "/ tháng",
       desc: "Giải pháp tối cao: Chuyển đổi link trực tiếp ngay trên Web & Bot Zalo 24/7, kết hợp tên miền riêng & liên kết Google",
       featured: false,
       isVip: true,
-      badge: "VIP 2 Trong 1",
       features: [
         "Chuyển đổi link Đa Nền Tảng (Web & Zalo): Hỗ trợ khách tự dán link chuyển đổi nhận hoàn tiền ngay trên Website và tự động chuyển đổi trong nhóm Zalo 24/7 (Shopee, ShopeeFood, TikTok, Lazada).",
         "Website Tên Miền Riêng Độc Quyền: Cài đặt Web chạy trên domain thương hiệu của bạn, giao diện chuẩn SEO và tương thích 100% di động.",
@@ -113,7 +113,7 @@ export function PricingContactView() {
         "Thông Báo Biến Động Số Dư Tự Động: Bot tự động gửi tin nhắn riêng cho khách khi đơn hoàn thành hoặc có lệnh duyệt thanh toán.",
         "Hỗ Trợ Kỹ Thuật VIP 1-1 Riêng Biệt: Ưu tiên cập nhật tính năng mới nhất, setup trọn gói A-Z & hỗ trợ kỹ thuật trực tiếp 24/7."
       ],
-      ctaText: "Liên Hệ Zalo Admin",
+      ctaText: "Liên Hệ Zalo Admin Phạm Thắng",
       ctaClass: "bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 text-slate-950 font-black shadow-md shadow-amber-500/25",
     }
   ];
@@ -174,40 +174,35 @@ export function PricingContactView() {
                   : "border border-slate-200/90 shadow-xs hover:shadow-md hover:border-slate-300"
               }`}
             >
-              {/* Badge at top right */}
-              {pkg.badge && (
-                <div
-                  className={`absolute top-3 right-3 text-[10px] font-black uppercase px-3 py-1 rounded-full shadow-xs tracking-wider flex items-center gap-1 ${
-                    isFeatured
-                      ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white"
-                      : "bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950"
-                  }`}
-                >
-                  <i className={`text-[10px] ${isFeatured ? "fa-solid fa-fire" : "fa-solid fa-crown"}`}></i>
-                  <span>{pkg.badge}</span>
-                </div>
-              )}
-
               <div className="space-y-4">
-                <div>
-                  <span
-                    className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-md inline-block ${
-                      isFeatured
-                        ? "text-orange-700 bg-orange-50 border border-orange-200"
-                        : isVip
-                        ? "text-amber-800 bg-amber-50 border border-amber-200"
-                        : pkg.id === "399k"
-                        ? "text-indigo-700 bg-indigo-50 border border-indigo-200"
-                        : "text-slate-600 bg-slate-100 border border-slate-200"
-                    }`}
-                  >
-                    {pkg.tag}
-                  </span>
-                  <h3 className="text-base sm:text-[17px] font-black text-slate-900 mt-2 font-display whitespace-nowrap">{pkg.name}</h3>
-                  <p className="text-xs text-slate-500 mt-1 leading-snug">{pkg.desc}</p>
+                <div className="text-center">
+                  {/* Single Clean Tag on 1 line centered */}
+                  <div className="flex items-center justify-center h-8 mb-2">
+                    <span
+                      className={`text-[11px] font-black uppercase tracking-wider px-3.5 py-1 rounded-full inline-flex items-center gap-1.5 shadow-xs ${
+                        isFeatured
+                          ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-orange-500/20"
+                          : isVip
+                          ? "bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 shadow-amber-500/20 font-black"
+                          : pkg.id === "399k"
+                          ? "text-indigo-700 bg-indigo-50 border border-indigo-200"
+                          : "text-slate-600 bg-slate-100 border border-slate-200"
+                      }`}
+                    >
+                      <i className={`text-[10px] ${pkg.tagIcon || "fa-solid fa-check"}`}></i>
+                      <span>{pkg.tag}</span>
+                    </span>
+                  </div>
+
+                  <h3 className="text-base sm:text-[17px] font-black text-slate-900 mt-1 font-display whitespace-nowrap text-center">
+                    {pkg.name}
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1 leading-snug min-h-[38px] flex items-center justify-center text-center px-1">
+                    {pkg.desc}
+                  </p>
                 </div>
 
-                <div className="pt-2 pb-1 border-y border-slate-100 flex items-baseline gap-1">
+                <div className="pt-2 pb-1 border-y border-slate-100 flex items-baseline justify-center gap-1">
                   <span
                     className={`text-3xl font-black font-mono tracking-tight ${
                       isFeatured ? "text-orange-600" : isVip ? "text-amber-600" : "text-slate-900"
@@ -243,9 +238,10 @@ export function PricingContactView() {
                   href="https://zalo.me/0888728256"
                   target="_blank"
                   rel="noreferrer"
-                  className={`w-full py-3 font-extrabold text-xs rounded-xl transition text-center block cursor-pointer active:scale-95 ${pkg.ctaClass}`}
+                  className={`w-full py-3.5 font-extrabold text-xs rounded-xl transition text-center flex items-center justify-center gap-2 cursor-pointer active:scale-95 ${pkg.ctaClass}`}
                 >
-                  <i className="fa-solid fa-comments mr-1.5"></i> {pkg.ctaText}
+                  <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-black shrink-0">Z</span>
+                  <span>Liên Hệ Zalo Admin Phạm Thắng</span>
                 </a>
                 <a
                   href="https://zalo.me/0888728256"

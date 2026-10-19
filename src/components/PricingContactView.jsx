@@ -51,7 +51,7 @@ export function PricingContactView() {
         "Vận hành siêu nhẹ nhàng: Không tốn thời gian quản lý đối soát ví, tập trung tối đa đẩy số."
       ],
       ctaText: "Đăng Ký Gói 199k",
-      ctaClass: "bg-slate-100 hover:bg-slate-200 text-slate-800",
+      ctaClass: "bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold border border-slate-200/80",
     },
     {
       id: "299k",
@@ -72,7 +72,7 @@ export function PricingContactView() {
         "Duyệt rút tiền tức thì qua Zalo: Trưởng nhóm duyệt chi trả siêu tốc bằng lệnh /duyet_[MÃ_ID]."
       ],
       ctaText: "Đăng Ký Gói 299k (Ưu Đãi)",
-      ctaClass: "bg-white hover:bg-orange-50 text-orange-600 shadow-md",
+      ctaClass: "bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-black shadow-md shadow-orange-500/25",
     },
     {
       id: "399k",
@@ -93,7 +93,7 @@ export function PricingContactView() {
         "Hỗ trợ trỏ tên miền & cài đặt chứng chỉ bảo mật SSL (HTTPS) miễn phí trọn đời."
       ],
       ctaText: "Đăng Ký Gói 399k",
-      ctaClass: "bg-slate-100 hover:bg-slate-200 text-slate-800",
+      ctaClass: "bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold border border-slate-200/80",
     },
     {
       id: "499k",
@@ -114,7 +114,7 @@ export function PricingContactView() {
         "Hỗ Trợ Kỹ Thuật VIP 1-1 Riêng Biệt: Ưu tiên cập nhật tính năng mới nhất & hỗ trợ kỹ thuật trực tiếp 24/7."
       ],
       ctaText: "Đăng Ký Gói VIP 499k",
-      ctaClass: "bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-slate-950 font-black shadow-md",
+      ctaClass: "bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 text-slate-950 font-black shadow-md shadow-amber-500/25",
     }
   ];
 
@@ -160,147 +160,78 @@ export function PricingContactView() {
       {/* 4 Pricing Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
         {PACKAGES.map((pkg) => {
-          if (pkg.featured) {
-            return (
-              <div
-                key={pkg.id}
-                className="rounded-3xl p-6 shadow-xl flex flex-col justify-between space-y-6 relative overflow-hidden text-white"
-                style={{
-                  background: "linear-gradient(135deg, #f97316 0%, #ea580c 100%)",
-                  border: "2px solid #fdba74",
-                }}
-              >
-                {pkg.badge && (
-                  <div className="absolute top-3 right-3 bg-white text-orange-600 text-[10px] font-black uppercase px-3 py-1 rounded-full shadow-xs">
-                    {pkg.badge}
-                  </div>
-                )}
-
-                <div className="space-y-4">
-                  <div>
-                    <span className="text-[10px] font-black uppercase tracking-wider text-orange-100 bg-white/20 px-2.5 py-1 rounded-md">
-                      {pkg.tag}
-                    </span>
-                    <h3 className="text-xl font-black text-white mt-2 font-display">{pkg.name}</h3>
-                    <p className="text-xs text-orange-100 mt-1 leading-snug">{pkg.desc}</p>
-                  </div>
-
-                  <div className="pt-2 pb-1 border-y border-white/20">
-                    <span className="text-3xl font-black font-mono tracking-tight text-white">{pkg.price}</span>
-                    <span className="text-xs text-orange-100 font-semibold">{pkg.period}</span>
-                  </div>
-
-                  <div className="space-y-2.5 text-xs text-white font-medium">
-                    {pkg.features.map((feat, idx) => (
-                      <div key={idx} className="flex items-start gap-2">
-                        <i className="fa-solid fa-circle-check text-amber-200 text-xs shrink-0 mt-0.5"></i>
-                        <span className="leading-relaxed">{feat}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="pt-4 space-y-2">
-                  <button
-                    type="button"
-                    onClick={() => handleSelectPackage(pkg.id)}
-                    className={`w-full py-3 font-black text-xs rounded-xl shadow-md transition text-center block cursor-pointer active:scale-95 ${pkg.ctaClass}`}
-                  >
-                    {pkg.ctaText}
-                  </button>
-                  <a
-                    href="https://zalo.me/0888728256"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="block text-center text-[11px] font-bold text-orange-100 hover:text-white transition"
-                  >
-                    💬 Hoặc chat Zalo ngay: 0888.728.256
-                  </a>
-                </div>
-              </div>
-            );
-          }
-
-          if (pkg.isVip) {
-            return (
-              <div
-                key={pkg.id}
-                className="bg-slate-900 text-white rounded-3xl p-6 border-2 border-slate-700/80 shadow-xl flex flex-col justify-between space-y-6 relative overflow-hidden"
-              >
-                {pkg.badge && (
-                  <div className="absolute top-3 right-3 bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 text-[10px] font-black uppercase px-3 py-1 rounded-full shadow-xs">
-                    {pkg.badge}
-                  </div>
-                )}
-
-                <div className="space-y-4">
-                  <div>
-                    <span className="text-[10px] font-black uppercase tracking-wider text-amber-300 bg-amber-500/20 border border-amber-400/30 px-2.5 py-1 rounded-md">
-                      {pkg.tag}
-                    </span>
-                    <h3 className="text-xl font-black text-white mt-2 font-display">{pkg.name}</h3>
-                    <p className="text-xs text-slate-400 mt-1 leading-snug">{pkg.desc}</p>
-                  </div>
-
-                  <div className="pt-2 pb-1 border-y border-slate-800">
-                    <span className="text-3xl font-black font-mono tracking-tight text-amber-400">{pkg.price}</span>
-                    <span className="text-xs text-slate-400 font-semibold">{pkg.period}</span>
-                  </div>
-
-                  <div className="space-y-2.5 text-xs text-slate-300 font-medium">
-                    {pkg.features.map((feat, idx) => (
-                      <div key={idx} className="flex items-start gap-2">
-                        <i className="fa-solid fa-crown text-amber-400 text-xs shrink-0 mt-0.5"></i>
-                        <span className="leading-relaxed">{feat}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="pt-4 space-y-2">
-                  <button
-                    type="button"
-                    onClick={() => handleSelectPackage(pkg.id)}
-                    className={`w-full py-3 font-black text-xs rounded-xl shadow-md transition text-center block cursor-pointer active:scale-95 ${pkg.ctaClass}`}
-                  >
-                    {pkg.ctaText}
-                  </button>
-                  <a
-                    href="https://zalo.me/0888728256"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="block text-center text-[11px] font-bold text-slate-400 hover:text-amber-300 transition"
-                  >
-                    💬 Hoặc chat Zalo ngay: 0888.728.256
-                  </a>
-                </div>
-              </div>
-            );
-          }
+          const isFeatured = pkg.featured;
+          const isVip = pkg.isVip;
 
           return (
             <div
               key={pkg.id}
-              className="bg-white rounded-3xl border border-slate-200/90 p-6 shadow-xs flex flex-col justify-between space-y-6 hover:shadow-md transition"
+              className={`bg-white rounded-3xl p-6 flex flex-col justify-between space-y-6 relative transition-all duration-300 ${
+                isFeatured
+                  ? "border-2 border-orange-500 shadow-xl shadow-orange-500/10 ring-4 ring-orange-500/10 md:-translate-y-1"
+                  : isVip
+                  ? "border-2 border-amber-400 shadow-xl shadow-amber-500/10 ring-4 ring-amber-400/10 md:-translate-y-1"
+                  : "border border-slate-200/90 shadow-xs hover:shadow-md hover:border-slate-300"
+              }`}
             >
+              {/* Badge at top right */}
+              {pkg.badge && (
+                <div
+                  className={`absolute top-3 right-3 text-[10px] font-black uppercase px-3 py-1 rounded-full shadow-xs tracking-wider flex items-center gap-1 ${
+                    isFeatured
+                      ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white"
+                      : "bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950"
+                  }`}
+                >
+                  <i className={`text-[10px] ${isFeatured ? "fa-solid fa-fire" : "fa-solid fa-crown"}`}></i>
+                  <span>{pkg.badge}</span>
+                </div>
+              )}
+
               <div className="space-y-4">
                 <div>
-                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md">
+                  <span
+                    className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-md inline-block ${
+                      isFeatured
+                        ? "text-orange-700 bg-orange-50 border border-orange-200"
+                        : isVip
+                        ? "text-amber-800 bg-amber-50 border border-amber-200"
+                        : pkg.id === "399k"
+                        ? "text-indigo-700 bg-indigo-50 border border-indigo-200"
+                        : "text-slate-600 bg-slate-100 border border-slate-200"
+                    }`}
+                  >
                     {pkg.tag}
                   </span>
                   <h3 className="text-xl font-black text-slate-900 mt-2 font-display">{pkg.name}</h3>
                   <p className="text-xs text-slate-500 mt-1 leading-snug">{pkg.desc}</p>
                 </div>
 
-                <div className="pt-2 pb-1 border-y border-slate-100">
-                  <span className="text-3xl font-black font-mono tracking-tight text-slate-900">{pkg.price}</span>
+                <div className="pt-2 pb-1 border-y border-slate-100 flex items-baseline gap-1">
+                  <span
+                    className={`text-3xl font-black font-mono tracking-tight ${
+                      isFeatured ? "text-orange-600" : isVip ? "text-amber-600" : "text-slate-900"
+                    }`}
+                  >
+                    {pkg.price}
+                  </span>
                   <span className="text-xs text-slate-400 font-semibold">{pkg.period}</span>
                 </div>
 
-                <div className="space-y-2.5 text-xs text-slate-600 font-medium">
+                <div className="space-y-2.5 text-xs text-slate-700 font-medium">
                   {pkg.features.map((feat, idx) => (
                     <div key={idx} className="flex items-start gap-2">
-                      <i className="fa-solid fa-check text-emerald-500 text-xs shrink-0 mt-0.5"></i>
+                      <i
+                        className={`text-xs shrink-0 mt-0.5 ${
+                          isFeatured
+                            ? "fa-solid fa-circle-check text-orange-500"
+                            : isVip
+                            ? "fa-solid fa-crown text-amber-500"
+                            : pkg.id === "399k"
+                            ? "fa-solid fa-check text-indigo-500"
+                            : "fa-solid fa-check text-emerald-500"
+                        }`}
+                      ></i>
                       <span className="leading-relaxed">{feat}</span>
                     </div>
                   ))}

@@ -1561,10 +1561,26 @@ export function MemberDetailModal({
                             </button>
                           )}
                         </td>
-                        <td className="px-2.5 py-2 min-w-[150px] max-w-[280px]">
-                          <span className="font-semibold text-slate-800 truncate block text-[11px]" title={o.productName}>
-                            {o.productName || "Đơn hàng Affiliate"}
-                          </span>
+                        <td className="px-2.5 py-2 min-w-[170px] max-w-[300px]">
+                          <div className="flex items-center gap-2">
+                            {o.imageUrl ? (
+                              <img
+                                src={o.imageUrl}
+                                alt=""
+                                referrerPolicy="no-referrer"
+                                className="w-8 h-8 rounded-lg object-cover shrink-0 border border-slate-200 cursor-pointer hover:opacity-85 hover:scale-105 transition bg-white shadow-2xs"
+                                title="Bấm để xem ảnh gốc"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  window.open(o.imageUrl, '_blank', 'noopener,noreferrer');
+                                }}
+                                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                              />
+                            ) : null}
+                            <span className="font-semibold text-slate-800 truncate block text-[11px] min-w-0 flex-1" title={o.productName}>
+                              {o.productName || "Đơn hàng Affiliate"}
+                            </span>
+                          </div>
                         </td>
                         <td className="px-2.5 py-2 text-right font-medium text-slate-500 whitespace-nowrap text-[11px] sm:text-xs">
                           {formatMoney(rawComm)}

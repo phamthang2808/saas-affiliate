@@ -3187,13 +3187,31 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                             <td className="px-2.5 py-2.5 text-slate-600 font-bold whitespace-nowrap text-xs">
                               {o.orderDate ? new Date(o.orderDate).toLocaleDateString("vi-VN") : "—"}
                             </td>
-                            <td className="px-2.5 py-2.5 min-w-[150px] max-w-[220px]">
-                              <p className="font-bold text-slate-900 text-xs leading-snug truncate" title={o.productName}>
-                                {o.productName}
-                              </p>
-                              <span className="inline-block mt-0.5 text-[10px] sm:text-[11px] text-slate-500 font-mono font-bold bg-slate-100 px-1.5 py-0.5 rounded">
-                                ID: {o.orderId}
-                              </span>
+                            <td className="px-2.5 py-2.5 min-w-[180px] max-w-[280px]">
+                              <div className="flex items-center gap-2">
+                                {o.imageUrl ? (
+                                  <img
+                                    src={o.imageUrl}
+                                    alt=""
+                                    referrerPolicy="no-referrer"
+                                    className="w-9 h-9 rounded-lg object-cover shrink-0 border border-slate-200 cursor-pointer hover:opacity-85 hover:scale-105 transition bg-white shadow-2xs"
+                                    title="Bấm để xem ảnh gốc"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      window.open(o.imageUrl, '_blank', 'noopener,noreferrer');
+                                    }}
+                                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                  />
+                                ) : null}
+                                <div className="min-w-0 flex-1">
+                                  <p className="font-bold text-slate-900 text-xs leading-snug truncate" title={o.productName}>
+                                    {o.productName}
+                                  </p>
+                                  <span className="inline-block mt-0.5 text-[10px] sm:text-[11px] text-slate-500 font-mono font-bold bg-slate-100 px-1.5 py-0.5 rounded">
+                                    ID: {o.orderId}
+                                  </span>
+                                </div>
+                              </div>
                             </td>
                             <td className="px-2.5 py-2.5 min-w-[125px] max-w-[160px] whitespace-nowrap text-xs">
                               <div className="flex flex-col items-start gap-1">
@@ -4340,11 +4358,22 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                   {selectedOrderToAssign.orderId}
                 </span>
               </div>
-              <div>
-                <span className="text-slate-400 font-bold uppercase text-[10px] block mb-0.5">Sản phẩm:</span>
-                <p className="font-bold text-slate-800 line-clamp-2 leading-snug" title={selectedOrderToAssign.productName}>
-                  {selectedOrderToAssign.productName || "Đơn hàng Affiliate"}
-                </p>
+              <div className="flex items-start gap-2.5">
+                {selectedOrderToAssign.imageUrl ? (
+                  <img
+                    src={selectedOrderToAssign.imageUrl}
+                    alt=""
+                    referrerPolicy="no-referrer"
+                    className="w-11 h-11 rounded-xl object-cover shrink-0 border border-slate-200 bg-white shadow-2xs"
+                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                  />
+                ) : null}
+                <div className="min-w-0 flex-1">
+                  <span className="text-slate-400 font-bold uppercase text-[10px] block mb-0.5">Sản phẩm:</span>
+                  <p className="font-bold text-slate-800 line-clamp-2 leading-snug" title={selectedOrderToAssign.productName}>
+                    {selectedOrderToAssign.productName || "Đơn hàng Affiliate"}
+                  </p>
+                </div>
               </div>
               {selectedOrderToAssign.zaloId && (
                 <div className="flex items-center justify-between pt-1 border-t border-slate-200/60 text-[11px]">

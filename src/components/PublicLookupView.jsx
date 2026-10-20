@@ -1204,9 +1204,41 @@ export function PublicLookupView({
                         </div>
                       </div>
 
-                      <p className="text-xs sm:text-sm font-bold text-slate-800 leading-snug line-clamp-2">
-                        {order.productName || "Sản phẩm Shopee / TikTok"}
-                      </p>
+                      <div className="flex items-start gap-3 my-1">
+                        {order.imageUrl ? (
+                          <img
+                            src={order.imageUrl}
+                            alt={order.productName || "Ảnh sản phẩm"}
+                            referrerPolicy="no-referrer"
+                            className="w-14 h-14 sm:w-16 sm:h-16 object-cover rounded-xl border border-slate-200 shrink-0 bg-white cursor-pointer shadow-2xs hover:opacity-90 hover:scale-105 transition"
+                            title="Bấm để xem ảnh gốc"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              window.open(order.imageUrl, '_blank', 'noopener,noreferrer');
+                            }}
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              if (e.currentTarget.nextElementSibling) {
+                                e.currentTarget.nextElementSibling.style.display = 'flex';
+                              }
+                            }}
+                          />
+                        ) : null}
+                        <div
+                          className={`w-14 h-14 sm:w-16 sm:h-16 rounded-xl ${
+                            isTiktok ? "bg-cyan-50 text-cyan-700 border-cyan-100" : "bg-orange-50 text-orange-600 border-orange-100"
+                          } border ${
+                            order.imageUrl ? 'hidden' : 'flex'
+                          } items-center justify-center text-lg sm:text-xl shrink-0 shadow-2xs`}
+                        >
+                          <i className="fa-solid fa-bag-shopping"></i>
+                        </div>
+                        <div className="flex-1 min-w-0 self-center">
+                          <p className="text-xs sm:text-sm font-bold text-slate-800 leading-snug line-clamp-2" title={order.productName}>
+                            {order.productName || "Sản phẩm Shopee / TikTok"}
+                          </p>
+                        </div>
+                      </div>
 
                       <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-xs flex-wrap gap-2">
                         <div className="flex items-center gap-3 text-slate-500 font-medium text-[11px] flex-wrap">

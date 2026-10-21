@@ -1803,6 +1803,18 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
   // Helper parse order timestamp safely for sorting
   const parseOrderTimeForSort = (o) => {
     if (!o) return 0;
+    // Tự động bảo vệ nếu mã đơn Shopee (YYMMDD) có ngày bị lưu nhầm thành tương lai (VD: đảo ngày 11/10 thành 10/11)
+    if (o.orderId && /^\d{6}[A-Za-z0-9]+$/.test(o.orderId)) {
+      const yr = 2000 + parseInt(o.orderId.substring(0, 2), 10);
+      const mo = parseInt(o.orderId.substring(2, 4), 10);
+      const da = parseInt(o.orderId.substring(4, 6), 10);
+      if (mo >= 1 && mo <= 12 && da >= 1 && da <= 31) {
+        const checkVal = o.orderDate || o.createdAt;
+        if (!checkVal || new Date(checkVal).getTime() > Date.now()) {
+          return new Date(yr, mo - 1, da, 12, 0, 0).getTime();
+        }
+      }
+    }
     const val = o.orderDate || o.createdAt;
     if (!val) return o.id ? Number(o.id) || 0 : 0;
     if (typeof val === "number") return val;
@@ -3185,7 +3197,19 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                               />
                             </td>
                             <td className="px-2.5 py-2.5 text-slate-600 font-bold whitespace-nowrap text-xs">
-                              {o.orderDate ? new Date(o.orderDate).toLocaleDateString("vi-VN") : "—"}
+                              {(() => {
+                                if (o.orderId && /^\d{6}[A-Za-z0-9]+$/.test(o.orderId)) {
+                                  const yr = 2000 + parseInt(o.orderId.substring(0, 2), 10);
+                                  const mo = parseInt(o.orderId.substring(2, 4), 10);
+                                  const da = parseInt(o.orderId.substring(4, 6), 10);
+                                  if (mo >= 1 && mo <= 12 && da >= 1 && da <= 31) {
+                                    if (!o.orderDate || new Date(o.orderDate).getTime() > Date.now()) {
+                                      return `${String(da).padStart(2, "0")}/${String(mo).padStart(2, "0")}/${yr}`;
+                                    }
+                                  }
+                                }
+                                return o.orderDate ? new Date(o.orderDate).toLocaleDateString("vi-VN") : "—";
+                              })()}
                             </td>
                             <td className="px-2.5 py-2.5 min-w-[180px] max-w-[280px]">
                               <div className="flex items-center gap-2">

@@ -148,7 +148,7 @@ const TEMPLATE_META = {
     title: "14. Mẫu tin nhắn Thông Báo Duyệt Rút Tiền Trong Nhóm",
     command: "/duyet_[MÃ_ID] (Chỉ Trưởng Nhóm)",
     icon: "fa-solid fa-circle-check text-orange-500",
-    desc: "Tin nhắn thông báo trong nhóm Zalo khi Trưởng Nhóm thực hiện lệnh duyệt tiền thành công cho thành viên."
+    desc: "Tin nhắn thông báo trong nhóm Zalo khi Trưởng Nhóm thực hiện lệnh duyệt tiền thành công cho thành viên (Bot tự động tag tên thành viên trong nhóm)."
   },
   template_payout_approved: {
     title: "15. Mẫu tin nhắn Riêng Chuyển Tiền Thành Công (Gửi Private cho Khách)",
@@ -3935,7 +3935,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                   <span>4. Thông Báo Duyệt Rút Tiền (Đồng Thời Tất Cả Nhóm & Riêng)</span>
                 </h4>
                 <p className="text-[11px] text-slate-500 mt-0.5">
-                  Khi bật: Duyệt trên web hay gõ <code className="px-1.5 py-0.5 rounded bg-orange-50 text-orange-600 font-mono text-[10px]">/duyet_ID</code>, bot sẽ gửi tin riêng cho thành viên VÀ tự động thông báo tới tất cả các nhóm Zalo bot đang có mặt
+                  Khi bật: Duyệt trên web hay gõ <code className="px-1.5 py-0.5 rounded bg-orange-50 text-orange-600 font-mono text-[10px]">/duyet_ID</code>, bot sẽ gửi tin riêng cho thành viên VÀ tự động thông báo tới tất cả các nhóm Zalo bot đang có mặt (tự động tag đích danh thành viên)
                 </p>
               </div>
 
@@ -3956,7 +3956,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
               <div className="pt-1">
                 <div className="flex items-center gap-2 text-xs text-orange-700 font-semibold">
                   <i className="fa-solid fa-circle-check text-[11px] text-orange-500"></i>
-                  <span>Đang BẬT: Bot tự động gửi tin riêng và thông báo tới tất cả các nhóm Zalo</span>
+                  <span>Đang BẬT: Bot tự động gửi tin riêng và thông báo tới tất cả các nhóm Zalo (kèm tag tên)</span>
                 </div>
                 <p className="text-[11px] text-slate-500 mt-0.5">
                   Trưởng nhóm không cần nhập ID nhóm Zalo. Bot sẽ tự động quét toàn bộ nhóm đang tham gia.

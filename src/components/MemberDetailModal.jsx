@@ -331,14 +331,10 @@ export function MemberDetailModal({
   const rawCompletedCommission = memberCompletedOrders.reduce((sum, o) => sum + Number(o.rawCommission || 0), 0);
 
   let eligibleCompletedCommission = 0;
-  let paidOrdersCommission = 0;
   memberCompletedOrders.forEach((o) => {
     const comm = calculateUserComm(o);
     if (isOrderEligible(o)) {
       eligibleCompletedCommission += comm;
-    }
-    if (String(o.paymentStatus || "").toUpperCase() === "PAID") {
-      paidOrdersCommission += comm;
     }
   });
 
@@ -487,109 +483,6 @@ export function MemberDetailModal({
     () => currentPageKeys.length > 0 && currentPageKeys.every((k) => selectedOrderIds.has(k)),
     [currentPageKeys, selectedOrderIds]
   );
-
-  // API Đánh dấu Đã thanh toán / Chưa thanh toán
-  const handleMarkPaid = async (action = "PAID", specificOrder = null) => {
-    if (!tenantSlug) return;
-
-    let targetKeys = [];
-    if (specificOrder) {
-      targetKeys = [getOrderKey(specificOrder)];
-    } else {
-      targetKeys = Array.from(selectedOrderIds);
-    }
-
-    if (targetKeys.length === 0) {
-      if (showNotification) showNotification("⚠️ Vui lòng tích chọn ít nhất 1 đơn hàng!", "error");
-      else alert("Vui lòng tích chọn ít nhất 1 đơn hàng!");
-      return;
-    }
-
-    const actionText = action === "PAID" ? "ĐÃ THANH TOÁN" : "CHƯA THANH TOÁN";
-    if (targetKeys.length > 1) {
-      const confirmMsg = `Xác nhận chuyển ${targetKeys.length} đơn hàng sang trạng thái ${actionText}?`;
-      if (!window.confirm(confirmMsg)) return;
-    }
-
-    setIsMarkingPaid(true);
-    try {
-      const res = await fetch(`${apiRoot}/api/saas/admin/${tenantSlug}/orders/mark-paid`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          ...(authHeaders || {}),
-        },
-        body: JSON.stringify({
-          orderIds: targetKeys,
-          action,
-          zaloId: zaloId || undefined,
-          userId: member?.id || undefined,
-          bankName: initialBankName || undefined,
-          accountNumber: initialAccountNumber || undefined,
-          accountName: initialAccountName || undefined,
-        }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        const msg = data.message || `Đã chuyển ${targetKeys.length} đơn sang ${actionText}!`;
-        if (showNotification) showNotification(msg, "success");
-
-        // Tải lại live lookup để đồng bộ ngay lập tức 4 thẻ số dư và danh sách lệnh rút
-        if (zaloId) {
-          const queryKey = encodeURIComponent(zaloId.trim());
-          fetch(`${apiRoot}/api/saas/public/${tenantSlug}/lookup?query=${queryKey}`)
-            .then((r) => (r.ok ? r.json() : null))
-            .then((d) => {
-              if (d) setLiveData(d);
-            })
-            .catch(() => {});
-        }
-
-        // Cập nhật ngay trong state liveData để giao diện phản hồi lập tức
-        setLiveData((prev) => {
-          if (!prev) return prev;
-          const targetSet = new Set(targetKeys.map(String));
-          const updateList = (list) =>
-            (list || []).map((o) => {
-              const k = getOrderKey(o);
-              if (
-                targetSet.has(k) ||
-                (o.id != null && targetSet.has(String(o.id))) ||
-                (o.orderId && targetSet.has(String(o.orderId)))
-              ) {
-                return { ...o, paymentStatus: action };
-              }
-              return o;
-            });
-          return {
-            ...prev,
-            orders: updateList(prev.orders),
-          };
-        });
-
-        // Bỏ chọn các đơn vừa được đánh dấu
-        setSelectedOrderIds((prev) => {
-          const next = new Set(prev);
-          targetKeys.forEach((k) => next.delete(k));
-          return next;
-        });
-
-        // Thông báo parent làm mới danh sách đơn
-        if (onOrdersUpdated) {
-          onOrdersUpdated();
-        }
-      } else {
-        const errMsg = data.message || "Lỗi cập nhật trạng thái thanh toán";
-        if (showNotification) showNotification("❌ " + errMsg, "error");
-        else alert("❌ " + errMsg);
-      }
-    } catch (err) {
-      if (showNotification) showNotification("❌ Lỗi máy chủ: " + err.message, "error");
-      else alert("❌ Lỗi: " + err.message);
-    } finally {
-      setIsMarkingPaid(false);
-    }
-  };
 
   // API Duyệt yêu cầu rút tiền
   const handleApprovePayout = async (payoutId) => {

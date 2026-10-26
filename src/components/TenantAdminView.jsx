@@ -1423,9 +1423,9 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
         }
       }
 
-      const totalWithdrawn = Math.max(totalPayoutsWithdrawn, paidOrdersCommission);
+      const totalWithdrawn = totalPayoutsWithdrawn;
       const availableBalance = Math.max(0, eligibleCommission - totalWithdrawn - pendingWithdrawn);
-      const finalCompletedCommission = Math.max(completedCommission, totalWithdrawn + availableBalance);
+      const finalCompletedCommission = completedCommission;
 
       const walletObj = {
         pendingCommission,
@@ -1788,13 +1788,6 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
         const toDate = new Date(adminOrderDateTo + "T23:59:59");
         if (oDate > toDate) return false;
       }
-    }
-
-    // Filter by Payment Status (Đối chiếu App Script)
-    if (adminOrderFilterPayment && adminOrderFilterPayment !== "Tất cả") {
-      const isPaid = String(o.paymentStatus || "").toUpperCase() === "PAID";
-      if (adminOrderFilterPayment === "PAID" && !isPaid) return false;
-      if (adminOrderFilterPayment === "UNPAID" && isPaid) return false;
     }
 
     return true;
@@ -2963,24 +2956,6 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                   <option value="Đã hủy">Đã hủy</option>
                 </select>
               </div>
-
-              <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">
-                  Thanh toán (App Script)
-                </label>
-                <select
-                  value={adminOrderFilterPayment}
-                  onChange={(e) => {
-                    setAdminOrderFilterPayment(e.target.value);
-                    setAdminOrderPage(1);
-                  }}
-                  className="w-full h-10 bg-slate-50 border border-slate-200 rounded-2xl px-3.5 text-xs font-bold text-slate-800 outline-none focus:border-orange-500 transition cursor-pointer"
-                >
-                  <option value="Tất cả">Tất cả thanh toán</option>
-                  <option value="PAID">✅ Đã thanh toán</option>
-                  <option value="UNPAID">⏳ Chưa thanh toán</option>
-                </select>
-              </div>
             </div>
 
             {/* Expandable Multi-ID Textarea */}
@@ -3158,7 +3133,6 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                     <th className="px-2.5 py-3">Sản phẩm / Mã đơn</th>
                     <th className="px-2.5 py-3 whitespace-nowrap">Người mua</th>
                     <th className="px-2.5 py-3 whitespace-nowrap text-center">Trạng thái</th>
-                    <th className="px-2 py-3 text-center whitespace-nowrap" title="Đã thanh toán (đối chiếu App Script)">Đã TT</th>
                     <th className="px-2.5 py-3 text-right whitespace-nowrap">Thô ({activeTab === "tiktok" ? "TikTok" : "Shopee"})</th>
                     <th className="px-2.5 py-3 text-right whitespace-nowrap">Thuế ({taxRate}%)</th>
                     <th className="px-2.5 py-3 text-right whitespace-nowrap">Sau thuế</th>
@@ -3170,7 +3144,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                 <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
                   {filteredOrders.length === 0 ? (
                     <tr>
-                      <td colSpan={12} className="p-12 text-center text-slate-400 font-bold">
+                      <td colSpan={11} className="p-12 text-center text-slate-400 font-bold">
                         <i className="fa-solid fa-folder-open text-2xl text-slate-300 mb-2 block"></i>
                         Không tìm thấy đơn hàng nào khớp với bộ lọc
                       </td>
@@ -3311,34 +3285,6 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                                   </div>
                                 );
                               })()}
-                            </td>
-                            {/* CỘT ĐÃ THANH TOÁN (ĐỐI CHIẾU APP SCRIPT) */}
-                            <td className="px-2 py-2.5 text-center whitespace-nowrap">
-                              {o.paymentStatus === "PAID" ? (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setSelectedOrderIds(new Set([o.id]));
-                                    handleMarkPaid("UNPAID");
-                                  }}
-                                  className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 hover:text-emerald-700 py-0.5 px-2 rounded-lg hover:bg-slate-100 transition cursor-pointer"
-                                  title="Đã thanh toán (bấm để đổi thành Chưa thanh toán)"
-                                >
-                                  <i className="fa-solid fa-check text-[10px]"></i> Đã TT
-                                </button>
-                              ) : (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setSelectedOrderIds(new Set([o.id]));
-                                    handleMarkPaid("PAID");
-                                  }}
-                                  className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-400 hover:text-slate-600 py-0.5 px-2 rounded-lg hover:bg-slate-100 transition cursor-pointer"
-                                  title="Chưa thanh toán (bấm để đánh dấu Đã thanh toán)"
-                                >
-                                  Chưa TT
-                                </button>
-                              )}
                             </td>
                             <td className="px-2.5 py-2.5 text-right font-mono font-bold text-slate-700 text-xs whitespace-nowrap">{formatMoney(rawVal)}</td>
                             <td className="px-2.5 py-2.5 text-right font-mono font-bold text-rose-500 text-xs whitespace-nowrap">{formatMoney(taxVal)}</td>
@@ -3499,24 +3445,6 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                 </div>
 
                 <div className="flex items-center gap-2 flex-wrap">
-                  <button
-                    type="button"
-                    onClick={() => handleMarkPaid("PAID")}
-                    className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-black rounded-2xl text-xs transition cursor-pointer flex items-center gap-1.5 shadow-md shadow-emerald-500/20"
-                    title="Đánh dấu tất cả đơn đang chọn là Đã thanh toán"
-                  >
-                    <i className="fa-solid fa-check"></i> Đánh dấu ĐÃ THANH TOÁN
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleMarkPaid("UNPAID")}
-                    className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl text-xs transition cursor-pointer flex items-center gap-1.5 border border-slate-200"
-                    title="Bỏ đánh dấu thanh toán (chuyển về Chưa thanh toán)"
-                  >
-                    <i className="fa-solid fa-rotate-left text-[11px]"></i> Chưa thanh toán
-                  </button>
-
                   <button
                     type="button"
                     onClick={handleDeleteSelectedOrders}

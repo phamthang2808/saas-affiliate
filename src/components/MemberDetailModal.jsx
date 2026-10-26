@@ -353,10 +353,10 @@ export function MemberDetailModal({
 
   const totalPayoutsWithdrawn = approvedPayouts.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
   const pendingWithdrawn = pendingPayoutsList.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
-  const totalWithdrawn = Math.max(totalPayoutsWithdrawn, paidOrdersCommission);
+  const totalWithdrawn = totalPayoutsWithdrawn;
 
   const availableBalance = Math.max(0, eligibleCompletedCommission - totalWithdrawn - pendingWithdrawn);
-  const displayCompletedCommission = Math.max(completedCommission, totalWithdrawn + availableBalance);
+  const displayCompletedCommission = completedCommission;
 
   const zaloName = liveData?.zaloName || liveData?.user?.name || initialZaloName;
   const bankName = liveData?.bankName || liveData?.user?.bankName || initialBankName;
@@ -381,11 +381,6 @@ export function MemberDetailModal({
           if (statusFilter === "COMPLETED" && !isOrderCompleted(o)) return false;
           if (statusFilter === "PENDING" && (isOrderCompleted(o) || isOrderCancelled(o))) return false;
           if (statusFilter === "CANCELLED" && !isOrderCancelled(o)) return false;
-        }
-        if (paymentFilter !== "ALL") {
-          const isPaid = o.paymentStatus === "PAID";
-          if (paymentFilter === "PAID" && !isPaid) return false;
-          if (paymentFilter === "UNPAID" && isPaid) return false;
         }
         if (localSearch.trim()) {
           const q = localSearch.toLowerCase().trim();
@@ -1228,21 +1223,6 @@ export function MemberDetailModal({
                 <option value="CANCELLED">Đã hủy</option>
               </select>
 
-              {/* Payment status filter */}
-              <select
-                value={paymentFilter}
-                onChange={(e) => {
-                  setPaymentFilter(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-800 outline-none cursor-pointer"
-                title="Lọc trạng thái thanh toán đối chiếu App Script"
-              >
-                <option value="ALL">Tất cả thanh toán</option>
-                <option value="UNPAID">Chưa thanh toán</option>
-                <option value="PAID">Đã thanh toán</option>
-              </select>
-
               {/* Quick Select Current Page */}
               {currentPageKeys.length > 0 && (
                 <button
@@ -1349,28 +1329,6 @@ export function MemberDetailModal({
               </div>
 
               <div className="flex items-center gap-2 flex-wrap">
-                <button
-                  type="button"
-                  disabled={isMarkingPaid}
-                  onClick={() => handleMarkPaid("PAID")}
-                  className="px-3.5 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white text-xs font-black rounded-xl transition cursor-pointer flex items-center gap-1.5 shadow-sm shadow-emerald-500/20 disabled:opacity-50"
-                  title="Đánh dấu các đơn này là Đã thanh toán (Đối chiếu App Script)"
-                >
-                  <i className="fa-solid fa-check text-[11px]"></i>
-                  <span>Đã thanh toán ({selectedOrderIds.size})</span>
-                </button>
-
-                <button
-                  type="button"
-                  disabled={isMarkingPaid}
-                  onClick={() => handleMarkPaid("UNPAID")}
-                  className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold rounded-xl transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
-                  title="Chuyển về Chưa thanh toán"
-                >
-                  <i className="fa-solid fa-rotate-left text-[11px] text-slate-500"></i>
-                  <span>Chưa TT</span>
-                </button>
-
                 <button
                   type="button"
                   onClick={handleDeleteSelectedOrders}
@@ -1490,7 +1448,6 @@ export function MemberDetailModal({
                   </th>
                   <th className="px-2.5 py-2.5 font-black text-slate-700 whitespace-nowrap">Mã đơn</th>
                   <th className="px-2.5 py-2.5 font-black text-slate-700 whitespace-nowrap">Nền tảng</th>
-                  <th className="px-2.5 py-2.5 font-black text-slate-700 whitespace-nowrap text-center">Đã TT</th>
                   <th className="px-2.5 py-2.5 font-black text-slate-700">Sản phẩm</th>
                   <th className="px-2.5 py-2.5 font-black text-slate-700 whitespace-nowrap text-right">HH Gốc</th>
                   <th className="px-2.5 py-2.5 font-black text-slate-700 whitespace-nowrap text-right">Sau thuế ({100 - taxRate}%)</th>
@@ -1503,7 +1460,7 @@ export function MemberDetailModal({
               <tbody>
                 {paginatedOrders.length === 0 ? (
                   <tr>
-                    <td colSpan="11" className="px-4 py-10 text-center text-slate-400 font-bold">
+                    <td colSpan="10" className="px-4 py-10 text-center text-slate-400 font-bold">
                       Không có đơn hàng nào phù hợp với bộ lọc này.
                     </td>
                   </tr>
@@ -1538,28 +1495,6 @@ export function MemberDetailModal({
                           <span className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold ${pfBadge.cls}`}>
                             {pfBadge.label}
                           </span>
-                        </td>
-                        {/* Cột Đã TT (Đối chiếu App Script) */}
-                        <td className="px-2.5 py-2 text-center whitespace-nowrap">
-                          {o.paymentStatus === "PAID" ? (
-                            <button
-                              type="button"
-                              onClick={() => handleMarkPaid("UNPAID", o)}
-                              className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 hover:text-emerald-700 py-0.5 px-2 rounded-lg hover:bg-slate-100 transition cursor-pointer"
-                              title="Đã thanh toán (Bấm để chuyển về Chưa thanh toán)"
-                            >
-                              <i className="fa-solid fa-check text-[10px]"></i> Đã TT
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => handleMarkPaid("PAID", o)}
-                              className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-400 hover:text-slate-600 py-0.5 px-2 rounded-lg hover:bg-slate-100 transition cursor-pointer"
-                              title="Chưa thanh toán (Bấm để đánh dấu Đã thanh toán)"
-                            >
-                              Chưa TT
-                            </button>
-                          )}
                         </td>
                         <td className="px-2.5 py-2 min-w-[170px] max-w-[300px]">
                           <div className="flex items-center gap-2">

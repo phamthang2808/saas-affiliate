@@ -508,11 +508,6 @@ export function PublicLookupView({
       if (statusFilter === "COMPLETED" && !st.includes("hoàn thành")) return false;
       if (statusFilter === "PENDING" && !st.includes("chờ") && !st.includes("vận chuyển")) return false;
     }
-    if (paymentFilter !== "ALL") {
-      const isPaid = String(o.paymentStatus || "").toUpperCase() === "PAID";
-      if (paymentFilter === "PAID" && !isPaid) return false;
-      if (paymentFilter === "UNPAID" && isPaid) return false;
-    }
     if (localSearch.trim()) {
       const q = localSearch.toLowerCase();
       const name = (o.productName || "").toLowerCase();
@@ -764,10 +759,10 @@ export function PublicLookupView({
                   <i className="fa-solid fa-money-bill-transfer"></i>
                 </div>
                 <p className="text-[10px] sm:text-xs font-black uppercase tracking-wide text-slate-500">
-                  ĐÃ NHẬN (ĐÃ THANH TOÁN)
+                  ĐÃ NHẬN
                 </p>
                 <p className="text-[9px] text-slate-400 font-semibold mb-2">
-                  (Tổng tiền đã rút về bank)
+                  (Tổng tiền đã rút về ngân hàng)
                 </p>
               </div>
               <div className="text-lg sm:text-2xl font-black text-orange-600 font-outfit truncate">
@@ -1099,16 +1094,6 @@ export function PublicLookupView({
                   <option value="PENDING">Chờ xử lý</option>
                 </select>
 
-                <select
-                  value={paymentFilter}
-                  onChange={(e) => setPaymentFilter(e.target.value)}
-                  className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-800 outline-hidden"
-                >
-                  <option value="ALL">Tất cả thanh toán</option>
-                  <option value="PAID">✅ Đã thanh toán</option>
-                  <option value="UNPAID">⏳ Chưa thanh toán</option>
-                </select>
-
                 <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs font-bold">
                   <button
                     onClick={() => setPlatformFilter("ALL")}
@@ -1184,21 +1169,6 @@ export function PublicLookupView({
                             <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-600 whitespace-nowrap">
                               <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block"></span>
                               <span>{order.status || "Chờ xử lý"}</span>
-                            </span>
-                          )}
-
-                          <span className="text-slate-300">•</span>
-
-                          {/* 2. Trạng thái Thanh toán: Chỉ hiển thị chữ & icon, không có viền/nền bao quanh */}
-                          {String(order.paymentStatus || "").toUpperCase() === "PAID" ? (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-sky-600 whitespace-nowrap">
-                              <i className="fa-solid fa-wallet text-[10px]"></i>
-                              <span>Đã thanh toán</span>
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-400 whitespace-nowrap">
-                              <i className="fa-regular fa-clock text-[10px]"></i>
-                              <span>Chưa thanh toán</span>
                             </span>
                           )}
                         </div>

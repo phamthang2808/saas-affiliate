@@ -1565,12 +1565,12 @@ export function MemberDetailModal({
                       </label>
                       <input
                         type="number"
-                        min="1000"
-                        step="1000"
+                        min="1"
+                        step="1"
                         required
                         value={manualAmount}
                         onChange={(e) => setManualAmount(e.target.value)}
-                        placeholder="VD: 50000"
+                        placeholder="VD: 181440"
                         className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-sm font-mono font-bold text-slate-900 outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 shadow-2xs"
                       />
                       {/* Gợi ý số tiền nhanh */}

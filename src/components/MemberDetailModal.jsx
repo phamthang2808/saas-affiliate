@@ -354,6 +354,32 @@ export function MemberDetailModal({
   const availableBalance = Math.max(0, eligibleCompletedCommission - totalWithdrawn - pendingWithdrawn);
   const displayCompletedCommission = completedCommission;
 
+  // Cấu hình Bật/Tắt Sổ theo dõi thanh toán đơn hàng (Trưởng nhóm tự chi trả riêng)
+  const isPaymentTrackingEnabled = Boolean(
+    activeTenant?.enableOrderPaymentTracking ??
+    liveData?.tenant?.enableOrderPaymentTracking ??
+    false
+  );
+
+  const paidOrdersList = useMemo(() => {
+    return memberOrders.filter((o) => (o.paymentStatus || "").toUpperCase() === "PAID");
+  }, [memberOrders]);
+
+  const paidCommission = useMemo(() => {
+    return paidOrdersList.reduce((sum, o) => {
+      if (isOrderCancelled(o)) return sum;
+      return sum + calculateUserComm(o);
+    }, 0);
+  }, [paidOrdersList, customerSplitRate]);
+
+  const unpaidCompletedList = useMemo(() => {
+    return memberCompletedOrders.filter((o) => (o.paymentStatus || "").toUpperCase() !== "PAID");
+  }, [memberCompletedOrders]);
+
+  const unpaidCompletedCommission = useMemo(() => {
+    return unpaidCompletedList.reduce((sum, o) => sum + calculateUserComm(o), 0);
+  }, [unpaidCompletedList, customerSplitRate]);
+
   const zaloName = liveData?.zaloName || liveData?.user?.name || initialZaloName;
   const bankName = liveData?.bankName || liveData?.user?.bankName || initialBankName;
   const accountNumber = liveData?.accountNumber || liveData?.user?.accountNumber || initialAccountNumber;
@@ -378,10 +404,11 @@ export function MemberDetailModal({
           if (statusFilter === "PENDING" && (isOrderCompleted(o) || isOrderCancelled(o))) return false;
           if (statusFilter === "CANCELLED" && !isOrderCancelled(o)) return false;
         }
-        if (paymentFilter !== "ALL") {
+        if (isPaymentTrackingEnabled && paymentFilter !== "ALL") {
           const isPaid = (o.paymentStatus || "").toUpperCase() === "PAID";
           if (paymentFilter === "PAID" && !isPaid) return false;
-          if (paymentFilter === "UNPAID" && isPaid) return false;
+          if (paymentFilter === "UNPAID_COMPLETED" && (!isOrderCompleted(o) || isPaid)) return false;
+          if (paymentFilter === "UNPAID_ALL" && isPaid) return false;
         }
         if (localSearch.trim()) {
           const q = localSearch.toLowerCase().trim();
@@ -1108,6 +1135,110 @@ export function MemberDetailModal({
           </div>
         </div>
 
+        {/* 2 Payment Tracking Cards — SỔ THEO DÕI THANH TOÁN (Chỉ hiện khi bật cấu hình) */}
+        {isPaymentTrackingEnabled && (
+          <div className="bg-gradient-to-r from-teal-50/70 via-emerald-50/40 to-cyan-50/70 rounded-3xl p-4 sm:p-5 border border-teal-200/80 shadow-xs space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-teal-100 pb-2.5">
+              <div className="flex items-center gap-2">
+                <span className="w-7 h-7 rounded-xl bg-teal-600 text-white flex items-center justify-center text-xs shadow-xs">
+                  <i className="fa-solid fa-receipt"></i>
+                </span>
+                <div>
+                  <h4 className="text-xs font-black uppercase tracking-wider text-teal-950 font-display">
+                    Sổ Theo Dõi Thanh Toán Trực Tiếp (Chi Trả Riêng)
+                  </h4>
+                  <p className="text-[10px] text-teal-700 font-semibold">
+                    Theo dõi nội bộ các đơn đã thanh toán / chưa thanh toán cho thành viên này (không làm ảnh hưởng số dư ví tiền rút).
+                  </p>
+                </div>
+              </div>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black bg-teal-100 text-teal-800 border border-teal-200 self-start sm:self-auto">
+                <i className="fa-solid fa-toggle-on text-teal-600"></i> Đang bật theo dõi
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* 1. CHỜ THANH TOÁN (ĐƠN HOÀN THÀNH) */}
+              <div
+                onClick={() => {
+                  setActiveTab("orders");
+                  setPaymentFilter("UNPAID_COMPLETED");
+                  setCurrentPage(1);
+                }}
+                className={`bg-white/95 rounded-2xl p-4 border transition cursor-pointer flex items-center justify-between group ${
+                  paymentFilter === "UNPAID_COMPLETED"
+                    ? "border-amber-500 ring-2 ring-amber-300 shadow-md bg-amber-50/40"
+                    : "border-teal-200 hover:border-amber-400 hover:shadow-md"
+                }`}
+                title="Bấm để lọc các đơn ĐÃ HOÀN THÀNH nhưng CHƯA THANH TOÁN"
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-xs font-black shrink-0">
+                      <i className="fa-solid fa-hourglass-half"></i>
+                    </span>
+                    <div>
+                      <p className="text-[10px] sm:text-[11px] font-black uppercase text-amber-900 tracking-wide">
+                        CHỜ THANH TOÁN (ĐƠN HOÀN THÀNH)
+                      </p>
+                      <p className="text-[9px] text-amber-600 font-bold">
+                        (Số tiền hoa hồng thực tế cần chuyển cho khách)
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-lg sm:text-2xl font-black text-amber-600 font-mono mt-1">
+                    {formatMoney(unpaidCompletedCommission)}
+                  </div>
+                </div>
+                <div className="text-right shrink-0">
+                  <span className="px-2.5 py-1 rounded-full text-xs font-black bg-amber-50 text-amber-700 border border-amber-200 group-hover:bg-amber-600 group-hover:text-white transition">
+                    {unpaidCompletedList.length} đơn ➔
+                  </span>
+                </div>
+              </div>
+
+              {/* 2. ĐÃ THANH TOÁN */}
+              <div
+                onClick={() => {
+                  setActiveTab("orders");
+                  setPaymentFilter("PAID");
+                  setCurrentPage(1);
+                }}
+                className={`bg-white/95 rounded-2xl p-4 border transition cursor-pointer flex items-center justify-between group ${
+                  paymentFilter === "PAID"
+                    ? "border-emerald-500 ring-2 ring-emerald-300 shadow-md bg-emerald-50/40"
+                    : "border-teal-200 hover:border-emerald-400 hover:shadow-md"
+                }`}
+                title="Bấm để lọc các đơn ĐÃ THANH TOÁN"
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-black shrink-0">
+                      <i className="fa-solid fa-circle-check"></i>
+                    </span>
+                    <div>
+                      <p className="text-[10px] sm:text-[11px] font-black uppercase text-emerald-900 tracking-wide">
+                        ĐÃ THANH TOÁN CHO KHÁCH
+                      </p>
+                      <p className="text-[9px] text-emerald-600 font-bold">
+                        (Đã hoàn tất chuyển khoản)
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-lg sm:text-2xl font-black text-emerald-600 font-mono mt-1">
+                    {formatMoney(paidCommission)}
+                  </div>
+                </div>
+                <div className="text-right shrink-0">
+                  <span className="px-2.5 py-1 rounded-full text-xs font-black bg-emerald-50 text-emerald-700 border border-emerald-200 group-hover:bg-emerald-600 group-hover:text-white transition">
+                    {paidOrdersList.length} đơn ➔
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Bank Info Card */}
         <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-xs border border-slate-200">
           <div className="flex items-center gap-2.5 text-sm font-black text-slate-900 mb-4 border-b border-slate-100 pb-3">
@@ -1254,20 +1385,23 @@ export function MemberDetailModal({
                 <option value="CANCELLED">Đã hủy</option>
               </select>
 
-              {/* Payment filter */}
-              <select
-                value={paymentFilter}
-                onChange={(e) => {
-                  setPaymentFilter(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-800 outline-none cursor-pointer"
-                title="Lọc theo trạng thái chi trả hoa hồng cho thành viên"
-              >
-                <option value="ALL">Tất cả thanh toán</option>
-                <option value="UNPAID">Chưa thanh toán</option>
-                <option value="PAID">Đã thanh toán</option>
-              </select>
+              {/* Payment filter (Chỉ hiện khi bật cấu hình) */}
+              {isPaymentTrackingEnabled && (
+                <select
+                  value={paymentFilter}
+                  onChange={(e) => {
+                    setPaymentFilter(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="bg-teal-50/50 border border-teal-300 rounded-xl px-2.5 py-1.5 text-xs font-bold text-teal-900 outline-none cursor-pointer"
+                  title="Lọc theo trạng thái chi trả hoa hồng cho thành viên"
+                >
+                  <option value="ALL">Tất cả thanh toán</option>
+                  <option value="UNPAID_COMPLETED">⏳ Chờ thanh toán (Hoàn thành)</option>
+                  <option value="PAID">✅ Đã thanh toán</option>
+                  <option value="UNPAID_ALL">○ Chưa thanh toán (Tất cả)</option>
+                </select>
+              )}
 
               {/* Quick Select Current Page */}
               {currentPageKeys.length > 0 && (
@@ -1375,33 +1509,36 @@ export function MemberDetailModal({
               </div>
 
               <div className="flex items-center gap-2 flex-wrap">
-                {/* Nút Đã thanh toán (KHÔNG ảnh hưởng tab ví, chỉ chuyển cờ trạng thái) */}
-                <button
-                  type="button"
-                  disabled={isMarkingPaid}
-                  onClick={() => handleMarkPaid("PAID")}
-                  className="px-3.5 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 disabled:opacity-50 text-white rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 shadow-sm shadow-emerald-500/20 active:scale-95"
-                  title="Đánh dấu các đơn đang chọn là ĐÃ THANH TOÁN (tiện theo dõi sổ sách)"
-                >
-                  {isMarkingPaid ? (
-                    <i className="fa-solid fa-spinner fa-spin text-xs"></i>
-                  ) : (
-                    <i className="fa-solid fa-circle-check text-xs"></i>
-                  )}
-                  <span>Đã thanh toán ({selectedOrderIds.size})</span>
-                </button>
+                {/* Nút Đã thanh toán & Bỏ đánh dấu (Chỉ hiện khi bật cấu hình) */}
+                {isPaymentTrackingEnabled && (
+                  <>
+                    <button
+                      type="button"
+                      disabled={isMarkingPaid}
+                      onClick={() => handleMarkPaid("PAID")}
+                      className="px-3.5 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 disabled:opacity-50 text-white rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 shadow-sm shadow-emerald-500/20 active:scale-95"
+                      title="Đánh dấu các đơn đang chọn là ĐÃ THANH TOÁN (tiện theo dõi sổ sách)"
+                    >
+                      {isMarkingPaid ? (
+                        <i className="fa-solid fa-spinner fa-spin text-xs"></i>
+                      ) : (
+                        <i className="fa-solid fa-circle-check text-xs"></i>
+                      )}
+                      <span>Đã thanh toán ({selectedOrderIds.size})</span>
+                    </button>
 
-                {/* Nút Bỏ đánh dấu / Chưa thanh toán */}
-                <button
-                  type="button"
-                  disabled={isMarkingPaid}
-                  onClick={() => handleMarkPaid("UNPAID")}
-                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 disabled:opacity-50 text-xs font-bold rounded-xl transition cursor-pointer flex items-center gap-1.5 active:scale-95"
-                  title="Chuyển các đơn đang chọn về trạng thái CHƯA THANH TOÁN"
-                >
-                  <i className="fa-solid fa-rotate-left text-xs"></i>
-                  <span>Bỏ đánh dấu</span>
-                </button>
+                    <button
+                      type="button"
+                      disabled={isMarkingPaid}
+                      onClick={() => handleMarkPaid("UNPAID")}
+                      className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 disabled:opacity-50 text-xs font-bold rounded-xl transition cursor-pointer flex items-center gap-1.5 active:scale-95"
+                      title="Chuyển các đơn đang chọn về trạng thái CHƯA THANH TOÁN"
+                    >
+                      <i className="fa-solid fa-rotate-left text-xs"></i>
+                      <span>Bỏ đánh dấu</span>
+                    </button>
+                  </>
+                )}
 
                 <button
                   type="button"
@@ -1527,7 +1664,7 @@ export function MemberDetailModal({
                   <th className="px-2.5 py-2.5 font-black text-slate-700 whitespace-nowrap text-right">Sau thuế ({100 - taxRate}%)</th>
                   <th className="px-2.5 py-2.5 font-black text-slate-700 whitespace-nowrap text-right">Khách nhận ({customerSplitRate}%)</th>
                   <th className="px-2.5 py-2.5 font-black text-slate-700 whitespace-nowrap">Thời gian</th>
-                  <th className="px-2.5 py-2.5 font-black text-slate-700 whitespace-nowrap text-center">Thanh toán</th>
+                  {isPaymentTrackingEnabled && <th className="px-2.5 py-2.5 font-black text-slate-700 whitespace-nowrap text-center">Thanh toán</th>}
                   <th className="px-2.5 py-2.5 font-black text-slate-700 whitespace-nowrap text-center">Trạng thái sàn</th>
                   <th className="px-2 py-2.5 font-black text-slate-700 whitespace-nowrap text-center">Thao tác</th>
                 </tr>
@@ -1535,7 +1672,7 @@ export function MemberDetailModal({
               <tbody>
                 {paginatedOrders.length === 0 ? (
                   <tr>
-                    <td colSpan="11" className="px-4 py-10 text-center text-slate-400 font-bold">
+                    <td colSpan={isPaymentTrackingEnabled ? 11 : 10} className="px-4 py-10 text-center text-slate-400 font-bold">
                       Không có đơn hàng nào phù hợp với bộ lọc này.
                     </td>
                   </tr>
@@ -1609,29 +1746,31 @@ export function MemberDetailModal({
                             </div>
                           )}
                         </td>
-                        <td className="px-2.5 py-2 text-center whitespace-nowrap">
-                          {((o.paymentStatus || "").toUpperCase() === "PAID") ? (
-                            <button
-                              type="button"
-                              onClick={() => handleToggleSingleOrderPayment(o)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition cursor-pointer shadow-2xs"
-                              title="Đã thanh toán cho khách. Bấm để chuyển lại về Chưa thanh toán"
-                            >
-                              <i className="fa-solid fa-circle-check text-emerald-600"></i>
-                              <span>Đã thanh toán</span>
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => handleToggleSingleOrderPayment(o)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 transition cursor-pointer shadow-2xs"
-                              title="Chưa thanh toán. Bấm để đánh dấu Đã thanh toán đơn này"
-                            >
-                              <i className="fa-regular fa-circle text-slate-400"></i>
-                              <span>Chưa thanh toán</span>
-                            </button>
-                          )}
-                        </td>
+                        {isPaymentTrackingEnabled && (
+                          <td className="px-2.5 py-2 text-center whitespace-nowrap">
+                            {((o.paymentStatus || "").toUpperCase() === "PAID") ? (
+                              <button
+                                type="button"
+                                onClick={() => handleToggleSingleOrderPayment(o)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition cursor-pointer shadow-2xs"
+                                title="Đã thanh toán cho khách. Bấm để chuyển lại về Chưa thanh toán"
+                              >
+                                <i className="fa-solid fa-circle-check text-emerald-600"></i>
+                                <span>Đã thanh toán</span>
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => handleToggleSingleOrderPayment(o)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 transition cursor-pointer shadow-2xs"
+                                title="Chưa thanh toán. Bấm để đánh dấu Đã thanh toán đơn này"
+                              >
+                                <i className="fa-regular fa-circle text-slate-400"></i>
+                                <span>Chưa thanh toán</span>
+                              </button>
+                            )}
+                          </td>
+                        )}
                         <td className="px-2.5 py-2 text-center whitespace-nowrap">
                           <span className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold ${stBadge.cls}`}>
                             {stBadge.text}
@@ -1675,7 +1814,7 @@ export function MemberDetailModal({
                     <td className="px-2.5 py-2.5 text-right font-black text-orange-600 whitespace-nowrap">
                       {formatMoney(pageTotalFinal)}
                     </td>
-                    <td colSpan="4" className="px-2.5 py-2.5 text-center text-slate-400 font-bold text-[11px] whitespace-nowrap">
+                    <td colSpan={isPaymentTrackingEnabled ? 4 : 3} className="px-2.5 py-2.5 text-center text-slate-400 font-bold text-[11px] whitespace-nowrap">
                       Trang {safePage}/{totalPages}
                     </td>
                   </tr>

@@ -218,6 +218,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
     tiktokCreatorUsername: "",
     isTiktokEnabled: activeTenant?.isTiktokEnabled ?? false,
     useShortLink: activeTenant?.useShortLink ?? false,
+    enableOrderPaymentTracking: activeTenant?.enableOrderPaymentTracking ?? false,
     notifyBothPayout: activeTenant?.notifyBothPayout ?? false,
     donhangUnpaidOnly: activeTenant?.donhangUnpaidOnly ?? false,
     zaloGroupId: activeTenant?.zaloGroupId ?? "",
@@ -370,6 +371,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
           tiktokCreatorUsername: data.tiktokCreatorUsername || "",
           isTiktokEnabled: data.isTiktokEnabled ?? activeTenant?.isTiktokEnabled ?? false,
           useShortLink: data.useShortLink ?? activeTenant?.useShortLink ?? false,
+          enableOrderPaymentTracking: data.enableOrderPaymentTracking ?? activeTenant?.enableOrderPaymentTracking ?? false,
           notifyBothPayout: data.notifyBothPayout ?? activeTenant?.notifyBothPayout ?? false,
           donhangUnpaidOnly: data.donhangUnpaidOnly ?? activeTenant?.donhangUnpaidOnly ?? false,
           zaloGroupId: data.zaloGroupId ?? activeTenant?.zaloGroupId ?? "",
@@ -2555,6 +2557,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                 customerSplitRate,
                 taxRate,
                 holdingDays,
+                enableOrderPaymentTracking: settings.enableOrderPaymentTracking ?? activeTenant?.enableOrderPaymentTracking ?? false,
               }}
               formatMoney={formatMoney}
               formatDate={formatDate}
@@ -3999,6 +4002,81 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
               </div>
             </div>
           )}
+
+          {/* CARD 7: SỔ THEO DÕI THANH TOÁN ĐƠN HÀNG THÀNH VIÊN (TÙY CHỌN DÀNH CHO TRƯỞNG NHÓM TỰ TRẢ TIỀN RIÊNG) */}
+          <div className="bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-6 shadow-xs space-y-4">
+            <div className="flex items-center justify-between flex-wrap gap-2 pb-3 border-b border-slate-100">
+              <div>
+                <h4 className="text-xs font-bold text-slate-900 flex items-center gap-2">
+                  <i className="fa-solid fa-file-invoice-dollar text-orange-500"></i>
+                  <span>7. Sổ Theo Dõi Thanh Toán Đơn Hàng Thành Viên (Tùy Chọn)</span>
+                </h4>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Bật tính năng theo dõi trạng thái Đã thanh toán / Chưa thanh toán cho từng đơn (dành riêng cho Trưởng nhóm tự chi trả trực tiếp cho khách quen)
+                </p>
+              </div>
+              <span className={`px-2.5 py-1 rounded-full text-[11px] font-semibold ${
+                settings.enableOrderPaymentTracking
+                  ? "bg-emerald-50 text-emerald-600"
+                  : "bg-slate-100 text-slate-500"
+              }`}>
+                {settings.enableOrderPaymentTracking ? "Đang BẬT theo dõi" : "Đang TẮT (Ẩn chức năng)"}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <div
+                onClick={() => setSettings({ ...settings, enableOrderPaymentTracking: false })}
+                className={`p-3.5 rounded-xl border transition-all cursor-pointer select-none flex items-start gap-3 ${
+                  !settings.enableOrderPaymentTracking
+                    ? "border-emerald-500 bg-emerald-50/40 text-emerald-950 shadow-2xs"
+                    : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50/50"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="enableOrderPaymentTracking"
+                  checked={!settings.enableOrderPaymentTracking}
+                  onChange={() => setSettings({ ...settings, enableOrderPaymentTracking: false })}
+                  className="accent-emerald-600 mt-0.5 cursor-pointer"
+                />
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-slate-900">TẮT — Ẩn sổ theo dõi thanh toán (Chuẩn)</span>
+                    <span className="px-1.5 py-0.2 bg-emerald-100 text-emerald-700 text-[10px] font-semibold rounded">Mặc định</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Giao diện đơn hàng thành viên gọn gàng, thuần túy, thành viên tự tạo lệnh rút tiền khi muốn.
+                  </p>
+                </div>
+              </div>
+
+              <div
+                onClick={() => setSettings({ ...settings, enableOrderPaymentTracking: true })}
+                className={`p-3.5 rounded-xl border transition-all cursor-pointer select-none flex items-start gap-3 ${
+                  settings.enableOrderPaymentTracking
+                    ? "border-orange-500 bg-orange-50/40 text-orange-950 shadow-2xs"
+                    : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50/50"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="enableOrderPaymentTracking"
+                  checked={Boolean(settings.enableOrderPaymentTracking)}
+                  onChange={() => setSettings({ ...settings, enableOrderPaymentTracking: true })}
+                  className="accent-orange-500 mt-0.5 cursor-pointer"
+                />
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-slate-900">BẬT — Sổ Đánh Dấu Thanh Toán Trực Tiếp</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Hiển thị cột Thanh toán, bộ lọc, các nút tích chọn và 2 thẻ tổng tiền Đã thanh toán / Chờ thanh toán trong chi tiết từng thành viên.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
 
           {/* FOOTER ACTION */}
           <div className="flex items-center justify-end gap-3 pt-2">

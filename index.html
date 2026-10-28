@@ -3,6 +3,32 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Immediate Shopee Short Link Direct Redirect for /s/{code} -->
+    <script>
+      (function() {
+        try {
+          var p = window.location.pathname || '';
+          var m = p.match(/^\/s\/([a-zA-Z0-9_-]+)/);
+          if (m && m[1]) {
+            var code = m[1];
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '/api/short-link/resolve/' + encodeURIComponent(code), true);
+            xhr.onreadystatechange = function() {
+              if (xhr.readyState === 4 && xhr.status === 200) {
+                try {
+                  var res = JSON.parse(xhr.responseText);
+                  if (res && res.longUrl) {
+                    window.location.replace(res.longUrl);
+                  }
+                } catch (e) {}
+              }
+            };
+            xhr.send();
+          }
+        } catch (err) {}
+      })();
+    </script>
     
     <!-- Primary SEO Meta Tags -->
     <title>28AffiHub — Nền Tảng Cho Thuê Bot Zalo Affiliate & Website Tra Cứu Hoàn Tiền Tự Động</title>

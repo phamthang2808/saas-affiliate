@@ -217,7 +217,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
     tiktokApiKey: "",
     tiktokCreatorUsername: "",
     isTiktokEnabled: activeTenant?.isTiktokEnabled ?? false,
-    useShortLink: activeTenant?.useShortLink ?? true,
+    useShortLink: activeTenant?.useShortLink ?? false,
     notifyBothPayout: activeTenant?.notifyBothPayout ?? false,
     donhangUnpaidOnly: activeTenant?.donhangUnpaidOnly ?? false,
     zaloGroupId: activeTenant?.zaloGroupId ?? "",
@@ -369,7 +369,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
           tiktokApiKey: data.tiktokApiKey || "",
           tiktokCreatorUsername: data.tiktokCreatorUsername || "",
           isTiktokEnabled: data.isTiktokEnabled ?? activeTenant?.isTiktokEnabled ?? false,
-          useShortLink: data.useShortLink ?? activeTenant?.useShortLink ?? true,
+          useShortLink: data.useShortLink ?? activeTenant?.useShortLink ?? false,
           notifyBothPayout: data.notifyBothPayout ?? activeTenant?.notifyBothPayout ?? false,
           donhangUnpaidOnly: data.donhangUnpaidOnly ?? activeTenant?.donhangUnpaidOnly ?? false,
           zaloGroupId: data.zaloGroupId ?? activeTenant?.zaloGroupId ?? "",
@@ -3754,15 +3754,44 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                 </p>
               </div>
               <span className={`px-2.5 py-1 rounded-full text-[11px] font-semibold ${
-                settings.useShortLink
-                  ? "bg-orange-50 text-orange-600"
-                  : "bg-slate-100 text-slate-600"
+                !settings.useShortLink
+                  ? "bg-emerald-50 text-emerald-600"
+                  : "bg-orange-50 text-orange-600"
               }`}>
-                {settings.useShortLink ? "Link Ngắn (Rút gọn)" : "Link Dài Shopee"}
+                {!settings.useShortLink ? "Link Trực Tiếp Shopee (Khuyên Dùng)" : "Link Rút Gọn Kênh"}
               </span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <div
+                onClick={() => setSettings({ ...settings, useShortLink: false })}
+                className={`p-3.5 rounded-xl border transition-all cursor-pointer select-none flex items-start gap-3 ${
+                  !settings.useShortLink
+                    ? "border-emerald-500 bg-emerald-50/40 text-emerald-950 shadow-2xs"
+                    : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50/50"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="useShortLink"
+                  checked={settings.useShortLink === false}
+                  onChange={() => setSettings({ ...settings, useShortLink: false })}
+                  className="accent-emerald-600 mt-0.5 cursor-pointer"
+                />
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-slate-900">Link Trực Tiếp Shopee (Khuyên Dùng)</span>
+                    <span className="px-1.5 py-0.2 bg-emerald-100 text-emerald-700 text-[10px] font-semibold rounded">Mặc định</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Mở thẳng ứng dụng Shopee ngay lập tức, không qua web trung gian, khách hàng an tâm 100%
+                  </p>
+                  <div className="mt-2 text-[10px] font-mono text-emerald-700 truncate">
+                    https://s.shopee.vn/an_redir?origin_link=...
+                  </div>
+                </div>
+              </div>
+
               <div
                 onClick={() => setSettings({ ...settings, useShortLink: true })}
                 className={`p-3.5 rounded-xl border transition-all cursor-pointer select-none flex items-start gap-3 ${
@@ -3780,42 +3809,13 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                 />
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-slate-900">Link Rút Gọn (Khuyên Dùng)</span>
-                    <span className="px-1.5 py-0.2 bg-orange-100 text-orange-700 text-[10px] font-semibold rounded">Mặc định</span>
+                    <span className="text-xs font-bold text-slate-900">Link Rút Gọn Kênh</span>
                   </div>
                   <p className="text-[11px] text-slate-500 mt-0.5">
-                    Tự động rút gọn link tiếp thị sang tên miền thương hiệu Kênh
+                    Rút gọn qua tên miền thương hiệu Kênh (sẽ hiển thị trang chuyển tiếp Shopee tối giản)
                   </p>
                   <div className="mt-2 text-[10px] font-mono text-slate-500 truncate">
                     https://www.28affihub.store/s/MNx5TJ4
-                  </div>
-                </div>
-              </div>
-
-              <div
-                onClick={() => setSettings({ ...settings, useShortLink: false })}
-                className={`p-3.5 rounded-xl border transition-all cursor-pointer select-none flex items-start gap-3 ${
-                  !settings.useShortLink
-                    ? "border-orange-500 bg-orange-50/40 text-orange-950 shadow-2xs"
-                    : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50/50"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="useShortLink"
-                  checked={settings.useShortLink === false}
-                  onChange={() => setSettings({ ...settings, useShortLink: false })}
-                  className="accent-orange-500 mt-0.5 cursor-pointer"
-                />
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-slate-900">Link Dài Gốc Shopee</span>
-                  </div>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
-                    Sử dụng trực tiếp link tiếp thị dài gốc từ Shopee Affiliate
-                  </p>
-                  <div className="mt-2 text-[10px] font-mono text-slate-500 truncate">
-                    https://s.shopee.vn/an_redir?origin_link=...
                   </div>
                 </div>
               </div>

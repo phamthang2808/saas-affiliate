@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { API_URL_ROOT } from "../config/api";
 
 export function ShortLinkRedirectView({ shortCode, onNavigateHome }) {
-  const [status, setStatus] = useState("loading"); // 'loading' | 'error' | 'redirecting'
+  const [status, setStatus] = useState("loading"); // 'loading' | 'redirecting' | 'error'
   const [errorMessage, setErrorMessage] = useState("");
   const [targetUrl, setTargetUrl] = useState("");
 
@@ -17,7 +17,7 @@ export function ShortLinkRedirectView({ shortCode, onNavigateHome }) {
 
     const resolveLink = async () => {
       try {
-        const resolveApi = `${API_URL_ROOT}/api/short-link/resolve/${shortCode}`;
+        const resolveApi = `${API_URL_ROOT}/api/short-link/resolve/${encodeURIComponent(shortCode)}`;
         const res = await fetch(resolveApi);
 
         if (res.ok) {
@@ -26,25 +26,32 @@ export function ShortLinkRedirectView({ shortCode, onNavigateHome }) {
             if (!isMounted) return;
             setTargetUrl(data.longUrl);
             setStatus("redirecting");
-            // Direct immediate browser redirect to Shopee/target URL
-            window.location.replace(data.longUrl);
+
+            // Direct immediate redirect to Shopee
+            try {
+              window.location.replace(data.longUrl);
+            } catch (e) {
+              window.location.href = data.longUrl;
+            }
             return;
           }
         }
 
-        // If backend returned 404 or missing longUrl
         if (isMounted) {
           setStatus("error");
-          setErrorMessage("Liên kết rút gọn không tồn tại hoặc đã hết hạn.");
+          setErrorMessage("Liên kết sản phẩm không tồn tại hoặc đã hết hạn.");
         }
       } catch (err) {
         console.error("Lỗi khi giải mã short link:", err);
-        // Fallback: try navigating directly to backend bridge route
         const fallbackUrl = `${API_URL_ROOT}/s/${shortCode}`;
         if (isMounted) {
           setTargetUrl(fallbackUrl);
           setStatus("redirecting");
-          window.location.replace(fallbackUrl);
+          try {
+            window.location.replace(fallbackUrl);
+          } catch (e) {
+            window.location.href = fallbackUrl;
+          }
         }
       }
     };
@@ -57,70 +64,65 @@ export function ShortLinkRedirectView({ shortCode, onNavigateHome }) {
   }, [shortCode]);
 
   return (
-    <div className="min-h-[70vh] flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-100 p-8 text-center relative overflow-hidden">
-        {/* Decorative background glow */}
-        <div className="absolute -top-12 -right-12 w-36 h-36 bg-gradient-to-br from-orange-400/20 to-red-500/20 rounded-full blur-2xl pointer-events-none" />
-        <div className="absolute -bottom-12 -left-12 w-36 h-36 bg-gradient-to-tr from-amber-400/20 to-orange-400/20 rounded-full blur-2xl pointer-events-none" />
+    <div className="fixed inset-0 z-[9999] bg-[#f5f5f5] flex items-center justify-center p-4">
+      <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl border border-orange-100 p-8 text-center relative overflow-hidden">
+        {/* Subtle Shopee Orange Top Accent Bar */}
+        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#ee4d2d] to-[#ff7337]" />
 
-        {status === "loading" && (
-          <div className="flex flex-col items-center py-6">
-            <div className="relative w-16 h-16 mb-6">
+        {/* Loading / Redirecting State */}
+        {status !== "error" ? (
+          <div className="flex flex-col items-center py-4">
+            <div className="relative w-20 h-20 mb-5 flex items-center justify-center">
               <div className="absolute inset-0 rounded-full border-4 border-orange-100" />
-              <div className="absolute inset-0 rounded-full border-4 border-orange-500 border-t-transparent animate-spin" />
-              <div className="absolute inset-0 flex items-center justify-center text-orange-500 font-bold text-lg">
+              <div className="absolute inset-0 rounded-full border-4 border-[#ee4d2d] border-t-transparent animate-spin" />
+              <div className="w-12 h-12 bg-orange-50 rounded-full flex items-center justify-center text-2xl shadow-inner">
                 🛍️
               </div>
             </div>
-            <h2 className="text-xl font-bold text-slate-800 mb-2">
-              Đang chuyển hướng đến Shopee...
-            </h2>
-            <p className="text-sm text-slate-500 mb-6">
-              Hệ thống đang mở liên kết mua sắm của bạn. Vui lòng chờ trong giây lát.
-            </p>
-          </div>
-        )}
 
-        {status === "redirecting" && (
-          <div className="flex flex-col items-center py-6">
-            <div className="w-16 h-16 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center text-2xl font-bold mb-6 animate-pulse">
-              ➔
-            </div>
-            <h2 className="text-xl font-bold text-slate-800 mb-2">
-              Đang mở cửa hàng...
-            </h2>
-            <p className="text-sm text-slate-500 mb-6">
-              Nếu trình duyệt của bạn không tự động chuyển hướng:
+            <h1 className="text-xl font-bold text-slate-800 mb-1.5">
+              Đang mở Shopee...
+            </h1>
+            <p className="text-xs text-slate-500 mb-6 leading-relaxed max-w-xs">
+              Đang chuyển hướng bạn đến ứng dụng Shopee. Vui lòng chờ trong giây lát.
             </p>
-            {targetUrl && (
+
+            {targetUrl ? (
               <a
                 href={targetUrl}
                 rel="noreferrer"
-                className="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold rounded-xl shadow-md hover:shadow-lg transition-all text-sm"
+                className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-gradient-to-r from-[#ee4d2d] to-[#ff5722] hover:from-[#d73211] hover:to-[#ee4d2d] text-white font-bold rounded-xl shadow-lg shadow-orange-500/25 active:scale-95 transition-all text-sm tracking-wide"
               >
-                Bấm vào đây để mở Shopee ➔
+                <span>Mở Shopee Ngay</span>
+                <span className="text-base">➔</span>
               </a>
+            ) : (
+              <div className="h-12 w-full flex items-center justify-center">
+                <span className="text-xs text-slate-400">Đang chuẩn bị liên kết...</span>
+              </div>
             )}
-          </div>
-        )}
 
-        {status === "error" && (
-          <div className="flex flex-col items-center py-6">
+            <p className="text-[11px] text-slate-400 mt-4">
+              Nếu không tự chuyển hướng, bấm nút màu cam ở trên
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center py-4">
             <div className="w-16 h-16 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center text-2xl mb-4">
               ⚠️
             </div>
-            <h2 className="text-xl font-bold text-slate-800 mb-2">
+            <h2 className="text-lg font-bold text-slate-800 mb-2">
               Không thể mở liên kết
             </h2>
-            <p className="text-sm text-slate-600 mb-6 max-w-xs">
-              {errorMessage || "Mã rút gọn không tồn tại hoặc đã hết hạn."}
+            <p className="text-xs text-slate-500 mb-6 max-w-xs">
+              {errorMessage || "Liên kết sản phẩm không tồn tại hoặc đã hết hạn."}
             </p>
-            <button
-              onClick={onNavigateHome}
-              className="inline-flex items-center justify-center px-6 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-medium rounded-xl text-sm transition-colors"
+            <a
+              href="https://shopee.vn"
+              className="w-full inline-flex items-center justify-center px-6 py-3 bg-[#ee4d2d] hover:bg-[#d73211] text-white font-medium rounded-xl text-sm transition-colors"
             >
-              Về trang chủ SaaS
-            </button>
+              Mở trang chủ Shopee
+            </a>
           </div>
         )}
       </div>

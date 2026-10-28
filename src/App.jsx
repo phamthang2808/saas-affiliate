@@ -385,6 +385,18 @@ export default function App() {
     setCurrentView("gioi-thieu");
   };
 
+  // Mở link rút gọn Shopee: Render toàn màn hình tối giản chuyên biệt Shopee, KHÔNG render Portal/Sidebar/Admin
+  if (currentView === "short-link") {
+    return (
+      <ShortLinkRedirectView
+        shortCode={shortCodeToResolve}
+        onNavigateHome={() => {
+          window.location.href = "/";
+        }}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 flex font-sans pb-20 lg:pb-0">
       {/* Backdrop overlay for mobile drawer */}
@@ -538,13 +550,7 @@ export default function App() {
             )
           )}
 
-          {/* 7. Short Link Redirect Router */}
-          {currentView === "short-link" && (
-            <ShortLinkRedirectView
-              shortCode={shortCodeToResolve}
-              onNavigateHome={() => setCurrentView("gioi-thieu")}
-            />
-          )}
+          {/* 7. Short Link Redirect Router (Đã xử lý ở early-return toàn màn hình) */}
         </main>
 
         {/* Comprehensive Multi-Column Footer */}

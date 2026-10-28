@@ -378,6 +378,11 @@ export function MemberDetailModal({
           if (statusFilter === "PENDING" && (isOrderCompleted(o) || isOrderCancelled(o))) return false;
           if (statusFilter === "CANCELLED" && !isOrderCancelled(o)) return false;
         }
+        if (paymentFilter !== "ALL") {
+          const isPaid = (o.paymentStatus || "").toUpperCase() === "PAID";
+          if (paymentFilter === "PAID" && !isPaid) return false;
+          if (paymentFilter === "UNPAID" && isPaid) return false;
+        }
         if (localSearch.trim()) {
           const q = localSearch.toLowerCase().trim();
           const orderId = (o.orderId || "").toLowerCase();
@@ -682,6 +687,129 @@ export function MemberDetailModal({
     } catch (err) {
       if (showNotification) showNotification("❌ Lỗi máy chủ: " + err.message, "error");
       else alert("❌ Lỗi: " + err.message);
+    }
+  };
+
+  // API Đánh dấu trạng thái thanh toán hàng loạt (KHÔNG ảnh hưởng ví hay lịch sử rút tiền)
+  const handleMarkPaid = async (action = "PAID") => {
+    if (!tenantSlug) return;
+    if (selectedOrdersList.length === 0) {
+      if (showNotification) showNotification("⚠️ Vui lòng tích chọn ít nhất 1 đơn hàng!", "error");
+      else alert("Vui lòng tích chọn ít nhất 1 đơn hàng!");
+      return;
+    }
+
+    const orderDbIds = selectedOrdersList.map((o) => o.id || o.orderId).filter(Boolean);
+    if (orderDbIds.length === 0) {
+      if (showNotification) showNotification("❌ Không tìm thấy ID đơn hàng hợp lệ!", "error");
+      return;
+    }
+
+    const isPaid = action === "PAID";
+    const actionText = isPaid ? "ĐÃ THANH TOÁN" : "CHƯA THANH TOÁN";
+
+    setIsMarkingPaid(true);
+    try {
+      const res = await fetch(`${apiRoot}/api/saas/admin/${tenantSlug}/orders/mark-paid`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...(authHeaders || {}),
+        },
+        body: JSON.stringify({
+          orderIds: orderDbIds,
+          action: isPaid ? "PAID" : "UNPAID",
+          zaloId: zaloId || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        const msg = data.message || `Đã chuyển ${orderDbIds.length} đơn sang ${actionText}!`;
+        if (showNotification) showNotification(msg, "success");
+        else alert(msg);
+
+        // Cập nhật ngay trong local state để người dùng thấy đổi trạng thái tức thì
+        setLiveData((prev) => {
+          if (!prev || !Array.isArray(prev.orders)) return prev;
+          const updatedSet = new Set(orderDbIds.map(String));
+          return {
+            ...prev,
+            orders: prev.orders.map((ord) => {
+              const k1 = String(ord.id);
+              const k2 = String(ord.orderId);
+              if (updatedSet.has(k1) || updatedSet.has(k2)) {
+                return { ...ord, paymentStatus: isPaid ? "PAID" : "UNPAID" };
+              }
+              return ord;
+            }),
+          };
+        });
+
+        setSelectedOrderIds(new Set());
+        await refreshLiveData();
+        if (onOrdersUpdated) onOrdersUpdated();
+      } else {
+        const errMsg = data.message || "Lỗi khi cập nhật trạng thái thanh toán";
+        if (showNotification) showNotification("❌ " + errMsg, "error");
+        else alert("❌ " + errMsg);
+      }
+    } catch (err) {
+      if (showNotification) showNotification("❌ Lỗi máy chủ: " + err.message, "error");
+      else alert("❌ Lỗi: " + err.message);
+    } finally {
+      setIsMarkingPaid(false);
+    }
+  };
+
+  // API Đổi nhanh trạng thái thanh toán 1 đơn lẻ khi bấm vào badge
+  const handleToggleSingleOrderPayment = async (order) => {
+    if (!tenantSlug || !order) return;
+    const isCurrentlyPaid = (order.paymentStatus || "").toUpperCase() === "PAID";
+    const nextAction = isCurrentlyPaid ? "UNPAID" : "PAID";
+    const orderKey = order.id || order.orderId;
+
+    try {
+      const res = await fetch(`${apiRoot}/api/saas/admin/${tenantSlug}/orders/mark-paid`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...(authHeaders || {}),
+        },
+        body: JSON.stringify({
+          orderIds: [orderKey],
+          action: nextAction,
+          zaloId: zaloId || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        if (showNotification) {
+          showNotification(
+            nextAction === "PAID"
+              ? `✅ Đã đánh dấu đơn #${order.orderId || orderKey} là ĐÃ THANH TOÁN`
+              : `↩️ Đã chuyển đơn #${order.orderId || orderKey} về CHƯA THANH TOÁN`,
+            "success"
+          );
+        }
+        setLiveData((prev) => {
+          if (!prev || !Array.isArray(prev.orders)) return prev;
+          return {
+            ...prev,
+            orders: prev.orders.map((ord) => {
+              if (ord.id === order.id || ord.orderId === order.orderId) {
+                return { ...ord, paymentStatus: nextAction };
+              }
+              return ord;
+            }),
+          };
+        });
+        await refreshLiveData();
+        if (onOrdersUpdated) onOrdersUpdated();
+      } else {
+        if (showNotification) showNotification("❌ " + (data.message || "Lỗi cập nhật"), "error");
+      }
+    } catch (err) {
+      if (showNotification) showNotification("❌ Lỗi: " + err.message, "error");
     }
   };
 
@@ -1116,6 +1244,21 @@ export function MemberDetailModal({
                 <option value="CANCELLED">Đã hủy</option>
               </select>
 
+              {/* Payment filter */}
+              <select
+                value={paymentFilter}
+                onChange={(e) => {
+                  setPaymentFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-800 outline-none cursor-pointer"
+                title="Lọc theo trạng thái chi trả hoa hồng cho thành viên"
+              >
+                <option value="ALL">Tất cả thanh toán</option>
+                <option value="UNPAID">Chưa thanh toán</option>
+                <option value="PAID">Đã thanh toán</option>
+              </select>
+
               {/* Quick Select Current Page */}
               {currentPageKeys.length > 0 && (
                 <button
@@ -1222,6 +1365,34 @@ export function MemberDetailModal({
               </div>
 
               <div className="flex items-center gap-2 flex-wrap">
+                {/* Nút Đã thanh toán (KHÔNG ảnh hưởng tab ví, chỉ chuyển cờ trạng thái) */}
+                <button
+                  type="button"
+                  disabled={isMarkingPaid}
+                  onClick={() => handleMarkPaid("PAID")}
+                  className="px-3.5 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 disabled:opacity-50 text-white rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 shadow-sm shadow-emerald-500/20 active:scale-95"
+                  title="Đánh dấu các đơn đang chọn là ĐÃ THANH TOÁN (tiện theo dõi sổ sách)"
+                >
+                  {isMarkingPaid ? (
+                    <i className="fa-solid fa-spinner fa-spin text-xs"></i>
+                  ) : (
+                    <i className="fa-solid fa-circle-check text-xs"></i>
+                  )}
+                  <span>Đã thanh toán ({selectedOrderIds.size})</span>
+                </button>
+
+                {/* Nút Bỏ đánh dấu / Chưa thanh toán */}
+                <button
+                  type="button"
+                  disabled={isMarkingPaid}
+                  onClick={() => handleMarkPaid("UNPAID")}
+                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 disabled:opacity-50 text-xs font-bold rounded-xl transition cursor-pointer flex items-center gap-1.5 active:scale-95"
+                  title="Chuyển các đơn đang chọn về trạng thái CHƯA THANH TOÁN"
+                >
+                  <i className="fa-solid fa-rotate-left text-xs"></i>
+                  <span>Bỏ đánh dấu</span>
+                </button>
+
                 <button
                   type="button"
                   onClick={handleDeleteSelectedOrders}
@@ -1346,14 +1517,15 @@ export function MemberDetailModal({
                   <th className="px-2.5 py-2.5 font-black text-slate-700 whitespace-nowrap text-right">Sau thuế ({100 - taxRate}%)</th>
                   <th className="px-2.5 py-2.5 font-black text-slate-700 whitespace-nowrap text-right">Khách nhận ({customerSplitRate}%)</th>
                   <th className="px-2.5 py-2.5 font-black text-slate-700 whitespace-nowrap">Thời gian</th>
-                  <th className="px-2.5 py-2.5 font-black text-slate-700 whitespace-nowrap text-center">Trạng thái</th>
+                  <th className="px-2.5 py-2.5 font-black text-slate-700 whitespace-nowrap text-center">Thanh toán</th>
+                  <th className="px-2.5 py-2.5 font-black text-slate-700 whitespace-nowrap text-center">Trạng thái sàn</th>
                   <th className="px-2 py-2.5 font-black text-slate-700 whitespace-nowrap text-center">Thao tác</th>
                 </tr>
               </thead>
               <tbody>
                 {paginatedOrders.length === 0 ? (
                   <tr>
-                    <td colSpan="10" className="px-4 py-10 text-center text-slate-400 font-bold">
+                    <td colSpan="11" className="px-4 py-10 text-center text-slate-400 font-bold">
                       Không có đơn hàng nào phù hợp với bộ lọc này.
                     </td>
                   </tr>
@@ -1428,6 +1600,29 @@ export function MemberDetailModal({
                           )}
                         </td>
                         <td className="px-2.5 py-2 text-center whitespace-nowrap">
+                          {((o.paymentStatus || "").toUpperCase() === "PAID") ? (
+                            <button
+                              type="button"
+                              onClick={() => handleToggleSingleOrderPayment(o)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition cursor-pointer shadow-2xs"
+                              title="Đã thanh toán cho khách. Bấm để chuyển lại về Chưa thanh toán"
+                            >
+                              <i className="fa-solid fa-circle-check text-emerald-600"></i>
+                              <span>Đã thanh toán</span>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleToggleSingleOrderPayment(o)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 transition cursor-pointer shadow-2xs"
+                              title="Chưa thanh toán. Bấm để đánh dấu Đã thanh toán đơn này"
+                            >
+                              <i className="fa-regular fa-circle text-slate-400"></i>
+                              <span>Chưa thanh toán</span>
+                            </button>
+                          )}
+                        </td>
+                        <td className="px-2.5 py-2 text-center whitespace-nowrap">
                           <span className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold ${stBadge.cls}`}>
                             {stBadge.text}
                           </span>
@@ -1470,7 +1665,7 @@ export function MemberDetailModal({
                     <td className="px-2.5 py-2.5 text-right font-black text-orange-600 whitespace-nowrap">
                       {formatMoney(pageTotalFinal)}
                     </td>
-                    <td colSpan="3" className="px-2.5 py-2.5 text-center text-slate-400 font-bold text-[11px] whitespace-nowrap">
+                    <td colSpan="4" className="px-2.5 py-2.5 text-center text-slate-400 font-bold text-[11px] whitespace-nowrap">
                       Trang {safePage}/{totalPages}
                     </td>
                   </tr>

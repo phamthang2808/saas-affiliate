@@ -699,7 +699,7 @@ export function MemberDetailModal({
       return;
     }
 
-    const orderDbIds = selectedOrdersList.map((o) => o.id || o.orderId).filter(Boolean);
+    const orderDbIds = selectedOrdersList.flatMap((o) => [o.id, o.orderId].filter(Boolean));
     if (orderDbIds.length === 0) {
       if (showNotification) showNotification("❌ Không tìm thấy ID đơn hàng hợp lệ!", "error");
       return;
@@ -724,9 +724,14 @@ export function MemberDetailModal({
       });
       const data = await res.json();
       if (res.ok) {
-        const msg = data.message || `Đã chuyển ${orderDbIds.length} đơn sang ${actionText}!`;
-        if (showNotification) showNotification(msg, "success");
-        else alert(msg);
+        if (data.count === 0) {
+          if (showNotification) showNotification("⚠️ 0 đơn hàng được cập nhật trong DB! Vui lòng thử lại.", "error");
+          else alert("⚠️ 0 đơn hàng được cập nhật trong DB!");
+        } else {
+          const msg = data.message || `Đã chuyển ${data.count || selectedOrdersList.length} đơn sang ${actionText}!`;
+          if (showNotification) showNotification(msg, "success");
+          else alert(msg);
+        }
 
         // Cập nhật ngay trong local state để người dùng thấy đổi trạng thái tức thì
         setLiveData((prev) => {
@@ -766,7 +771,7 @@ export function MemberDetailModal({
     if (!tenantSlug || !order) return;
     const isCurrentlyPaid = (order.paymentStatus || "").toUpperCase() === "PAID";
     const nextAction = isCurrentlyPaid ? "UNPAID" : "PAID";
-    const orderKey = order.id || order.orderId;
+    const targetKeys = [order.id, order.orderId].filter(Boolean);
 
     try {
       const res = await fetch(`${apiRoot}/api/saas/admin/${tenantSlug}/orders/mark-paid`, {
@@ -776,27 +781,32 @@ export function MemberDetailModal({
           ...(authHeaders || {}),
         },
         body: JSON.stringify({
-          orderIds: [orderKey],
+          orderIds: targetKeys,
           action: nextAction,
           zaloId: zaloId || undefined,
         }),
       });
       const data = await res.json();
       if (res.ok) {
-        if (showNotification) {
-          showNotification(
-            nextAction === "PAID"
-              ? `✅ Đã đánh dấu đơn #${order.orderId || orderKey} là ĐÃ THANH TOÁN`
-              : `↩️ Đã chuyển đơn #${order.orderId || orderKey} về CHƯA THANH TOÁN`,
-            "success"
-          );
+        if (data.count === 0) {
+          if (showNotification) showNotification("⚠️ Không tìm thấy bản ghi đơn hàng trong DB để cập nhật!", "error");
+        } else {
+          if (showNotification) {
+            showNotification(
+              nextAction === "PAID"
+                ? `✅ Đã đánh dấu đơn #${order.orderId || order.id} là ĐÃ THANH TOÁN`
+                : `↩️ Đã chuyển đơn #${order.orderId || order.id} về CHƯA THANH TOÁN`,
+              "success"
+            );
+          }
         }
+        const keySet = new Set(targetKeys.map(String));
         setLiveData((prev) => {
           if (!prev || !Array.isArray(prev.orders)) return prev;
           return {
             ...prev,
             orders: prev.orders.map((ord) => {
-              if (ord.id === order.id || ord.orderId === order.orderId) {
+              if (keySet.has(String(ord.id)) || keySet.has(String(ord.orderId))) {
                 return { ...ord, paymentStatus: nextAction };
               }
               return ord;

@@ -2949,7 +2949,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
 
           {/* LỲ-STYLE SEARCH & FILTER BAR */}
           <div className="bg-white rounded-3xl border border-slate-200/80 p-5 shadow-2xs space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 items-end">
+            <div className={`grid grid-cols-1 sm:grid-cols-2 ${isPaymentTrackingEnabled ? "md:grid-cols-5" : "md:grid-cols-4"} gap-3 items-end`}>
               <div>
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">
                   Người mua
@@ -3024,6 +3024,26 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                   <option value="Đã hủy">Đã hủy</option>
                 </select>
               </div>
+
+              {isPaymentTrackingEnabled && (
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">
+                    Thanh toán
+                  </label>
+                  <select
+                    value={adminOrderFilterPayment}
+                    onChange={(e) => {
+                      setAdminOrderFilterPayment(e.target.value);
+                      setAdminOrderPage(1);
+                    }}
+                    className="w-full h-10 bg-slate-50 border border-slate-200 rounded-2xl px-3.5 text-xs font-bold text-slate-800 outline-none focus:border-orange-500 transition cursor-pointer"
+                  >
+                    <option value="Tất cả">Tất cả thanh toán</option>
+                    <option value="PAID">Đã thanh toán</option>
+                    <option value="UNPAID">Chưa thanh toán</option>
+                  </select>
+                </div>
+              )}
             </div>
 
             {/* Expandable Multi-ID Textarea */}
@@ -3259,6 +3279,9 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                     <th className="px-2.5 py-3">Sản phẩm / Mã đơn</th>
                     <th className="px-2.5 py-3 whitespace-nowrap">Người mua</th>
                     <th className="px-2.5 py-3 whitespace-nowrap text-center">Trạng thái</th>
+                    {isPaymentTrackingEnabled && (
+                      <th className="px-2.5 py-3 whitespace-nowrap text-center">Thanh toán</th>
+                    )}
                     <th className="px-2.5 py-3 text-right whitespace-nowrap">Thô ({activeTab === "tiktok" ? "TikTok" : "Shopee"})</th>
                     <th className="px-2.5 py-3 text-right whitespace-nowrap">Thuế ({taxRate}%)</th>
                     <th className="px-2.5 py-3 text-right whitespace-nowrap">Sau thuế</th>
@@ -3412,6 +3435,50 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                                 );
                               })()}
                             </td>
+                            {isPaymentTrackingEnabled && (
+                              <td className="px-2.5 py-2.5 whitespace-nowrap text-center">
+                                {(() => {
+                                  const isPaid = (o.paymentStatus || "").toUpperCase() === "PAID";
+                                  const paidDate = o.paidAt || (isPaid ? (o.updatedAt || o.completeTime) : null);
+
+                                  return (
+                                    <div className="flex flex-col items-center gap-1">
+                                      {isPaid ? (
+                                        <button
+                                          type="button"
+                                          onClick={() => handleToggleSingleOrderPayment(o)}
+                                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition cursor-pointer shadow-2xs"
+                                          title="Đã thanh toán cho khách. Bấm để chuyển lại về Chưa thanh toán"
+                                        >
+                                          <i className="fa-solid fa-circle-check text-emerald-600"></i>
+                                          <span>Đã thanh toán</span>
+                                        </button>
+                                      ) : (
+                                        <button
+                                          type="button"
+                                          onClick={() => handleToggleSingleOrderPayment(o)}
+                                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 transition cursor-pointer shadow-2xs"
+                                          title="Chưa thanh toán. Bấm để đánh dấu Đã thanh toán đơn này"
+                                        >
+                                          <i className="fa-regular fa-circle text-slate-400"></i>
+                                          <span>Chưa thanh toán</span>
+                                        </button>
+                                      )}
+
+                                      {isPaid && paidDate && (
+                                        <div
+                                          className="text-[10px] font-semibold text-emerald-700/90 flex items-center gap-1 mt-0.5"
+                                          title={`Thanh toán lúc: ${new Date(paidDate).toLocaleString("vi-VN")}`}
+                                        >
+                                          <i className="fa-regular fa-calendar-check text-[9px] text-emerald-600"></i>
+                                          <span>{new Date(paidDate).toLocaleDateString("vi-VN")}</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })()}
+                              </td>
+                            )}
                             <td className="px-2.5 py-2.5 text-right font-mono font-bold text-slate-700 text-xs whitespace-nowrap">{formatMoney(rawVal)}</td>
                             <td className="px-2.5 py-2.5 text-right font-mono font-bold text-rose-500 text-xs whitespace-nowrap">{formatMoney(taxVal)}</td>
                             <td className="px-2.5 py-2.5 text-right font-mono font-bold text-slate-800 text-xs whitespace-nowrap">{formatMoney(afterTaxVal)}</td>

@@ -493,6 +493,16 @@ export function PublicLookupView({
   const availableBalance = Math.max(0, eligibleCompletedCommission - totalWithdrawn - pendingPayoutAmount);
   const displayCompletedCommission = completedCommission;
 
+  // Thống kê trạng thái thanh toán đơn hàng
+  const paidOrdersList = orders.filter((o) => (o.paymentStatus || "").toUpperCase() === "PAID");
+  const unpaidCompletedList = orders.filter((o) => {
+    const isDone = (o.status || "").toLowerCase().includes("hoàn thành");
+    const isPaid = (o.paymentStatus || "").toUpperCase() === "PAID";
+    return isDone && !isPaid;
+  });
+  const paidCommission = paidOrdersList.reduce((sum, o) => sum + getOrderUserCommission(o), 0);
+  const unpaidCompletedCommission = unpaidCompletedList.reduce((sum, o) => sum + getOrderUserCommission(o), 0);
+
   // Lọc danh sách đơn hàng
   const filteredOrders = orders.filter((o) => {
     if (platformFilter !== "ALL") {
@@ -503,6 +513,13 @@ export function PublicLookupView({
       const st = (o.status || "").toLowerCase();
       if (statusFilter === "COMPLETED" && !st.includes("hoàn thành")) return false;
       if (statusFilter === "PENDING" && !st.includes("chờ") && !st.includes("vận chuyển")) return false;
+    }
+    if (paymentFilter !== "ALL") {
+      const isPaid = (o.paymentStatus || "").toUpperCase() === "PAID";
+      const isDone = (o.status || "").toLowerCase().includes("hoàn thành");
+      if (paymentFilter === "PAID" && !isPaid) return false;
+      if (paymentFilter === "UNPAID_COMPLETED" && (!isDone || isPaid)) return false;
+      if (paymentFilter === "UNPAID_ALL" && isPaid) return false;
     }
     if (localSearch.trim()) {
       const q = localSearch.toLowerCase();
@@ -1065,11 +1082,56 @@ export function PublicLookupView({
 
           {/* 4. KHU DANH SÁCH ĐƠN HÀNG */}
           <div className="bg-white rounded-3xl p-5 sm:p-7 shadow-xs border border-slate-200 space-y-4">
-            <div className="flex items-center justify-between flex-wrap gap-3">
-              <h3 className="font-extrabold text-slate-900 text-base flex items-center gap-2 font-outfit">
-                <i className="fa-solid fa-boxes-stacked text-orange-600"></i>
-                Tất Cả Đơn Hàng Đã Đặt ({orders.length} đơn)
-              </h3>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <h3 className="font-extrabold text-slate-900 text-base flex items-center gap-2 font-outfit">
+                  <i className="fa-solid fa-boxes-stacked text-orange-600"></i>
+                  Tất Cả Đơn Hàng Đã Đặt ({orders.length} đơn)
+                </h3>
+              </div>
+
+              {/* Dải nút tóm tắt nhanh trạng thái thanh toán */}
+              {orders.length > 0 && (
+                <div className="flex items-center gap-2 flex-wrap pt-1 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setPaymentFilter(paymentFilter === "UNPAID_COMPLETED" ? "ALL" : "UNPAID_COMPLETED")}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold transition cursor-pointer border shadow-2xs ${
+                      paymentFilter === "UNPAID_COMPLETED"
+                        ? "bg-amber-500 text-white border-amber-600 shadow-xs ring-2 ring-amber-300"
+                        : "bg-amber-50 hover:bg-amber-100 text-amber-900 border-amber-200"
+                    }`}
+                    title="Bấm để lọc các đơn Đã hoàn thành nhưng Chưa thanh toán"
+                  >
+                    <i className="fa-solid fa-hourglass-half text-[10px] text-amber-600"></i>
+                    <span>Chờ thanh toán: <strong className="font-mono">${formatMoney(unpaidCompletedCommission)}</strong> (${unpaidCompletedList.length} đơn)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setPaymentFilter(paymentFilter === "PAID" ? "ALL" : "PAID")}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold transition cursor-pointer border shadow-2xs ${
+                      paymentFilter === "PAID"
+                        ? "bg-emerald-600 text-white border-emerald-700 shadow-xs ring-2 ring-emerald-300"
+                        : "bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border-emerald-200"
+                    }`}
+                    title="Bấm để lọc các đơn Đã thanh toán"
+                  >
+                    <i className="fa-solid fa-circle-check text-[10px] text-emerald-600"></i>
+                    <span>Đã thanh toán: <strong className="font-mono">${formatMoney(paidCommission)}</strong> (${paidOrdersList.length} đơn)</span>
+                  </button>
+
+                  {paymentFilter !== "ALL" && (
+                    <button
+                      type="button"
+                      onClick={() => setPaymentFilter("ALL")}
+                      className="text-xs text-slate-400 hover:text-slate-600 font-semibold px-2 py-1 cursor-pointer"
+                    >
+                      ✕ Xem tất cả
+                    </button>
+                  )}
+                </div>
+              )}
 
               <div className="flex items-center gap-2 flex-wrap">
                 <input
@@ -1088,6 +1150,18 @@ export function PublicLookupView({
                   <option value="ALL">Tất cả trạng thái</option>
                   <option value="COMPLETED">Đã hoàn thành</option>
                   <option value="PENDING">Chờ xử lý</option>
+                </select>
+
+                <select
+                  value={paymentFilter}
+                  onChange={(e) => setPaymentFilter(e.target.value)}
+                  className="bg-teal-50/70 border border-teal-300 rounded-xl px-3 py-1.5 text-xs font-bold text-teal-900 outline-hidden cursor-pointer shadow-2xs"
+                  title="Lọc theo trạng thái chi trả hoa hồng"
+                >
+                  <option value="ALL">Tất cả thanh toán</option>
+                  <option value="PAID">✅ Đã thanh toán ({paidOrdersList.length})</option>
+                  <option value="UNPAID_COMPLETED">⏳ Chờ thanh toán ({unpaidCompletedList.length})</option>
+                  <option value="UNPAID_ALL">○ Chưa thanh toán (Tất cả)</option>
                 </select>
 
                 <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs font-bold">
@@ -1128,6 +1202,7 @@ export function PublicLookupView({
                 {filteredOrders.map((order, idx) => {
                   const isDone = (order.status || "").toLowerCase().includes("hoàn thành");
                   const isTiktok = (order.platform || "").toUpperCase() === "TIKTOK";
+                  const isPaid = (order.paymentStatus || "").toUpperCase() === "PAID";
                   return (
                     <div
                       key={order.id || idx}
@@ -1150,7 +1225,7 @@ export function PublicLookupView({
                           </div>
                         </div>
                         <div className="flex items-center gap-2 flex-wrap justify-end text-xs">
-                          {/* 1. Trạng thái Đơn hàng: Chỉ hiển thị chữ & dot, không có viền/nền bao quanh */}
+                          {/* 1. Trạng thái Đơn hàng sàn */}
                           {isDone && holdingDays > 0 && !isOrderEligibleForWithdrawal(order) ? (
                             <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-amber-600 whitespace-nowrap">
                               <i className="fa-solid fa-hourglass-half text-[10px]"></i>
@@ -1165,6 +1240,23 @@ export function PublicLookupView({
                             <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-600 whitespace-nowrap">
                               <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block"></span>
                               <span>{order.status || "Chờ xử lý"}</span>
+                            </span>
+                          )}
+
+                          {/* 2. Trạng thái Chi trả Hoa hồng */}
+                          {isPaid ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-100/90 text-emerald-800 border border-emerald-300 shadow-2xs whitespace-nowrap">
+                              <i className="fa-solid fa-circle-check text-emerald-600 text-[10px]"></i>
+                              <span>Đã thanh toán</span>
+                            </span>
+                          ) : (
+                            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border shadow-2xs whitespace-nowrap ${
+                              isDone
+                                ? "bg-amber-100/80 text-amber-900 border-amber-300"
+                                : "bg-slate-100 text-slate-600 border-slate-200"
+                            }`}>
+                              <i className={`fa-solid ${isDone ? "fa-hourglass-half text-amber-600" : "fa-clock text-slate-400"} text-[10px]`}></i>
+                              <span>{isDone ? "Chờ thanh toán" : "Chưa thanh toán"}</span>
                             </span>
                           )}
                         </div>
@@ -1219,11 +1311,24 @@ export function PublicLookupView({
                             </span>
                           )}
                         </div>
-                        <div className="text-right ml-auto">
+                        <div className="text-right ml-auto flex items-center gap-2 flex-wrap justify-end">
                           <span className="text-[11px] font-semibold text-slate-500 mr-1">Thực nhận:</span>
                           <span className="text-sm sm:text-base font-black text-orange-600 font-outfit">
                             {formatMoney(getOrderUserCommission(order))}
                           </span>
+                          {isPaid ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200 whitespace-nowrap">
+                              <i className="fa-solid fa-circle-check text-[9px]"></i>
+                              <span>Đã thanh toán</span>
+                            </span>
+                          ) : (
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold border whitespace-nowrap ${
+                              isDone ? "bg-amber-50 text-amber-700 border-amber-200" : "bg-slate-50 text-slate-500 border-slate-200"
+                            }`}>
+                              <i className={`fa-solid ${isDone ? "fa-hourglass-half text-amber-600" : "fa-clock text-slate-400"} text-[9px]`}></i>
+                              <span>{isDone ? "Chờ thanh toán" : "Chưa thanh toán"}</span>
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>

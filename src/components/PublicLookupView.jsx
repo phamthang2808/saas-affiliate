@@ -20,6 +20,13 @@ export function PublicLookupView({
   const [paymentFilter, setPaymentFilter] = useState("ALL"); // ALL | PAID | UNPAID
   const [localSearch, setLocalSearch] = useState("");
 
+  const isPaymentTrackingEnabled = Boolean(
+    currentTenant?.enableOrderPaymentTracking ??
+    lookupData?.tenant?.enableOrderPaymentTracking ??
+    lookupData?.enableOrderPaymentTracking ??
+    false
+  );
+
   // Toast Notification state
   const [toast, setToast] = useState(null);
   const notify = (msg, type = "success") => {
@@ -1101,8 +1108,12 @@ export function PublicLookupView({
                 >
                   <option value="ALL">Tất cả trạng thái</option>
                   <option value="COMPLETED">Đã hoàn thành</option>
-                  <option value="UNPAID_COMPLETED">Chờ thanh toán</option>
-                  <option value="PAID">Đã thanh toán</option>
+                  {isPaymentTrackingEnabled && (
+                    <>
+                      <option value="UNPAID_COMPLETED">Chờ thanh toán</option>
+                      <option value="PAID">Đã thanh toán</option>
+                    </>
+                  )}
                   <option value="PENDING">Chờ xử lý</option>
                 </select>
 
@@ -1185,18 +1196,23 @@ export function PublicLookupView({
                             </span>
                           )}
 
-                          {/* 2. Trạng thái Chi trả Hoa hồng: Chỉ hiển thị 1 lần, KHÔNG màu nền & KHÔNG viền */}
-                          {isPaid ? (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-emerald-600 whitespace-nowrap">
-                              <i className="fa-solid fa-circle-check text-[10px]"></i>
-                              <span>Đã thanh toán</span>
-                            </span>
-                          ) : isDone ? (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-amber-600 whitespace-nowrap">
-                              <i className="fa-solid fa-hourglass-half text-[10px]"></i>
-                              <span>Chờ thanh toán</span>
-                            </span>
-                          ) : null}
+                          {/* 2. Trạng thái Chi trả Hoa hồng: Chỉ hiển thị khi BẬT Sổ theo dõi thanh toán trong cấu hình */}
+                          {isPaymentTrackingEnabled && (
+                            isPaid ? (
+                              <span
+                                className="inline-flex items-center gap-1 text-[11px] font-extrabold text-emerald-600 whitespace-nowrap"
+                                title={order.paidAt || order.updatedAt ? `Thời gian thanh toán: ${new Date(order.paidAt || order.updatedAt).toLocaleString("vi-VN")}` : "Đã thanh toán"}
+                              >
+                                <i className="fa-solid fa-circle-check text-[10px]"></i>
+                                <span>Đã thanh toán{(order.paidAt || order.updatedAt) ? ` (${new Date(order.paidAt || order.updatedAt).toLocaleDateString("vi-VN")})` : ""}</span>
+                              </span>
+                            ) : isDone ? (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-amber-600 whitespace-nowrap">
+                                <i className="fa-solid fa-hourglass-half text-[10px]"></i>
+                                <span>Chờ thanh toán</span>
+                              </span>
+                            ) : null
+                          )}
                         </div>
                       </div>
 

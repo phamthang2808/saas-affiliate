@@ -229,6 +229,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
   });
 
   const isTiktokEnabled = Boolean(activeTenant?.isTiktokEnabled ?? settings.isTiktokEnabled);
+  const isPaymentTrackingEnabled = Boolean(settings.enableOrderPaymentTracking ?? activeTenant?.enableOrderPaymentTracking ?? false);
 
   // Tabs: 'overview' | 'shopee' | 'tiktok' | 'payouts' | 'members' | 'settings' | 'templates' | 'bots'
   const VALID_TENANT_TABS = ["overview", "shopee", "tiktok", "payouts", "members", "settings", "templates", "bots"];
@@ -917,6 +918,92 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
         fetchTenantData();
       } else {
         showNotification("❌ " + (data.message || "Lỗi khi xóa các đơn hàng đã chọn"), "error");
+      }
+    } catch (err) {
+      showNotification("❌ Lỗi kết nối máy chủ: " + err.message, "error");
+    }
+  };
+
+
+  const handleToggleSingleOrderPayment = async (order) => {
+    if (!activeTenant?.slug || !order) return;
+    const isCurrentlyPaid = (order.paymentStatus || "").toUpperCase() === "PAID";
+    const nextAction = isCurrentlyPaid ? "UNPAID" : "PAID";
+    const targetKeys = [order.id, order.orderId].filter(Boolean);
+
+    try {
+      const res = await fetch(`${apiRoot}/api/saas/admin/${activeTenant.slug}/orders/mark-paid`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...(authHeaders || {}),
+        },
+        body: JSON.stringify({
+          orderIds: targetKeys,
+          action: nextAction,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        const nowIso = new Date().toISOString();
+        setOrders((prev) =>
+          prev.map((o) => {
+            if (o.id === order.id || o.orderId === order.orderId) {
+              return { ...o, paymentStatus: nextAction, updatedAt: nowIso, paidAt: nowIso };
+            }
+            return o;
+          })
+        );
+        showNotification(
+          nextAction === "PAID"
+            ? `✅ Đã đánh dấu đơn ${order.orderId} là ĐÃ THANH TOÁN!`
+            : `ℹ️ Đã chuyển đơn ${order.orderId} về CHƯA THANH TOÁN!`,
+          "success"
+        );
+      } else {
+        showNotification("❌ " + (data.message || "Lỗi cập nhật trạng thái thanh toán!"), "error");
+      }
+    } catch (err) {
+      showNotification("❌ Lỗi kết nối máy chủ: " + err.message, "error");
+    }
+  };
+
+  const handleBatchMarkPaid = async (action = "PAID") => {
+    if (!activeTenant?.slug || selectedOrderIds.size === 0) return;
+    const targetIds = Array.from(selectedOrderIds);
+
+    try {
+      const res = await fetch(`${apiRoot}/api/saas/admin/${activeTenant.slug}/orders/mark-paid`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...(authHeaders || {}),
+        },
+        body: JSON.stringify({
+          orderIds: targetIds,
+          action: action,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        const nowIso = new Date().toISOString();
+        const targetSet = new Set(targetIds.map(String));
+        setOrders((prev) =>
+          prev.map((o) => {
+            if (targetSet.has(String(o.id)) || (o.orderId && targetSet.has(String(o.orderId)))) {
+              return { ...o, paymentStatus: action, updatedAt: nowIso, paidAt: nowIso };
+            }
+            return o;
+          })
+        );
+        showNotification(
+          action === "PAID"
+            ? `✅ Đã đánh dấu ${targetIds.length} đơn đã chọn thành ĐÃ THANH TOÁN!`
+            : `ℹ️ Đã chuyển ${targetIds.length} đơn đã chọn về CHƯA THANH TOÁN!`,
+          "success"
+        );
+      } else {
+        showNotification("❌ " + (data.message || "Lỗi cập nhật trạng thái thanh toán hàng loạt!"), "error");
       }
     } catch (err) {
       showNotification("❌ Lỗi kết nối máy chủ: " + err.message, "error");
@@ -1738,6 +1825,16 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
       } else {
         if (!st.includes(targetSt)) return false;
       }
+    }
+
+
+    // Filter by Payment Status (chỉ áp dụng khi bật Sổ theo dõi thanh toán)
+    if (isPaymentTrackingEnabled && adminOrderFilterPayment && adminOrderFilterPayment !== "Tất cả") {
+      const isPaid = (o.paymentStatus || "").toUpperCase() === "PAID";
+      const isCompleted = isCompletedSaasOrder(o.status);
+      if (adminOrderFilterPayment === "PAID" && !isPaid) return false;
+      if (adminOrderFilterPayment === "UNPAID" && isPaid) return false;
+      if (adminOrderFilterPayment === "UNPAID_COMPLETED" && (!isCompleted || isPaid)) return false;
     }
 
     // Filter by Date From
@@ -3050,17 +3147,6 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
-              {selectedOrderIds.size > 0 && (
-                <button
-                  type="button"
-                  onClick={handleDeleteSelectedOrders}
-                  className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl text-xs font-black transition flex items-center gap-2 shadow-md shadow-rose-500/20 cursor-pointer animate-pulse"
-                  title="Xóa tất cả các đơn hàng đang được tích chọn"
-                >
-                  <i className="fa-solid fa-trash-can text-sm"></i> Xóa {selectedOrderIds.size} đơn đã chọn
-                </button>
-              )}
-
               <button
                 onClick={() => handleExportOrdersExcel(activeTab === "tiktok" ? "TikTok" : "Shopee")}
                 className={`px-4 py-2 text-white rounded-2xl text-xs font-black transition flex items-center gap-2 shadow-md cursor-pointer ${
@@ -3073,6 +3159,75 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
               </button>
             </div>
           </div>
+
+          {/* BANNER TỔNG CỘNG CHO CÁC ĐƠN ĐANG ĐƯỢC TÍCH CHỌN (HIỂN THỊ PHÍA TRÊN BẢNG) */}
+          {selectedOrderIds.size > 0 && (
+            <div className="bg-gradient-to-r from-orange-50 via-amber-50 to-orange-50 border-2 border-orange-300/90 rounded-2xl p-3.5 px-4 sm:px-5 flex flex-wrap items-center justify-between gap-3 shadow-xs animate-fade-in">
+              <div className="flex items-center gap-3 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <span className="w-8 h-8 rounded-xl bg-orange-500 text-white flex items-center justify-center text-xs font-black shadow-xs">
+                    {selectedOrderIds.size}
+                  </span>
+                  <div>
+                    <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5 flex-wrap">
+                      <span>Đang chọn {selectedOrderIds.size} đơn:</span>
+                      <span className="text-slate-500 font-semibold">Khách nhận:</span>
+                      <strong className="text-orange-600 font-black font-mono text-base">{formatMoney(selectedUserFinalSum)}</strong>
+                    </div>
+                    <div className="text-[11px] text-slate-500 font-mono font-medium">
+                      Tổng thô {activeTab === "tiktok" ? "TikTok" : "Shopee"}: <span className="font-bold text-slate-700">{formatMoney(selectedRawSum)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* Nút Đã thanh toán & Bỏ đánh dấu nếu bật payment tracking */}
+                {isPaymentTrackingEnabled && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => handleBatchMarkPaid("PAID")}
+                      className="px-3.5 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 shadow-sm shadow-emerald-500/20 active:scale-95"
+                      title="Đánh dấu các đơn đang chọn là ĐÃ THANH TOÁN"
+                    >
+                      <i className="fa-solid fa-circle-check text-xs"></i>
+                      <span>Đã thanh toán ({selectedOrderIds.size})</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleBatchMarkPaid("UNPAID")}
+                      className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 text-xs font-bold rounded-xl transition cursor-pointer flex items-center gap-1.5 active:scale-95"
+                      title="Chuyển các đơn đang chọn về trạng thái CHƯA THANH TOÁN"
+                    >
+                      <i className="fa-solid fa-rotate-left text-xs"></i>
+                      <span>Bỏ đánh dấu</span>
+                    </button>
+                  </>
+                )}
+
+                <button
+                  type="button"
+                  onClick={handleDeleteSelectedOrders}
+                  className="px-3.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-700 border border-rose-200 text-xs font-bold rounded-xl transition cursor-pointer flex items-center gap-1.5"
+                  title="Xóa toàn bộ các đơn hàng đang chọn khỏi hệ thống"
+                >
+                  <i className="fa-solid fa-trash-can text-[11px]"></i>
+                  <span>Xóa đã chọn ({selectedOrderIds.size})</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setSelectedOrderIds(new Set())}
+                  className="px-3 py-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition cursor-pointer text-xs font-bold"
+                  title="Bỏ chọn tất cả"
+                >
+                  <i className="fa-solid fa-xmark text-sm"></i> Bỏ chọn
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* TABLE OF ORDERS (BẢNG HÀNG NGANG ĐỒNG BỘ TRÊN ĐIỆN THOẠI VÀ LAPTOP) */}
           <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden w-full max-w-full">
@@ -3115,7 +3270,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                 <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
                   {filteredOrders.length === 0 ? (
                     <tr>
-                      <td colSpan={11} className="p-12 text-center text-slate-400 font-bold">
+                      <td colSpan={isPaymentTrackingEnabled ? 12 : 11} className="p-12 text-center text-slate-400 font-bold">
                         <i className="fa-solid fa-folder-open text-2xl text-slate-300 mb-2 block"></i>
                         Không tìm thấy đơn hàng nào khớp với bộ lọc
                       </td>
@@ -3280,7 +3435,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                 {filteredOrders.length > 0 && (
                   <tfoot className="bg-slate-100/90 font-bold border-t-2 border-slate-200 text-xs">
                     <tr>
-                      <td colSpan={6} className="px-2.5 py-3 font-black text-slate-800 whitespace-nowrap">
+                      <td colSpan={isPaymentTrackingEnabled ? 6 : 5} className="px-2.5 py-3 font-black text-slate-800 whitespace-nowrap">
                         📊 TỔNG CỘNG ({filteredOrders.length} đơn {activeTab === "tiktok" ? "TikTok" : "Shopee"} đang lọc)
                       </td>
                       <td className="px-2.5 py-3 text-right font-mono font-black text-slate-800 whitespace-nowrap">
@@ -3397,45 +3552,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
               );
             })()}
 
-            {/* FLOATING ACTION BAR FOR SELECTED ORDERS (ĐỐI CHIẾU APP SCRIPT) */}
-            {selectedOrderIds.size > 0 && (
-              <div className="sticky bottom-4 z-40 bg-white/95 backdrop-blur-md text-slate-800 rounded-3xl p-3.5 px-5 shadow-2xl border-2 border-orange-200/90 flex items-center justify-between gap-4 flex-wrap animate-fade-in-up mt-3">
-                <div className="flex items-center gap-3">
-                  <span className="w-8 h-8 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 text-white flex items-center justify-center font-black text-xs shadow-sm">
-                    {selectedOrderIds.size}
-                  </span>
-                  <div>
-                    <div className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                      <span>Khách nhận (đang chọn):</span>
-                      <strong className="text-orange-600 font-black font-mono text-base">{formatMoney(selectedUserFinalSum)}</strong>
-                    </div>
-                    <div className="text-[11px] text-slate-400 font-mono font-medium">
-                      Tổng thô {activeTab === "tiktok" ? "TikTok" : "Shopee"}: {formatMoney(selectedRawSum)}
-                    </div>
-                  </div>
-                </div>
 
-                <div className="flex items-center gap-2 flex-wrap">
-                  <button
-                    type="button"
-                    onClick={handleDeleteSelectedOrders}
-                    className="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-700 font-bold rounded-2xl text-xs transition cursor-pointer flex items-center gap-1.5 border border-rose-200"
-                    title="Xóa toàn bộ các đơn hàng đang chọn khỏi hệ thống"
-                  >
-                    <i className="fa-solid fa-trash-can text-[11px]"></i> Xóa đã chọn ({selectedOrderIds.size})
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setSelectedOrderIds(new Set())}
-                    className="px-3 py-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-2xl transition cursor-pointer text-xs font-bold"
-                    title="Bỏ chọn tất cả"
-                  >
-                    <i className="fa-solid fa-xmark text-sm"></i> Bỏ chọn
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       )}

@@ -482,6 +482,16 @@ export function PublicLookupView({
     }
   });
 
+  // Thống kê trạng thái thanh toán đơn hàng
+  const paidOrdersList = orders.filter((o) => (o.paymentStatus || "").toUpperCase() === "PAID");
+  const unpaidCompletedList = orders.filter((o) => {
+    const isDone = (o.status || "").toLowerCase().includes("hoàn thành");
+    const isPaid = (o.paymentStatus || "").toUpperCase() === "PAID";
+    return isDone && !isPaid;
+  });
+  const paidCommission = paidOrdersList.reduce((sum, o) => sum + getOrderUserCommission(o), 0);
+  const unpaidCompletedCommission = unpaidCompletedList.reduce((sum, o) => sum + getOrderUserCommission(o), 0);
+
   const completedPayouts = payouts.filter((p) => (p.status || "").toUpperCase() === "COMPLETED");
   const pendingPayoutsList = payouts.filter((p) => (p.status || "").toUpperCase() === "PENDING");
 
@@ -495,16 +505,6 @@ export function PublicLookupView({
   // Số dư khả dụng = Tổng hoa hồng đủ điều kiện rút - Đã rút - Đang chờ duyệt
   const availableBalance = Math.max(0, eligibleCompletedCommission - totalWithdrawn - pendingPayoutAmount);
   const displayCompletedCommission = completedCommission;
-
-  // Thống kê trạng thái thanh toán đơn hàng
-  const paidOrdersList = orders.filter((o) => (o.paymentStatus || "").toUpperCase() === "PAID");
-  const unpaidCompletedList = orders.filter((o) => {
-    const isDone = (o.status || "").toLowerCase().includes("hoàn thành");
-    const isPaid = (o.paymentStatus || "").toUpperCase() === "PAID";
-    return isDone && !isPaid;
-  });
-  const paidCommission = paidOrdersList.reduce((sum, o) => sum + getOrderUserCommission(o), 0);
-  const unpaidCompletedCommission = unpaidCompletedList.reduce((sum, o) => sum + getOrderUserCommission(o), 0);
 
   // Lọc danh sách đơn hàng
   const filteredOrders = orders.filter((o) => {

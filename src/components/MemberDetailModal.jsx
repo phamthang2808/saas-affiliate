@@ -36,6 +36,8 @@ export function MemberDetailModal({
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedOrderIds, setSelectedOrderIds] = useState(new Set());
   const [isMarkingPaid, setIsMarkingPaid] = useState(false);
+  const [isSyncingWallet, setIsSyncingWallet] = useState(false);
+  const [unmarkConfirmData, setUnmarkConfirmData] = useState(null);
   const [showSelectMenu, setShowSelectMenu] = useState(false);
   const pageSize = 10;
 
@@ -347,22 +349,6 @@ export function MemberDetailModal({
     }
   });
 
-  const approvedPayouts = memberPayoutsList.filter((p) => {
-    const st = String(p.status || "").toUpperCase();
-    return st === "COMPLETED" || st === "APPROVED";
-  });
-  const pendingPayoutsList = memberPayoutsList.filter((p) => {
-    const st = String(p.status || "").toUpperCase();
-    return st === "PENDING";
-  });
-
-  const totalPayoutsWithdrawn = approvedPayouts.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
-  const pendingWithdrawn = pendingPayoutsList.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
-  const totalWithdrawn = totalPayoutsWithdrawn;
-
-  const availableBalance = Math.max(0, eligibleCompletedCommission - totalWithdrawn - pendingWithdrawn);
-  const displayCompletedCommission = completedCommission;
-
   // Cấu hình Bật/Tắt Sổ theo dõi thanh toán đơn hàng (Trưởng nhóm tự chi trả riêng)
   const isPaymentTrackingEnabled = Boolean(
     activeTenant?.enableOrderPaymentTracking ??
@@ -388,6 +374,22 @@ export function MemberDetailModal({
   const unpaidCompletedCommission = useMemo(() => {
     return unpaidCompletedList.reduce((sum, o) => sum + calculateUserComm(o), 0);
   }, [unpaidCompletedList, customerSplitRate]);
+
+  const approvedPayouts = memberPayoutsList.filter((p) => {
+    const st = String(p.status || "").toUpperCase();
+    return st === "COMPLETED" || st === "APPROVED";
+  });
+  const pendingPayoutsList = memberPayoutsList.filter((p) => {
+    const st = String(p.status || "").toUpperCase();
+    return st === "PENDING";
+  });
+
+  const totalPayoutsWithdrawn = approvedPayouts.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+  const pendingWithdrawn = pendingPayoutsList.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+  const totalWithdrawn = totalPayoutsWithdrawn;
+
+  const availableBalance = Math.max(0, eligibleCompletedCommission - totalWithdrawn - pendingWithdrawn);
+  const displayCompletedCommission = completedCommission;
 
   const zaloName = liveData?.zaloName || liveData?.user?.name || initialZaloName;
   const bankName = liveData?.bankName || liveData?.user?.bankName || initialBankName;
@@ -806,6 +808,17 @@ export function MemberDetailModal({
   const handleToggleSingleOrderPayment = async (order) => {
     if (!tenantSlug || !order) return;
     const isCurrentlyPaid = (order.paymentStatus || "").toUpperCase() === "PAID";
+    if (isCurrentlyPaid && order.payoutId) {
+      const siblingOrders = memberOrders.filter((o) => o.payoutId && String(o.payoutId) === String(order.payoutId));
+      const payoutInfo = memberPayoutsList.find((p) => String(p.id) === String(order.payoutId));
+      setUnmarkConfirmData({
+        payoutId: order.payoutId,
+        payoutAmount: payoutInfo?.amount || 0,
+        siblingOrders: siblingOrders.length > 0 ? siblingOrders : [order],
+        triggerOrder: order,
+      });
+      return;
+    }
     const nextAction = isCurrentlyPaid ? "UNPAID" : "PAID";
     const targetKeys = [order.id, order.orderId].filter(Boolean);
 
@@ -856,6 +869,116 @@ export function MemberDetailModal({
       }
     } catch (err) {
       if (showNotification) showNotification("❌ Lỗi: " + err.message, "error");
+    }
+  };
+
+  // API Xác nhận bỏ đánh dấu toàn bộ các đơn cùng lệnh rút tiền (Cách 1)
+  const handleConfirmUnmarkPayout = async () => {
+    if (!unmarkConfirmData) return;
+    const targetOrders = unmarkConfirmData.siblingOrders;
+    const orderDbIds = targetOrders.flatMap((o) => [o.id, o.orderId].filter(Boolean));
+    setIsMarkingPaid(true);
+    try {
+      const res = await fetch(`${apiRoot}/api/saas/admin/${tenantSlug}/orders/mark-paid`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...(authHeaders || {}),
+        },
+        body: JSON.stringify({
+          orderIds: orderDbIds,
+          action: "UNPAID",
+          zaloId: zaloId || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        if (showNotification) {
+          showNotification(
+            `↩️ Đã hủy đợt chi trả #${unmarkConfirmData.payoutId}! Toàn bộ ${targetOrders.length} đơn đã chuyển về CHƯA THANH TOÁN.`,
+            "success"
+          );
+        } else {
+          alert(`↩️ Đã hủy đợt chi trả #${unmarkConfirmData.payoutId}! Toàn bộ ${targetOrders.length} đơn đã chuyển về CHƯA THANH TOÁN.`);
+        }
+
+        // Bỏ chọn các đơn này trong selectedOrderIds
+        const unmarkKeys = new Set(targetOrders.map((o) => getOrderKey(o)));
+        setSelectedOrderIds((prev) => {
+          const next = new Set(prev);
+          unmarkKeys.forEach((k) => next.delete(k));
+          return next;
+        });
+
+        // Cập nhật ngay local state
+        const targetIdSet = new Set(targetOrders.map((o) => String(o.id)));
+        setLiveData((prev) => {
+          if (!prev || !Array.isArray(prev.orders)) return prev;
+          return {
+            ...prev,
+            orders: prev.orders.map((ord) => {
+              if (targetIdSet.has(String(ord.id))) {
+                return { ...ord, paymentStatus: "UNPAID", payoutId: null, paidAt: null };
+              }
+              return ord;
+            }),
+            payouts: (prev.payouts || []).filter((p) => String(p.id) !== String(unmarkConfirmData.payoutId)),
+          };
+        });
+
+        setUnmarkConfirmData(null);
+        await refreshLiveData();
+        if (onOrdersUpdated) onOrdersUpdated();
+      } else {
+        if (showNotification) showNotification("❌ " + (data.message || "Lỗi khi bỏ đánh dấu"), "error");
+        else alert("❌ " + (data.message || "Lỗi khi bỏ đánh dấu"));
+      }
+    } catch (err) {
+      if (showNotification) showNotification("❌ Lỗi: " + err.message, "error");
+      else alert("❌ Lỗi: " + err.message);
+    } finally {
+      setIsMarkingPaid(false);
+    }
+  };
+
+  // API Đồng bộ chuẩn hóa ví và đơn hàng cũ (1-click sync)
+  const handleSyncWallet = async () => {
+    if (!tenantSlug || !zaloId) return;
+    const diffAmount = paidCommission - totalWithdrawn;
+    if (diffAmount <= 0) return;
+    if (
+      !window.confirm(
+        `⚡ BẠN CÓ MUỐN ĐỒNG BỘ CHUẨN HÓA VÍ CHO ${zaloName || zaloId}?\n\n• Số tiền bù: ${formatMoney(diffAmount)}\n• Gắn vào: ${paidOrdersList.length} đơn đã thanh toán cũ\n\nHệ thống sẽ tự động tạo lệnh rút COMPLETED bù đúng số tiền này để cả 2 mục ĐÃ NHẬN và ĐÃ THANH TOÁN khớp 100%!`
+      )
+    ) {
+      return;
+    }
+
+    setIsSyncingWallet(true);
+    try {
+      const res = await fetch(`${apiRoot}/api/saas/admin/${tenantSlug}/members/${encodeURIComponent(zaloId)}/sync-wallet`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(authHeaders || {}),
+        },
+      });
+      const data = await res.json();
+      if (res.ok) {
+        if (showNotification) showNotification(data.message || "🎉 Đồng bộ ví thành công!", "success");
+        else alert(data.message || "🎉 Đồng bộ ví thành công!");
+        await refreshLiveData();
+        if (onOrdersUpdated) onOrdersUpdated();
+      } else {
+        const errMsg = data.message || "Lỗi đồng bộ";
+        if (showNotification) showNotification("❌ " + errMsg, "error");
+        else alert("❌ " + errMsg);
+      }
+    } catch (err) {
+      if (showNotification) showNotification("❌ Lỗi: " + err.message, "error");
+      else alert("❌ Lỗi: " + err.message);
+    } finally {
+      setIsSyncingWallet(false);
     }
   };
 
@@ -1364,6 +1487,39 @@ export function MemberDetailModal({
                 </div>
               </div>
             </div>
+
+            {/* CẢNH BÁO & NÚT ĐỒNG BỘ 1-CLICK NẾU DỮ LIỆU CŨ CHƯA KHỚP */}
+            {paidCommission > totalWithdrawn && (
+              <div className="bg-amber-50/90 border border-amber-200/90 rounded-2xl p-3 px-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs animate-fade-in shadow-2xs">
+                <div className="flex items-center gap-2.5 text-amber-900 min-w-0">
+                  <span className="w-7 h-7 rounded-xl bg-amber-500 text-white flex items-center justify-center text-xs shrink-0 shadow-xs">
+                    <i className="fa-solid fa-triangle-exclamation"></i>
+                  </span>
+                  <div className="min-w-0">
+                    <p className="font-bold">
+                      Dữ liệu cũ chưa có lệnh rút tương ứng cho {paidOrdersList.length} đơn đã thanh toán.
+                    </p>
+                    <p className="text-[11px] text-amber-700 font-medium">
+                      Chênh lệch: <strong className="font-mono text-amber-900">{formatMoney(paidCommission - totalWithdrawn)}</strong> giữa Đã thanh toán ({formatMoney(paidCommission)}) và Đã rút ({formatMoney(totalWithdrawn)}).
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  disabled={isSyncingWallet}
+                  onClick={handleSyncWallet}
+                  className="px-3.5 py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 disabled:opacity-50 text-white rounded-xl font-black text-xs transition cursor-pointer flex items-center justify-center gap-1.5 shadow-sm shadow-orange-500/20 active:scale-95 shrink-0 self-end sm:self-auto"
+                  title="Tự động tạo lệnh rút bù phần chênh lệch và gắn vào các đơn đã thanh toán cũ"
+                >
+                  {isSyncingWallet ? (
+                    <i className="fa-solid fa-spinner fa-spin text-xs"></i>
+                  ) : (
+                    <i className="fa-solid fa-bolt text-xs"></i>
+                  )}
+                  <span>⚡ Đồng bộ khớp 100%</span>
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -1645,9 +1801,14 @@ export function MemberDetailModal({
                       disabled={isMarkingPaid || isExecutingPayout}
                       onClick={() => {
                         if (selectedOrdersList.length === 0) return;
+                        const orderCodes = selectedOrdersList
+                          .map((o) => o.orderId || `#${o.id}`)
+                          .slice(0, 8)
+                          .join(", ");
+                        const moreCount = selectedOrdersList.length > 8 ? ` (+${selectedOrdersList.length - 8} đơn khác)` : "";
                         if (
                           !window.confirm(
-                            `⚡ XÁC NHẬN CHI TRẢ TRỰC TIẾP CHO THÀNH VIÊN?\n\n• Thành viên: ${zaloName || zaloId}\n• Số lượng: ${selectedOrdersList.length} đơn hàng\n• Tổng tiền chi trả: ${formatMoney(selectedTotalUserComm)}\n\nHệ thống sẽ tự động:\n✓ Đánh dấu các đơn này là ĐÃ THANH TOÁN\n✓ Tự động tạo lệnh rút tiền COMPLETED và cấn trừ ví khả dụng\n✓ Đồng bộ 100% giữa Ví tiền và Danh sách đơn!`
+                            `⚡ XÁC NHẬN CHI TRẢ TRỰC TIẾP CHO THÀNH VIÊN?\n\n• Thành viên: ${zaloName || zaloId}\n• Số lượng: ${selectedOrdersList.length} đơn hàng\n• Danh sách mã đơn: ${orderCodes}${moreCount}\n• Tổng tiền chi trả: ${formatMoney(selectedTotalUserComm)}\n\nHệ thống sẽ tự động:\n✓ Ghi chú lệnh rút chi tiết các mã đơn này\n✓ Đánh dấu các đơn này là ĐÃ THANH TOÁN\n✓ Tự động tạo lệnh rút tiền COMPLETED và cấn trừ ví khả dụng\n✓ Đồng bộ 100% giữa Ví tiền và Danh sách đơn!`
                           )
                         ) {
                           return;
@@ -1669,6 +1830,22 @@ export function MemberDetailModal({
                       type="button"
                       disabled={isMarkingPaid}
                       onClick={() => {
+                        if (selectedOrdersList.length === 0) return;
+                        const paidWithPayout = selectedOrdersList.filter(
+                          (o) => (o.paymentStatus || "").toUpperCase() === "PAID" && o.payoutId
+                        );
+                        if (paidWithPayout.length > 0) {
+                          const pIds = new Set(paidWithPayout.map((o) => String(o.payoutId)));
+                          const allSiblings = memberOrders.filter((o) => o.payoutId && pIds.has(String(o.payoutId)));
+                          const pInfo = memberPayoutsList.find((p) => pIds.has(String(p.id)));
+                          setUnmarkConfirmData({
+                            payoutId: Array.from(pIds).join(", #"),
+                            payoutAmount: pInfo?.amount || 0,
+                            siblingOrders: allSiblings.length > 0 ? allSiblings : paidWithPayout,
+                            triggerOrder: paidWithPayout[0],
+                          });
+                          return;
+                        }
                         if (!window.confirm(`Chuyển ${selectedOrdersList.length} đơn hàng đã chọn về trạng thái CHƯA THANH TOÁN?`)) return;
                         handleMarkPaid("UNPAID");
                       }}
@@ -2564,6 +2741,100 @@ export function MemberDetailModal({
                     <span>✓ Tạo Lệnh Rút & Cấn Trừ Ví (Khuyên dùng)</span>
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL XÁC NHẬN BỎ ĐÁNH DẤU & HỦY TOÀN BỘ CÁC ĐƠN CÙNG LỆNH RÚT */}
+        {unmarkConfirmData && (
+          <div className="fixed inset-0 z-[120] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
+            <div className="bg-white rounded-3xl p-5 sm:p-6 max-w-lg w-full shadow-2xl border border-slate-200 space-y-4 animate-scale-up">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <span className="w-9 h-9 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-sm shadow-2xs shrink-0">
+                    <i className="fa-solid fa-triangle-exclamation text-base"></i>
+                  </span>
+                  <div>
+                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-wide">
+                      Xác Nhận Hủy Đợt Chi Trả
+                    </h3>
+                    <p className="text-[11px] text-slate-500 font-medium">
+                      Lệnh rút tiền #{unmarkConfirmData.payoutId} • {formatMoney(unmarkConfirmData.payoutAmount)}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setUnmarkConfirmData(null)}
+                  className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center text-xs cursor-pointer transition"
+                >
+                  <i className="fa-solid fa-xmark"></i>
+                </button>
+              </div>
+
+              {/* Thông tin cảnh báo */}
+              <div className="bg-amber-50 border border-amber-200/80 rounded-2xl p-3.5 space-y-2.5">
+                <p className="text-xs text-amber-950 font-bold leading-relaxed">
+                  ⚠️ Đơn hàng bạn chọn thuộc <strong className="text-amber-800">Lệnh rút tiền #{unmarkConfirmData.payoutId}</strong>.
+                  Đợt chi trả này gồm tổng cộng <strong className="text-rose-600">{unmarkConfirmData.siblingOrders.length} đơn hàng</strong>:
+                </p>
+
+                {/* Danh sách các mã đơn hàng trong đợt này */}
+                <div className="max-h-36 overflow-y-auto space-y-1.5 pr-1 scrollbar-thin">
+                  {unmarkConfirmData.siblingOrders.map((ord, idx) => (
+                    <div
+                      key={ord.id || idx}
+                      className="flex items-center justify-between gap-2 bg-white/90 border border-amber-200/60 rounded-xl px-2.5 py-1.5 text-xs font-mono"
+                    >
+                      <div className="min-w-0 flex items-center gap-1.5">
+                        <span className="w-5 h-5 rounded-md bg-amber-100 text-amber-800 flex items-center justify-center text-[10px] font-bold shrink-0">
+                          {idx + 1}
+                        </span>
+                        <span className="font-bold text-slate-800 truncate" title={ord.orderId}>
+                          {ord.orderId || `#${ord.id}`}
+                        </span>
+                        {ord.productName && (
+                          <span className="text-[10px] text-slate-400 font-sans truncate max-w-[120px]">
+                            ({ord.productName})
+                          </span>
+                        )}
+                      </div>
+                      <span className="font-black text-orange-600 shrink-0">
+                        {formatMoney(calculateUserComm(ord))}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="pt-2 border-t border-amber-200/60 text-[11px] text-amber-800 leading-normal">
+                  💡 <strong>Quy tắc đối soát:</strong> Để bảo toàn số tiền khớp 100% với sao kê ngân hàng, khi bỏ đánh dấu, <strong>toàn bộ {unmarkConfirmData.siblingOrders.length} đơn hàng trên sẽ cùng được chuyển về CHƯA THANH TOÁN</strong> và Lệnh rút #{unmarkConfirmData.payoutId} sẽ được xóa bỏ khỏi hệ thống.
+                </div>
+              </div>
+
+              {/* Nút hành động */}
+              <div className="flex flex-col sm:flex-row items-center justify-end gap-2 pt-1">
+                <button
+                  type="button"
+                  disabled={isMarkingPaid}
+                  onClick={() => setUnmarkConfirmData(null)}
+                  className="w-full sm:w-auto px-4 py-2.5 text-xs font-bold text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-xl transition cursor-pointer"
+                >
+                  Giữ nguyên (Đóng)
+                </button>
+                <button
+                  type="button"
+                  disabled={isMarkingPaid}
+                  onClick={handleConfirmUnmarkPayout}
+                  className="w-full sm:w-auto px-4 py-2.5 bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-700 hover:to-red-700 text-white rounded-xl text-xs font-black transition cursor-pointer flex items-center justify-center gap-1.5 shadow-md shadow-rose-500/25 active:scale-95 disabled:opacity-50"
+                >
+                  {isMarkingPaid ? (
+                    <i className="fa-solid fa-spinner fa-spin text-xs"></i>
+                  ) : (
+                    <i className="fa-solid fa-rotate-left text-xs"></i>
+                  )}
+                  <span>Đồng ý bỏ đánh dấu cả {unmarkConfirmData.siblingOrders.length} đơn & Xóa lệnh</span>
+                </button>
               </div>
             </div>
           </div>

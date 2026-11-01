@@ -3072,25 +3072,30 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
             )}
 
             {/* Date range & Reset filter */}
-            <div className="flex items-center justify-between flex-wrap gap-3 pt-2 border-t border-slate-100">
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-black text-slate-400 uppercase">Từ:</span>
-                <input
-                  type="date"
-                  value={adminOrderDateFrom}
-                  onChange={(e) => setAdminOrderDateFrom(e.target.value)}
-                  className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 text-xs font-bold text-slate-700 outline-none"
-                />
-                <span className="text-[10px] font-black text-slate-400 uppercase">Đến:</span>
-                <input
-                  type="date"
-                  value={adminOrderDateTo}
-                  onChange={(e) => setAdminOrderDateTo(e.target.value)}
-                  className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 text-xs font-bold text-slate-700 outline-none"
-                />
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-2 border-t border-slate-100">
+              <div className="grid grid-cols-2 gap-2 w-full sm:w-auto">
+                <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 min-w-0">
+                  <span className="text-[10px] font-black text-slate-400 uppercase shrink-0">Từ:</span>
+                  <input
+                    type="date"
+                    value={adminOrderDateFrom}
+                    onChange={(e) => setAdminOrderDateFrom(e.target.value)}
+                    className="w-full bg-transparent text-xs font-bold text-slate-700 outline-none min-w-0 cursor-pointer"
+                  />
+                </div>
+                <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 min-w-0">
+                  <span className="text-[10px] font-black text-slate-400 uppercase shrink-0">Đến:</span>
+                  <input
+                    type="date"
+                    value={adminOrderDateTo}
+                    onChange={(e) => setAdminOrderDateTo(e.target.value)}
+                    className="w-full bg-transparent text-xs font-bold text-slate-700 outline-none min-w-0 cursor-pointer"
+                  />
+                </div>
               </div>
 
               <button
+                type="button"
                 onClick={() => {
                   setAdminOrderSearchUser("");
                   setAdminOrderSearchId("");
@@ -3100,24 +3105,26 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                   setAdminOrderDateFrom("");
                   setAdminOrderDateTo("");
                 }}
-                className="text-xs text-rose-500 font-bold hover:underline cursor-pointer"
+                className="text-xs text-rose-500 font-bold hover:underline cursor-pointer self-end sm:self-auto shrink-0 flex items-center gap-1"
               >
-                Xóa bộ lọc
+                <i className="fa-solid fa-rotate-left text-[10px]"></i>
+                <span>Xóa bộ lọc</span>
               </button>
             </div>
           </div>
 
           {/* RESULTS CONTROL HEADER */}
-          <div className="flex items-center justify-between flex-wrap gap-2 px-1">
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <p className="text-xs text-slate-500 font-medium">
-                Hiển thị{" "}
-                <span className="font-bold text-slate-800">
-                  {filteredOrders.length > 0 ? (adminOrderPage - 1) * 50 + 1 : 0} - {Math.min(adminOrderPage * 50, filteredOrders.length)}
-                </span>{" "}
-                / Kết quả {activeTab === "tiktok" ? "TikTok" : "Shopee"}: <strong className="text-orange-600">{filteredOrders.length} đơn</strong>
-              </p>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 px-1">
+            <p className="text-xs text-slate-500 font-medium shrink-0">
+              Hiển thị{" "}
+              <span className="font-bold text-slate-800">
+                {filteredOrders.length > 0 ? (adminOrderPage - 1) * 50 + 1 : 0} - {Math.min(adminOrderPage * 50, filteredOrders.length)}
+              </span>{" "}
+              / Kết quả {activeTab === "tiktok" ? "TikTok" : "Shopee"}: <strong className="text-orange-600">{filteredOrders.length} đơn</strong>
+            </p>
 
+            {/* Cụm 3 nút hành động hiển thị trên 1 hàng */}
+            <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto scrollbar-none py-0.5">
               {/* Nút chọn all đơn cho trang đang xem */}
               {(() => {
                 const pageOrders = filteredOrders.slice((adminOrderPage - 1) * 50, adminOrderPage * 50);
@@ -3127,18 +3134,18 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                   <button
                     type="button"
                     onClick={() => toggleSelectAllOrders(pageOrders)}
-                    className={`text-xs font-bold px-3 py-1.5 rounded-xl transition cursor-pointer border flex items-center gap-1.5 shadow-2xs ${
+                    className={`flex-1 sm:flex-initial text-xs font-bold px-2.5 sm:px-3 py-1.5 rounded-xl transition cursor-pointer border flex items-center justify-center gap-1.5 shadow-2xs whitespace-nowrap ${
                       isPageSelected
                         ? "bg-blue-600 text-white border-blue-700 shadow-blue-500/20 ring-2 ring-blue-400/30"
                         : "bg-blue-50 hover:bg-blue-100 text-blue-800 border-blue-200 hover:border-blue-300"
                     }`}
                     title={`Tích chọn / Bỏ chọn toàn bộ ${pageOrders.length} đơn trên trang ${adminOrderPage} đang xem`}
                   >
-                    <i className={`fa-solid ${isPageSelected ? "fa-circle-check text-white" : "fa-file-lines text-blue-600"} text-xs`}></i>
+                    <i className={`fa-solid ${isPageSelected ? "fa-circle-check text-white" : "fa-file-lines text-blue-600"} text-xs shrink-0`}></i>
                     <span>
                       {isPageSelected
-                        ? `Đã chọn trang ${adminOrderPage} (${pageOrders.length} đơn)`
-                        : `Chọn trang này (${pageOrders.length} đơn)`}
+                        ? `Đã chọn trang (${pageOrders.length})`
+                        : `Chọn trang này (${pageOrders.length})`}
                     </span>
                   </button>
                 );
@@ -3149,33 +3156,33 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                 <button
                   type="button"
                   onClick={() => toggleSelectAllFiltered(filteredOrders)}
-                  className={`text-xs font-bold px-3 py-1.5 rounded-xl transition cursor-pointer border flex items-center gap-1.5 shadow-2xs ${
+                  className={`flex-1 sm:flex-initial text-xs font-bold px-2.5 sm:px-3 py-1.5 rounded-xl transition cursor-pointer border flex items-center justify-center gap-1.5 shadow-2xs whitespace-nowrap ${
                     filteredOrders.every((o) => selectedOrderIds.has(o.id))
                       ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white border-orange-600 shadow-orange-500/25 ring-2 ring-orange-400/30"
                       : "text-orange-700 hover:text-orange-800 bg-orange-50 hover:bg-orange-100 border-orange-200"
                   }`}
                   title="Tích chọn TẤT CẢ các đơn trên TẤT CẢ các trang (không cần lật từng trang)"
                 >
-                  <i className={`fa-solid ${filteredOrders.every((o) => selectedOrderIds.has(o.id)) ? "fa-circle-check text-white" : "fa-list-check text-orange-600"} text-xs`}></i>
+                  <i className={`fa-solid ${filteredOrders.every((o) => selectedOrderIds.has(o.id)) ? "fa-circle-check text-white" : "fa-list-check text-orange-600"} text-xs shrink-0`}></i>
                   <span>
                     {filteredOrders.every((o) => selectedOrderIds.has(o.id))
-                      ? `Đã chọn tất cả (${filteredOrders.length} đơn)`
-                      : `Chọn tất cả ${filteredOrders.length} đơn đang lọc`}
+                      ? `Đã chọn tất cả (${filteredOrders.length})`
+                      : `Chọn tất cả (${filteredOrders.length})`}
                   </span>
                 </button>
               )}
-            </div>
 
-            <div className="flex items-center gap-2 flex-wrap">
+              {/* Nút Xuất Excel */}
               <button
                 onClick={() => handleExportOrdersExcel(activeTab === "tiktok" ? "TikTok" : "Shopee")}
-                className={`px-4 py-2 text-white rounded-2xl text-xs font-black transition flex items-center gap-2 shadow-md cursor-pointer ${
+                className={`flex-1 sm:flex-initial px-2.5 sm:px-4 py-1.5 sm:py-2 text-white rounded-xl sm:rounded-2xl text-xs font-black transition flex items-center justify-center gap-1.5 shadow-md cursor-pointer whitespace-nowrap ${
                   activeTab === "tiktok"
                     ? "bg-slate-900 hover:bg-black shadow-slate-900/20"
                     : "bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 shadow-orange-500/20"
                 }`}
               >
-                <i className="fa-solid fa-file-excel text-sm"></i> Xuất Excel {activeTab === "tiktok" ? "TikTok" : "Shopee"} ({filteredOrders.length})
+                <i className="fa-solid fa-file-excel text-xs sm:text-sm shrink-0"></i>
+                <span>Xuất Excel ({filteredOrders.length})</span>
               </button>
             </div>
           </div>
@@ -3251,17 +3258,6 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
 
           {/* TABLE OF ORDERS (BẢNG HÀNG NGANG ĐỒNG BỘ TRÊN ĐIỆN THOẠI VÀ LAPTOP) */}
           <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden w-full max-w-full">
-            {/* Hướng dẫn vuốt ngang trên điện thoại */}
-            <div className="sm:hidden bg-gradient-to-r from-orange-50 to-amber-50 border-b border-orange-200/80 text-orange-900 text-xs font-bold p-2.5 px-3.5 flex items-center justify-between shadow-2xs">
-              <span className="flex items-center gap-1.5">
-                <i className="fa-solid fa-arrows-left-right text-orange-500 text-xs animate-pulse"></i>
-                👈 Vuốt sang ngang để xem đủ 9 cột đối soát ➔
-              </span>
-              <span className="text-[10px] bg-orange-200/80 text-orange-900 px-2 py-0.5 rounded-full font-black">
-                Hàng ngang
-              </span>
-            </div>
-
             <div className="overflow-x-auto w-full max-w-full scrollbar-thin">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>

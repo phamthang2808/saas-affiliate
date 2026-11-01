@@ -24,7 +24,7 @@ export function PublicLookupView({
     currentTenant?.enableOrderPaymentTracking ??
     lookupData?.tenant?.enableOrderPaymentTracking ??
     lookupData?.enableOrderPaymentTracking ??
-    false
+    true
   );
 
   // Toast Notification state
@@ -194,13 +194,9 @@ export function PublicLookupView({
       }
     } else if (action === "PAYOUT") {
       const minWithdraw = Number(lookupData?.tenant?.minWithdrawAmount || currentTenant?.minWithdrawAmount || 10000);
-      const amount = Number(withdrawAmount);
+      const amount = availableBalance;
       if (!amount || amount < minWithdraw) {
-        setWithdrawError(`Số tiền rút tối thiểu là ${formatMoney(minWithdraw)}!`);
-        return;
-      }
-      if (amount > availableBalance) {
-        setWithdrawError("Số tiền rút vượt quá số dư khả dụng!");
+        setWithdrawError(`Số dư khả dụng tối thiểu để rút là ${formatMoney(minWithdraw)} (Hiện có: ${formatMoney(availableBalance)})!`);
         return;
       }
       if (!accountNumber.trim() || !accountName.trim()) {
@@ -274,7 +270,7 @@ export function PublicLookupView({
             bankName: finalBank,
             accountNumber: accountNumber.trim(),
             accountName: accountName.trim().toUpperCase(),
-            amount: Number(withdrawAmount),
+            amount: availableBalance,
             pin: pinToUse,
           }),
         });
@@ -991,7 +987,7 @@ export function PublicLookupView({
                 <div className="flex items-center justify-between gap-2 flex-wrap">
                   <label className="text-xs font-black text-slate-800 flex items-center gap-1.5">
                     <i className="fa-solid fa-money-bill-transfer text-orange-500"></i>
-                    <span>Nhập số tiền muốn rút:</span>
+                    <span>Số tiền rút (Toàn bộ số dư):</span>
                   </label>
                   <div className="text-xs font-bold text-slate-500 flex items-center gap-1">
                     <span>Khả dụng:</span>
@@ -1001,70 +997,33 @@ export function PublicLookupView({
                   </div>
                 </div>
 
-                {/* Ô input số tiền tích hợp nút Rút tất cả */}
-                <div className="relative flex items-center bg-white rounded-2xl border-2 border-orange-200 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-200/50 transition shadow-2xs overflow-hidden">
+                {/* Ô hiển thị số tiền rút cố định bằng toàn bộ số dư khả dụng */}
+                <div className="relative flex items-center bg-white rounded-2xl border-2 border-orange-200 shadow-2xs overflow-hidden">
                   <span className="pl-3.5 pr-1 text-slate-400 font-black text-base select-none shrink-0">₫</span>
                   <input
-                    type="number"
-                    value={withdrawAmount}
-                    onChange={(e) => setWithdrawAmount(e.target.value)}
-                    placeholder="VD: 50.000"
-                    className="flex-1 min-w-0 py-3 px-2 text-base font-black font-mono text-slate-900 placeholder:text-slate-400 placeholder:font-normal placeholder:text-xs outline-none bg-transparent"
+                    type="text"
+                    readOnly
+                    value={formatMoney(availableBalance).replace('đ', '').trim()}
+                    className="flex-1 min-w-0 py-3 px-2 text-base font-black font-mono text-slate-900 outline-none bg-transparent cursor-default"
                   />
-                  <div className="pr-2 flex items-center gap-1 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => setWithdrawAmount(availableBalance.toString())}
-                      className="px-2.5 sm:px-3 py-1.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-xl text-xs font-black cursor-pointer shadow-xs transition flex items-center gap-1 active:scale-95 shrink-0 whitespace-nowrap"
-                      title="Rút toàn bộ số dư khả dụng"
-                    >
-                      <i className="fa-solid fa-bolt text-[10px]"></i>
-                      <span className="whitespace-nowrap">Rút tất cả</span>
-                    </button>
+                  <div className="pr-3 flex items-center gap-1 shrink-0">
+                    <span className="px-2.5 py-1 bg-orange-100 text-orange-800 rounded-xl text-[11px] font-black flex items-center gap-1">
+                      <i className="fa-solid fa-lock text-[10px]"></i>
+                      <span>Rút toàn bộ</span>
+                    </span>
                   </div>
                 </div>
 
-                {/* Các nút chọn nhanh & Ghi chú */}
-                <div className="flex items-center justify-between flex-wrap gap-2 text-[11px]">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-slate-400 font-semibold text-[10px]">Gợi ý:</span>
-                    {availableBalance >= 50000 && (
-                      <button
-                        type="button"
-                        onClick={() => setWithdrawAmount("50000")}
-                        className="px-2.5 py-1 bg-white hover:bg-orange-50 text-slate-700 hover:text-orange-600 border border-slate-200 rounded-lg text-[11px] font-bold cursor-pointer transition shadow-2xs"
-                      >
-                        50.000đ
-                      </button>
-                    )}
-                    {availableBalance >= 100000 && (
-                      <button
-                        type="button"
-                        onClick={() => setWithdrawAmount("100000")}
-                        className="px-2.5 py-1 bg-white hover:bg-orange-50 text-slate-700 hover:text-orange-600 border border-slate-200 rounded-lg text-[11px] font-bold cursor-pointer transition shadow-2xs"
-                      >
-                        100.000đ
-                      </button>
-                    )}
-                    {availableBalance >= 200000 && (
-                      <button
-                        type="button"
-                        onClick={() => setWithdrawAmount("200000")}
-                        className="px-2.5 py-1 bg-white hover:bg-orange-50 text-slate-700 hover:text-orange-600 border border-slate-200 rounded-lg text-[11px] font-bold cursor-pointer transition shadow-2xs"
-                      >
-                        200.000đ
-                      </button>
-                    )}
-                  </div>
-                  <span className="text-[11px] text-slate-400 font-medium ml-auto">
-                    * Rút tối thiểu 10.000đ
-                  </span>
+                <div className="flex items-center justify-between gap-2 text-[11px]">
+                  <p className="text-[11px] text-slate-500 font-medium">
+                    💡 Hệ thống tự động rút toàn bộ số dư khả dụng để khớp chính xác 100% với từng đơn hàng hoàn thành.
+                  </p>
                 </div>
 
                 {/* Nút Tạo yêu cầu rút tiền */}
                 <button
                   type="submit"
-                  disabled={isSubmittingWithdraw}
+                  disabled={isSubmittingWithdraw || availableBalance < 10000}
                   className="w-full py-3.5 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-500 hover:from-orange-600 hover:to-amber-600 text-white font-black text-xs sm:text-sm uppercase tracking-wider rounded-2xl shadow-md shadow-orange-500/25 active:scale-[0.98] transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                 >
                   {isSubmittingWithdraw ? (
@@ -1072,7 +1031,7 @@ export function PublicLookupView({
                   ) : (
                     <>
                       <i className="fa-solid fa-paper-plane text-xs"></i>
-                      <span>TẠO YÊU CẦU RÚT TIỀN</span>
+                      <span>TẠO YÊU CẦU RÚT TIỀN ({formatMoney(availableBalance)})</span>
                     </>
                   )}
                 </button>

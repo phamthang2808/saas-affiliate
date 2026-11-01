@@ -367,7 +367,7 @@ export function MemberDetailModal({
   const isPaymentTrackingEnabled = Boolean(
     activeTenant?.enableOrderPaymentTracking ??
     liveData?.tenant?.enableOrderPaymentTracking ??
-    false
+    true
   );
 
   const paidOrdersList = useMemo(() => {
@@ -1276,7 +1276,7 @@ export function MemberDetailModal({
                     Sổ Theo Dõi Thanh Toán Trực Tiếp (Chi Trả Riêng)
                   </h4>
                   <p className="text-[10px] text-teal-700 font-semibold">
-                    Theo dõi nội bộ các đơn đã thanh toán / chưa thanh toán cho thành viên này (không làm ảnh hưởng số dư ví tiền rút).
+                    Theo dõi đối soát chi tiết từng đơn hàng hoàn thành (Đồng bộ cấn trừ ví và Khớp 100% với Lệnh rút tiền).
                   </p>
                 </div>
               </div>
@@ -1637,28 +1637,41 @@ export function MemberDetailModal({
               </div>
 
               <div className="flex items-center gap-2 flex-wrap">
-                {/* Nút Đã thanh toán & Bỏ đánh dấu (Chỉ hiện khi bật cấu hình) */}
+                {/* Nút Xác nhận chi trả 1-click & Bỏ đánh dấu */}
                 {isPaymentTrackingEnabled && (
                   <>
                     <button
                       type="button"
                       disabled={isMarkingPaid || isExecutingPayout}
-                      onClick={openPayoutConfirmModal}
+                      onClick={() => {
+                        if (selectedOrdersList.length === 0) return;
+                        if (
+                          !window.confirm(
+                            `⚡ XÁC NHẬN CHI TRẢ TRỰC TIẾP CHO THÀNH VIÊN?\n\n• Thành viên: ${zaloName || zaloId}\n• Số lượng: ${selectedOrdersList.length} đơn hàng\n• Tổng tiền chi trả: ${formatMoney(selectedTotalUserComm)}\n\nHệ thống sẽ tự động:\n✓ Đánh dấu các đơn này là ĐÃ THANH TOÁN\n✓ Tự động tạo lệnh rút tiền COMPLETED và cấn trừ ví khả dụng\n✓ Đồng bộ 100% giữa Ví tiền và Danh sách đơn!`
+                          )
+                        ) {
+                          return;
+                        }
+                        handleMarkPaid("PAID");
+                      }}
                       className="px-3.5 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 disabled:opacity-50 text-white rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 shadow-sm shadow-emerald-500/20 active:scale-95"
-                      title="Đánh dấu các đơn đang chọn là ĐÃ THANH TOÁN (tiện theo dõi sổ sách)"
+                      title="Xác nhận chi trả 1-click và tự động cấn trừ ví tiền cho các đơn hàng đã chọn"
                     >
                       {isMarkingPaid ? (
                         <i className="fa-solid fa-spinner fa-spin text-xs"></i>
                       ) : (
-                        <i className="fa-solid fa-circle-check text-xs"></i>
+                        <i className="fa-solid fa-bolt text-xs"></i>
                       )}
-                      <span>Đã thanh toán ({selectedOrderIds.size})</span>
+                      <span>⚡ Xác nhận chi trả ({selectedOrderIds.size} đơn - {formatMoney(selectedTotalUserComm)})</span>
                     </button>
 
                     <button
                       type="button"
                       disabled={isMarkingPaid}
-                      onClick={() => handleMarkPaid("UNPAID")}
+                      onClick={() => {
+                        if (!window.confirm(`Chuyển ${selectedOrdersList.length} đơn hàng đã chọn về trạng thái CHƯA THANH TOÁN?`)) return;
+                        handleMarkPaid("UNPAID");
+                      }}
                       className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 disabled:opacity-50 text-xs font-bold rounded-xl transition cursor-pointer flex items-center gap-1.5 active:scale-95"
                       title="Chuyển các đơn đang chọn về trạng thái CHƯA THANH TOÁN"
                     >
@@ -1884,7 +1897,7 @@ export function MemberDetailModal({
                                 title="Đã thanh toán cho khách. Bấm để chuyển lại về Chưa thanh toán"
                               >
                                 <i className="fa-solid fa-circle-check text-emerald-600"></i>
-                                <span>Đã thanh toán</span>
+                                <span>Đã thanh toán{o.paidAt ? ` (${new Date(o.paidAt).toLocaleDateString("vi-VN")})` : ""}</span>
                               </button>
                             ) : (
                               <button

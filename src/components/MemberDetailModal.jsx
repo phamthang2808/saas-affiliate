@@ -58,7 +58,7 @@ export function MemberDetailModal({
   const [payoutFormAccountNumber, setPayoutFormAccountNumber] = useState("");
   const [payoutFormAccountName, setPayoutFormAccountName] = useState("");
   const [payoutFormNote, setPayoutFormNote] = useState("");
-  const [paymentMode, setPaymentMode] = useState("STANDARD"); // "STANDARD" | "OLD_ORDERS" | "MARK_ONLY" 
+  const [isCreatePayout, setIsCreatePayout] = useState(true);
   const [modalTargetOrders, setModalTargetOrders] = useState(null);
   const [isExecutingPayout, setIsExecutingPayout] = useState(false);
 
@@ -997,7 +997,7 @@ export function MemberDetailModal({
     }
   };
 
-  // Mở modal xác nhận quyết toán & đánh dấu đã thanh toán
+  // Mở modal xác nhận chi trả & đánh dấu đã thanh toán
   const openPayoutConfirmModal = (targetOrders = null) => {
     const ordersToUse = targetOrders && targetOrders.length > 0 ? targetOrders : selectedOrdersList;
     if (ordersToUse.length === 0) {
@@ -1020,11 +1020,11 @@ export function MemberDetailModal({
         .slice(0, 3)
         .join(", ")}${ordersToUse.length > 3 ? "..." : ""})`
     );
-    setPaymentMode("STANDARD");
+    setIsCreatePayout(true);
     setShowPayoutConfirmModal(true);
   };
 
-  // Xử lý Quyết toán và Đánh dấu các đơn đã chọn là PAID theo 3 kịch bản
+  // Xử lý Chi trả và Đánh dấu các đơn đã chọn là PAID
   const handleConfirmPayoutAndMarkPaid = async () => {
     if (!tenantSlug) return;
     const ordersToUse = modalTargetOrders && modalTargetOrders.length > 0 ? modalTargetOrders : selectedOrdersList;
@@ -1038,10 +1038,8 @@ export function MemberDetailModal({
       const orderDbIds = ordersToUse.flatMap((o) => [o.id, o.orderId].filter(Boolean));
       const amountNum = Number(String(payoutFormAmount || "").replace(/[^0-9]/g, ""));
 
-      const shouldCreatePayout = paymentMode === "STANDARD" || paymentMode === "OLD_ORDERS";
-      const shouldDeductWallet = paymentMode === "STANDARD";
-
-      // Gọi API cập nhật trạng thái đơn PAID kèm các tùy chọn Payout và Cấn trừ ví
+      // Khi isCreatePayout = true: Tạo lệnh rút (và hệ thống tự động trừ ví + cộng vào Đã nhận)
+      // Khi isCreatePayout = false: Không tạo lệnh rút, không đụng ví (cho đơn cũ)
       const markRes = await fetch(`${apiRoot}/api/saas/admin/${tenantSlug}/orders/mark-paid`, {
         method: "PUT",
         headers: {
@@ -1052,13 +1050,13 @@ export function MemberDetailModal({
           orderIds: orderDbIds,
           action: "PAID",
           zaloId: zaloId || undefined,
-          createPayout: shouldCreatePayout,
-          deductWallet: shouldDeductWallet,
-          amount: shouldCreatePayout && amountNum > 0 ? amountNum : undefined,
-          note: shouldCreatePayout ? (payoutFormNote.trim() || undefined) : undefined,
-          bankName: shouldCreatePayout ? (payoutFormBankName || bankName || undefined) : undefined,
-          accountNumber: shouldCreatePayout ? (payoutFormAccountNumber || accountNumber || undefined) : undefined,
-          accountName: shouldCreatePayout ? (payoutFormAccountName || accountName || undefined) : undefined,
+          createPayout: isCreatePayout,
+          deductWallet: isCreatePayout,
+          amount: isCreatePayout && amountNum > 0 ? amountNum : undefined,
+          note: isCreatePayout ? (payoutFormNote.trim() || undefined) : undefined,
+          bankName: isCreatePayout ? (payoutFormBankName || bankName || undefined) : undefined,
+          accountNumber: isCreatePayout ? (payoutFormAccountNumber || accountNumber || undefined) : undefined,
+          accountName: isCreatePayout ? (payoutFormAccountName || accountName || undefined) : undefined,
         }),
       });
 
@@ -1068,10 +1066,10 @@ export function MemberDetailModal({
       }
 
       let summaryMsg = `✅ Đã chuyển ${ordersToUse.length} đơn sang ĐÃ THANH TOÁN!`;
-      if (paymentMode === "STANDARD") {
-        summaryMsg = `🎉 Đã tạo lệnh rút ${formatMoney(amountNum || selectedTotalUserComm)} & cấn trừ ví, đánh dấu ${ordersToUse.length} đơn ĐÃ THANH TOÁN!`;
-      } else if (paymentMode === "OLD_ORDERS") {
-        summaryMsg = `⚡ Đã lưu lịch sử chi trả đơn cũ (KHÔNG trừ ví) và đánh dấu ${ordersToUse.length} đơn ĐÃ THANH TOÁN!`;
+      if (isCreatePayout) {
+        summaryMsg = `🎉 Đã tạo lệnh rút ${formatMoney(amountNum || selectedTotalUserComm)} & đánh dấu ${ordersToUse.length} đơn ĐÃ THANH TOÁN!`;
+      } else {
+        summaryMsg = `✅ Đã chuyển ${ordersToUse.length} đơn sang ĐÃ THANH TOÁN (không tạo lệnh rút)!`;
       }
 
       if (showNotification) showNotification(summaryMsg, "success");
@@ -2614,93 +2612,48 @@ export function MemberDetailModal({
                   </div>
                 </div>
 
-                {/* 3 KỊCH BẢN THANH TOÁN (1-CLICK LỰA CHỌN) */}
-                <div className="space-y-2">
-                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                    Hình thức chi trả:
-                  </label>
-
-                  <div className="space-y-2">
-                    {/* Kịch bản 1: Chi trả chuẩn */}
-                    <div
-                      onClick={() => setPaymentMode("STANDARD")}
-                      className={`p-3 rounded-2xl transition cursor-pointer select-none flex items-start gap-3 ${
-                        paymentMode === "STANDARD"
-                          ? "bg-emerald-50/90 ring-2 ring-emerald-500/80 text-emerald-950"
-                          : "bg-slate-50/80 hover:bg-slate-100/70 text-slate-700"
-                      }`}
-                    >
-                      <div
-                        className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
-                          paymentMode === "STANDARD" ? "bg-emerald-600 text-white" : "border-2 border-slate-300"
-                        }`}
-                      >
-                        {paymentMode === "STANDARD" && <i className="fa-solid fa-check text-[10px]"></i>}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <p className="text-xs font-bold">1. Chi trả chuẩn (Đơn mới)</p>
-                          <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-md">
-                            Khuyên dùng
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-slate-500 mt-0.5 leading-normal">
-                          Tạo lệnh rút tiền trong lịch sử & cấn trừ {formatMoney(numAmount)} khỏi ví khả dụng.
-                        </p>
-                      </div>
+                {/* 1 CÔNG TẮC DUY NHẤT: TẠO LỆNH RÚT TIỀN */}
+                <div
+                  onClick={() => setIsCreatePayout(!isCreatePayout)}
+                  className={`p-4 rounded-2xl transition cursor-pointer select-none flex items-center justify-between gap-3 ${
+                    isCreatePayout ? "bg-emerald-50/80" : "bg-slate-50/80"
+                  }`}
+                >
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-2">
+                      <p className="text-xs font-bold text-slate-800">
+                        Tạo Lệnh Rút Tiền trong lịch sử
+                      </p>
+                      {!isCreatePayout && (
+                        <span className="text-[10px] font-semibold text-amber-700 bg-amber-100/70 px-2 py-0.5 rounded-md">
+                          Dành cho đơn cũ
+                        </span>
+                      )}
                     </div>
+                    <p className="text-[11px] leading-normal">
+                      {isCreatePayout ? (
+                        <span className="text-slate-500">
+                          Tự động cộng vào "Đã nhận" và giảm số dư ví của thành viên
+                        </span>
+                      ) : (
+                        <span className="text-slate-500">
+                          Không tạo lệnh rút & giữ nguyên ví (tránh làm ví khách bị âm)
+                        </span>
+                      )}
+                    </p>
+                  </div>
 
-                    {/* Kịch bản 2: Chi trả đơn cũ */}
+                  <div className="shrink-0">
                     <div
-                      onClick={() => setPaymentMode("OLD_ORDERS")}
-                      className={`p-3 rounded-2xl transition cursor-pointer select-none flex items-start gap-3 ${
-                        paymentMode === "OLD_ORDERS"
-                          ? "bg-indigo-50/90 ring-2 ring-indigo-500/80 text-indigo-950"
-                          : "bg-slate-50/80 hover:bg-slate-100/70 text-slate-700"
+                      className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors duration-200 ease-in-out cursor-pointer ${
+                        isCreatePayout ? "bg-emerald-600" : "bg-slate-300"
                       }`}
                     >
-                      <div
-                        className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
-                          paymentMode === "OLD_ORDERS" ? "bg-indigo-600 text-white" : "border-2 border-slate-300"
+                      <span
+                        className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out mt-0.5 ${
+                          isCreatePayout ? "translate-x-5.5" : "translate-x-0.5"
                         }`}
-                      >
-                        {paymentMode === "OLD_ORDERS" && <i className="fa-solid fa-check text-[10px]"></i>}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <p className="text-xs font-bold">2. Chi trả đơn cũ (KHÔNG trừ ví)</p>
-                          <span className="text-[10px] font-semibold text-indigo-700 bg-indigo-100/70 px-2 py-0.5 rounded-md">
-                            Đơn cũ ngoài hệ thống
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-slate-500 mt-0.5 leading-normal">
-                          Lưu lịch sử đối soát làm bằng chứng nhưng <strong>không trừ ví</strong> (tránh làm ví thành viên bị âm).
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Kịch bản 3: Chỉ đánh dấu đơn */}
-                    <div
-                      onClick={() => setPaymentMode("MARK_ONLY")}
-                      className={`p-3 rounded-2xl transition cursor-pointer select-none flex items-start gap-3 ${
-                        paymentMode === "MARK_ONLY"
-                          ? "bg-slate-200/90 ring-2 ring-slate-400 text-slate-900"
-                          : "bg-slate-50/80 hover:bg-slate-100/70 text-slate-700"
-                      }`}
-                    >
-                      <div
-                        className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
-                          paymentMode === "MARK_ONLY" ? "bg-slate-700 text-white" : "border-2 border-slate-300"
-                        }`}
-                      >
-                        {paymentMode === "MARK_ONLY" && <i className="fa-solid fa-check text-[10px]"></i>}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-bold">3. Chỉ đánh dấu Đã thanh toán</p>
-                        <p className="text-[11px] text-slate-500 mt-0.5 leading-normal">
-                          Chỉ chuyển trạng thái sang Đã thanh toán; không tạo lệnh rút, không đụng vào ví tiền.
-                        </p>
-                      </div>
+                      ></span>
                     </div>
                   </div>
                 </div>
@@ -2714,14 +2667,14 @@ export function MemberDetailModal({
                   </span>
                 </div>
 
-                {/* Form Inputs (Chỉ hiển thị khi là STANDARD hoặc OLD_ORDERS) */}
-                {paymentMode !== "MARK_ONLY" && (
+                {/* Form Inputs (Chỉ hiển thị khi isCreatePayout = true) */}
+                {isCreatePayout && (
                   <div className="space-y-3 pt-1">
                     {/* Số tiền chi trả */}
                     <div>
                       <div className="flex items-center justify-between mb-1.5">
                         <label className="text-xs font-semibold text-slate-600">
-                          {paymentMode === "STANDARD" ? "Số tiền chi trả (VND):" : "Số tiền ghi nhận lệnh rút (VND):"}
+                          Số tiền chi trả (VND):
                         </label>
                         <div className="flex items-center gap-1.5">
                           <button
@@ -2823,10 +2776,8 @@ export function MemberDetailModal({
                     disabled={isExecutingPayout}
                     onClick={handleConfirmPayoutAndMarkPaid}
                     className={`px-5 py-2.5 text-white rounded-xl text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1.5 shadow-md active:scale-95 disabled:opacity-50 ${
-                      paymentMode === "STANDARD"
+                      isCreatePayout
                         ? "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-emerald-500/20"
-                        : paymentMode === "OLD_ORDERS"
-                        ? "bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 shadow-indigo-500/20"
                         : "bg-slate-800 hover:bg-slate-900 shadow-slate-800/20"
                     }`}
                   >
@@ -2836,10 +2787,8 @@ export function MemberDetailModal({
                       <i className="fa-solid fa-bolt text-xs"></i>
                     )}
                     <span>
-                      {paymentMode === "STANDARD"
-                        ? `Xác nhận (Tạo lệnh & Trừ ví)`
-                        : paymentMode === "OLD_ORDERS"
-                        ? `Xác nhận chi trả đơn cũ (KHÔNG trừ ví)`
+                      {isCreatePayout
+                        ? `Xác nhận chi trả (Tạo lệnh rút tiền)`
                         : `Xác nhận (Chỉ đánh dấu Đã thanh toán)`}
                     </span>
                   </button>

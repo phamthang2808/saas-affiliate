@@ -58,6 +58,9 @@ export function MemberDetailModal({
   const [payoutFormAccountNumber, setPayoutFormAccountNumber] = useState("");
   const [payoutFormAccountName, setPayoutFormAccountName] = useState("");
   const [payoutFormNote, setPayoutFormNote] = useState("");
+  const [optCreatePayout, setOptCreatePayout] = useState(true);
+  const [optDeductWallet, setOptDeductWallet] = useState(true);
+  const [modalTargetOrders, setModalTargetOrders] = useState(null);
   const [isExecutingPayout, setIsExecutingPayout] = useState(false);
 
   // Live lookup state (100% đồng bộ với trang Tra Cứu)
@@ -285,12 +288,16 @@ export function MemberDetailModal({
     const st = String(p.status || "").toUpperCase();
     return st === "COMPLETED" || st === "APPROVED";
   });
+  const fallbackWalletDeductingPayouts = fallbackApprovedPayouts.filter((p) => {
+    const note = p.note || "";
+    return !note.includes("[KHÔNG_CẤN_TRỪ_VÍ]");
+  });
   const fallbackPendingPayoutsList = fallbackPayouts.filter((p) => {
     const st = String(p.status || "").toUpperCase();
     return st === "PENDING";
   });
 
-  const fallbackTotalWithdrawn = fallbackApprovedPayouts.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+  const fallbackTotalWithdrawn = fallbackWalletDeductingPayouts.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
   const fallbackPendingWithdrawn = fallbackPendingPayoutsList.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
   const isOrderEligible = (o) => {
     if (holdingDays <= 0) return true;
@@ -379,12 +386,16 @@ export function MemberDetailModal({
     const st = String(p.status || "").toUpperCase();
     return st === "COMPLETED" || st === "APPROVED";
   });
+  const walletDeductingPayouts = approvedPayouts.filter((p) => {
+    const note = p.note || "";
+    return !note.includes("[KHÔNG_CẤN_TRỪ_VÍ]");
+  });
   const pendingPayoutsList = memberPayoutsList.filter((p) => {
     const st = String(p.status || "").toUpperCase();
     return st === "PENDING";
   });
 
-  const totalPayoutsWithdrawn = approvedPayouts.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+  const totalPayoutsWithdrawn = walletDeductingPayouts.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
   const pendingWithdrawn = pendingPayoutsList.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
   const totalWithdrawn = totalPayoutsWithdrawn;
 
@@ -819,7 +830,12 @@ export function MemberDetailModal({
       });
       return;
     }
-    const nextAction = isCurrentlyPaid ? "UNPAID" : "PAID";
+    if (!isCurrentlyPaid) {
+      // Khi bấm vào đơn chưa thanh toán, mở form xác nhận chi trả cho riêng đơn này
+      openPayoutConfirmModal([order]);
+      return;
+    }
+    const nextAction = "UNPAID";
     const targetKeys = [order.id, order.orderId].filter(Boolean);
 
     try {
@@ -983,95 +999,84 @@ export function MemberDetailModal({
   };
 
   // Mở modal xác nhận quyết toán & đánh dấu đã thanh toán
-  const openPayoutConfirmModal = () => {
-    if (selectedOrdersList.length === 0) {
+  const openPayoutConfirmModal = (targetOrders = null) => {
+    const ordersToUse = targetOrders && targetOrders.length > 0 ? targetOrders : selectedOrdersList;
+    if (ordersToUse.length === 0) {
       if (showNotification) showNotification("⚠️ Vui lòng tích chọn ít nhất 1 đơn hàng!", "error");
       else alert("Vui lòng tích chọn ít nhất 1 đơn hàng!");
       return;
     }
-    const defaultAmount = selectedTotalUserComm > 0 ? selectedTotalUserComm : 0;
-    setPayoutFormAmount(defaultAmount > 0 ? String(defaultAmount) : "");
+    setModalTargetOrders(targetOrders && targetOrders.length > 0 ? targetOrders : null);
+    const totalComm = ordersToUse.reduce((sum, o) => {
+      if (isOrderCancelled(o)) return sum;
+      return sum + calculateUserComm(o);
+    }, 0);
+    setPayoutFormAmount(totalComm > 0 ? String(totalComm) : "");
     setPayoutFormBankName(bankName || initialBankName || "");
     setPayoutFormAccountNumber(accountNumber || initialAccountNumber || "");
     setPayoutFormAccountName(accountName || initialAccountName || "");
     setPayoutFormNote(
-      `Admin quyết toán hoa hồng cho ${selectedOrdersList.length} đơn hàng (${selectedOrdersList
+      `Chi trả hoa hồng cho ${ordersToUse.length} đơn hàng (${ordersToUse
         .map((o) => o.orderId || o.id)
         .slice(0, 3)
-        .join(", ")}${selectedOrdersList.length > 3 ? "..." : ""})`
+        .join(", ")}${ordersToUse.length > 3 ? "..." : ""})`
     );
+    setOptCreatePayout(true);
+    setOptDeductWallet(true);
     setShowPayoutConfirmModal(true);
   };
 
-  // Xử lý Quyết toán (Tạo Payout COMPLETED nếu createPayout=true) và Đánh dấu các đơn đã chọn là PAID
-  const handleConfirmPayoutAndMarkPaid = async (createPayout = true) => {
+  // Xử lý Quyết toán và Đánh dấu các đơn đã chọn là PAID
+  const handleConfirmPayoutAndMarkPaid = async () => {
     if (!tenantSlug) return;
+    const ordersToUse = modalTargetOrders && modalTargetOrders.length > 0 ? modalTargetOrders : selectedOrdersList;
+    if (ordersToUse.length === 0) {
+      if (showNotification) showNotification("⚠️ Không có đơn hàng nào được chọn!", "error");
+      return;
+    }
     setIsExecutingPayout(true);
 
     try {
-      const orderDbIds = selectedOrdersList.flatMap((o) => [o.id, o.orderId].filter(Boolean));
+      const orderDbIds = ordersToUse.flatMap((o) => [o.id, o.orderId].filter(Boolean));
       const amountNum = Number(String(payoutFormAmount || "").replace(/[^0-9]/g, ""));
 
-      if (createPayout) {
-        if (!amountNum || amountNum <= 0) {
-          if (showNotification) showNotification("⚠️ Vui lòng nhập số tiền rút hợp lệ (> 0đ)!", "error");
-          else alert("Vui lòng nhập số tiền rút hợp lệ!");
-          setIsExecutingPayout(false);
-          return;
-        }
+      // Gọi API cập nhật trạng thái đơn PAID kèm các tùy chọn Payout và Cấn trừ ví
+      const markRes = await fetch(`${apiRoot}/api/saas/admin/${tenantSlug}/orders/mark-paid`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...(authHeaders || {}),
+        },
+        body: JSON.stringify({
+          orderIds: orderDbIds,
+          action: "PAID",
+          zaloId: zaloId || undefined,
+          createPayout: optCreatePayout,
+          deductWallet: optDeductWallet,
+          amount: amountNum > 0 ? amountNum : undefined,
+          note: payoutFormNote.trim() || undefined,
+          bankName: payoutFormBankName || bankName || undefined,
+          accountNumber: payoutFormAccountNumber || accountNumber || undefined,
+          accountName: payoutFormAccountName || accountName || undefined,
+        }),
+      });
 
-        // 1. Gọi API tạo & duyệt payout thủ công
-        const payoutRes = await fetch(`${apiRoot}/api/saas/admin/${tenantSlug}/payouts/create-manual`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...(authHeaders || {}),
-          },
-          body: JSON.stringify({
-            zaloId: zaloId || undefined,
-            amount: amountNum,
-            bankName: payoutFormBankName || bankName || undefined,
-            accountNumber: payoutFormAccountNumber || accountNumber || undefined,
-            accountName: payoutFormAccountName || accountName || undefined,
-            note: payoutFormNote.trim() || `Admin tạo & duyệt quyết toán cho ${zaloName}`,
-          }),
-        });
-        const payoutData = await payoutRes.json();
-        if (!payoutRes.ok) {
-          throw new Error(payoutData.message || "Lỗi khi tạo lệnh rút tiền");
-        }
+      const markData = await markRes.json();
+      if (!markRes.ok) {
+        throw new Error(markData.message || "Lỗi khi cập nhật trạng thái đơn hàng");
       }
 
-      // 2. Gọi API đánh dấu các đơn đã chọn thành PAID
-      if (orderDbIds.length > 0) {
-        const markRes = await fetch(`${apiRoot}/api/saas/admin/${tenantSlug}/orders/mark-paid`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            ...(authHeaders || {}),
-          },
-          body: JSON.stringify({
-            orderIds: orderDbIds,
-            action: "PAID",
-            zaloId: zaloId || undefined,
-          }),
-        });
-        const markData = await markRes.json();
-        if (!markRes.ok) {
-          console.warn("Lỗi cập nhật trạng thái đơn PAID:", markData.message);
-        }
+      let summaryMsg = `✅ Đã chuyển ${ordersToUse.length} đơn sang ĐÃ THANH TOÁN!`;
+      if (optCreatePayout && optDeductWallet) {
+        summaryMsg = `🎉 Đã tạo lệnh rút ${formatMoney(amountNum || selectedTotalUserComm)} & cấn trừ ví, đánh dấu ${ordersToUse.length} đơn ĐÃ THANH TOÁN!`;
+      } else if (optCreatePayout && !optDeductWallet) {
+        summaryMsg = `⚡ Đã tạo lệnh rút trong lịch sử (KHÔNG trừ ví) và đánh dấu ${ordersToUse.length} đơn ĐÃ THANH TOÁN!`;
+      } else if (!optCreatePayout && optDeductWallet) {
+        summaryMsg = `⚡ Đã cấn trừ ví khả dụng (KHÔNG tạo lệnh rút rác) và đánh dấu ${ordersToUse.length} đơn ĐÃ THANH TOÁN!`;
       }
 
-      // 3. Cập nhật local state & thông báo thành công
-      if (createPayout) {
-        const msg = `🎉 Đã tạo lệnh rút ${formatMoney(amountNum)} & cấn trừ ví, đánh dấu ${selectedOrdersList.length} đơn ĐÃ THANH TOÁN!`;
-        if (showNotification) showNotification(msg, "success");
-        else alert(msg);
-      } else {
-        const msg = `✅ Đã chuyển ${selectedOrdersList.length} đơn sang ĐÃ THANH TOÁN (không cấn trừ ví)!`;
-        if (showNotification) showNotification(msg, "success");
-        else alert(msg);
-      }
+      if (showNotification) showNotification(summaryMsg, "success");
+      else alert(summaryMsg);
 
       setLiveData((prev) => {
         if (!prev || !Array.isArray(prev.orders)) return prev;
@@ -1082,7 +1087,7 @@ export function MemberDetailModal({
             const k1 = String(ord.id);
             const k2 = String(ord.orderId);
             if (updatedSet.has(k1) || updatedSet.has(k2)) {
-              return { ...ord, paymentStatus: "PAID" };
+              return { ...ord, paymentStatus: "PAID", paidAt: new Date().toISOString() };
             }
             return ord;
           }),
@@ -1090,6 +1095,7 @@ export function MemberDetailModal({
       });
 
       setShowPayoutConfirmModal(false);
+      setModalTargetOrders(null);
       setSelectedOrderIds(new Set());
       await refreshLiveData();
       if (onOrdersUpdated) onOrdersUpdated();
@@ -1801,22 +1807,10 @@ export function MemberDetailModal({
                       disabled={isMarkingPaid || isExecutingPayout}
                       onClick={() => {
                         if (selectedOrdersList.length === 0) return;
-                        const orderCodes = selectedOrdersList
-                          .map((o) => o.orderId || `#${o.id}`)
-                          .slice(0, 8)
-                          .join(", ");
-                        const moreCount = selectedOrdersList.length > 8 ? ` (+${selectedOrdersList.length - 8} đơn khác)` : "";
-                        if (
-                          !window.confirm(
-                            `⚡ XÁC NHẬN CHI TRẢ TRỰC TIẾP CHO THÀNH VIÊN?\n\n• Thành viên: ${zaloName || zaloId}\n• Số lượng: ${selectedOrdersList.length} đơn hàng\n• Danh sách mã đơn: ${orderCodes}${moreCount}\n• Tổng tiền chi trả: ${formatMoney(selectedTotalUserComm)}\n\nHệ thống sẽ tự động:\n✓ Ghi chú lệnh rút chi tiết các mã đơn này\n✓ Đánh dấu các đơn này là ĐÃ THANH TOÁN\n✓ Tự động tạo lệnh rút tiền COMPLETED và cấn trừ ví khả dụng\n✓ Đồng bộ 100% giữa Ví tiền và Danh sách đơn!`
-                          )
-                        ) {
-                          return;
-                        }
-                        handleMarkPaid("PAID");
+                        openPayoutConfirmModal();
                       }}
                       className="px-3.5 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 disabled:opacity-50 text-white rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 shadow-sm shadow-emerald-500/20 active:scale-95"
-                      title="Xác nhận chi trả 1-click và tự động cấn trừ ví tiền cho các đơn hàng đã chọn"
+                      title="Mở form xác nhận chi trả, tùy chọn tạo lệnh rút tiền và cấn trừ ví"
                     >
                       {isMarkingPaid ? (
                         <i className="fa-solid fa-spinner fa-spin text-xs"></i>
@@ -2471,8 +2465,18 @@ export function MemberDetailModal({
                             </td>
                             <td className="px-3.5 py-3 max-w-[200px]">
                               <span className="text-[11px] text-slate-600 block truncate" title={p.note || ""}>
-                                {p.note || "—"}
+                                {p.note ? p.note.replace("[KHÔNG_CẤN_TRỪ_VÍ]", "").replace("[CẤN_TRỪ_VÍ_NỘI_BỘ]", "").trim() || "—" : "—"}
                               </span>
+                              {p.note && p.note.includes("[KHÔNG_CẤN_TRỪ_VÍ]") && (
+                                <span className="inline-block mt-0.5 px-1.5 py-0.5 rounded text-[9px] font-black bg-amber-50 text-amber-700 border border-amber-200">
+                                  ⚡ Không trừ ví (Đơn cũ)
+                                </span>
+                              )}
+                              {p.note && p.note.includes("[CẤN_TRỪ_VÍ_NỘI_BỘ]") && (
+                                <span className="inline-block mt-0.5 px-1.5 py-0.5 rounded text-[9px] font-black bg-purple-50 text-purple-700 border border-purple-200">
+                                  ⚡ Cấn trừ ví nội bộ
+                                </span>
+                              )}
                             </td>
                             <td className="px-3.5 py-3 whitespace-nowrap text-[11px] font-mono text-slate-500">
                               <div>Tạo: {formatDateTime(p.createdAt)}</div>
@@ -2551,200 +2555,301 @@ export function MemberDetailModal({
         )}
 
         {/* ===================== MODAL XÁC NHẬN THANH TOÁN & QUYẾT TOÁN HOA HỒNG ===================== */}
-        {showPayoutConfirmModal && (
-          <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-[fadeIn_0.15s_ease-out]">
-            <div
-              className="bg-white rounded-3xl max-w-xl w-full p-5 sm:p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[92vh] overflow-y-auto"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Header */}
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white flex items-center justify-center text-lg shadow-md shadow-purple-500/20">
-                    <i className="fa-solid fa-receipt"></i>
+        {showPayoutConfirmModal && (() => {
+          const activeOrders = modalTargetOrders && modalTargetOrders.length > 0 ? modalTargetOrders : selectedOrdersList;
+          const activeTotalComm = activeOrders.reduce((sum, o) => isOrderCancelled(o) ? sum : sum + calculateUserComm(o), 0);
+          const numAmount = Number(String(payoutFormAmount || 0).replace(/[^0-9]/g, "")) || activeTotalComm;
+
+          return (
+            <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-[fadeIn_0.15s_ease-out]">
+              <div
+                className="bg-white rounded-3xl max-w-xl w-full p-5 sm:p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[92vh] overflow-y-auto"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Header */}
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white flex items-center justify-center text-lg shadow-md shadow-emerald-500/20">
+                      <i className="fa-solid fa-file-invoice-dollar"></i>
+                    </div>
+                    <div>
+                      <h3 className="text-base sm:text-lg font-black text-slate-900 font-display">
+                        Xác Nhận Chi Trả & Đánh Dấu Đã Thanh Toán
+                      </h3>
+                      <p className="text-xs text-slate-500 font-medium">
+                        Thành viên: <span className="font-bold text-orange-600">{zaloName}</span> ({activeOrders.length} đơn hàng)
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-base sm:text-lg font-black text-slate-900 font-display">
-                      Xác Nhận Quyết Toán & Thanh Toán Hoa Hồng
-                    </h3>
-                    <p className="text-xs text-slate-500 font-medium">
-                      Thành viên: <span className="font-bold text-orange-600">{zaloName}</span> ({selectedOrdersList.length} đơn được chọn)
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowPayoutConfirmModal(false);
+                      setModalTargetOrders(null);
+                    }}
+                    className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition cursor-pointer"
+                  >
+                    <i className="fa-solid fa-xmark text-sm"></i>
+                  </button>
+                </div>
+
+                {/* 3 ô thông tin đối soát */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
+                  <div className="text-center sm:text-left">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase">Đơn được chọn</p>
+                    <p className="text-sm font-black text-slate-800 font-mono mt-0.5">
+                      {activeOrders.length} đơn
+                    </p>
+                  </div>
+                  <div className="text-center sm:text-left">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase">Khách nhận (Theo đơn)</p>
+                    <p className="text-sm font-black text-orange-600 font-mono mt-0.5">
+                      {formatMoney(activeTotalComm)}
+                    </p>
+                  </div>
+                  <div className="text-center sm:text-left">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase">Số dư ví khả dụng</p>
+                    <p className="text-sm font-black text-emerald-600 font-mono mt-0.5">
+                      {formatMoney(availableBalance)}
                     </p>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setShowPayoutConfirmModal(false)}
-                  className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition cursor-pointer"
-                >
-                  <i className="fa-solid fa-xmark text-sm"></i>
-                </button>
-              </div>
 
-              {/* Thông tin đối soát 3 ô */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
-                <div className="text-center sm:text-left">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase">Đơn đã chọn</p>
-                  <p className="text-sm font-black text-slate-800 font-mono mt-0.5">
-                    {selectedOrdersList.length} đơn
-                  </p>
-                </div>
-                <div className="text-center sm:text-left">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase">Khách nhận (Theo đơn)</p>
-                  <p className="text-sm font-black text-orange-600 font-mono mt-0.5">
-                    {formatMoney(selectedTotalUserComm)}
-                  </p>
-                </div>
-                <div className="text-center sm:text-left">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase">Số dư khả dụng hiện có</p>
-                  <p className="text-sm font-black text-emerald-600 font-mono mt-0.5">
-                    {formatMoney(availableBalance)}
-                  </p>
-                </div>
-              </div>
+                {/* 2 TÙY CHỌN BẬT / TẮT (TẠO LỆNH RÚT & CẤN TRỪ VÍ) */}
+                <div className="space-y-2.5">
+                  <label className="text-xs font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
+                    <i className="fa-solid fa-sliders text-indigo-600"></i>
+                    <span>Tùy chọn xử lý dòng tiền (Linh hoạt cho đơn cũ / mới):</span>
+                  </label>
 
-              {/* Hộp giải thích cơ chế an toàn */}
-              <div className="bg-amber-50/70 border border-amber-200 rounded-2xl p-3 flex items-start gap-2.5 text-xs text-amber-900 leading-relaxed">
-                <i className="fa-solid fa-circle-exclamation text-amber-600 mt-0.5 shrink-0 text-sm"></i>
-                <div>
-                  <span className="font-black text-amber-950">Bảo vệ tránh thanh toán 2 lần:</span> Nếu bạn chọn{" "}
-                  <strong className="text-purple-700">"Tạo Lệnh Rút & Cấn Trừ Ví"</strong>, hệ thống sẽ tự động trừ{" "}
-                  <span className="font-bold text-orange-600">{formatMoney(Number(String(payoutFormAmount || 0).replace(/[^0-9]/g, "")) || selectedTotalUserComm)}</span> khỏi
-                  Số Dư Khả Dụng và cộng vào Đã Nhận, giúp khách không thể vào web/bot bấm rút tiền trùng lặp!
-                </div>
-              </div>
-
-              {/* Form inputs */}
-              <div className="space-y-3">
-                {/* Số tiền rút */}
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="text-xs font-black text-slate-700 uppercase">
-                      Số tiền rút quyết toán (VND): <span className="text-rose-500">*</span>
-                    </label>
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <button
-                        type="button"
-                        onClick={() => setPayoutFormAmount(String(selectedTotalUserComm || 0))}
-                        className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-orange-100 text-orange-800 hover:bg-orange-200 transition cursor-pointer"
-                        title="Điền số tiền bằng đúng tổng hoa hồng của các đơn đang chọn"
-                      >
-                        Bằng {selectedOrdersList.length} đơn ({formatMoney(selectedTotalUserComm)})
-                      </button>
-                      {availableBalance > 0 && (
-                        <button
-                          type="button"
-                          onClick={() => setPayoutFormAmount(String(availableBalance))}
-                          className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-emerald-100 text-emerald-800 hover:bg-emerald-200 transition cursor-pointer"
-                          title="Điền toàn bộ số dư khả dụng hiện có"
+                  {/* Option 1: Tạo Lệnh Rút Tiền */}
+                  <div
+                    onClick={() => setOptCreatePayout(!optCreatePayout)}
+                    className={`p-3 rounded-2xl border transition cursor-pointer flex items-start gap-3 select-none ${
+                      optCreatePayout
+                        ? "bg-indigo-50/70 border-indigo-200"
+                        : "bg-slate-50/70 border-slate-200 hover:bg-slate-100/60"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={optCreatePayout}
+                      onChange={(e) => setOptCreatePayout(e.target.checked)}
+                      className="mt-1 w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-black text-slate-900">
+                          1. Có tạo Lệnh Rút Tiền (COMPLETED) trong lịch sử?
+                        </span>
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                            optCreatePayout ? "bg-indigo-600 text-white" : "bg-slate-200 text-slate-600"
+                          }`}
                         >
-                          Toàn bộ ví ({formatMoney(availableBalance)})
-                        </button>
-                      )}
+                          {optCreatePayout ? "BẬT: Tạo lệnh" : "TẮT: Không tạo"}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-0.5">
+                        {optCreatePayout
+                          ? "✓ Hệ thống sẽ lưu 1 bản ghi vào tab 'Lịch Sử Rút Tiền' để đối soát và lưu lại ngày giờ, số tài khoản nhận."
+                          : "○ Không tạo bản ghi trong Lịch Sử Rút Tiền (tránh làm rối danh sách rút tiền)."}
+                      </p>
                     </div>
                   </div>
-                  <input
-                    type="text"
-                    value={payoutFormAmount ? Number(String(payoutFormAmount).replace(/[^0-9]/g, "")).toLocaleString("vi-VN") : ""}
-                    onChange={(e) => {
-                      const raw = e.target.value.replace(/[^0-9]/g, "");
-                      setPayoutFormAmount(raw);
-                    }}
-                    placeholder="VD: 50.000"
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm font-mono font-black text-slate-900 outline-none focus:border-purple-600 focus:bg-white transition"
-                  />
-                </div>
 
-                {/* Ghi chú */}
-                <div>
-                  <label className="text-xs font-black text-slate-700 uppercase mb-1 block">
-                    Ghi Chú Giao Dịch:
-                  </label>
-                  <input
-                    type="text"
-                    value={payoutFormNote}
-                    onChange={(e) => setPayoutFormNote(e.target.value)}
-                    placeholder="VD: Admin quyết toán hoa hồng cho các đơn đã chọn..."
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 outline-none focus:border-purple-600 focus:bg-white transition"
-                  />
-                </div>
-
-                {/* Thông tin Ngân hàng */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
-                  <div>
-                    <label className="text-[11px] font-bold text-slate-600 mb-1 block">Ngân hàng:</label>
+                  {/* Option 2: Cấn trừ Ví khả dụng */}
+                  <div
+                    onClick={() => setOptDeductWallet(!optDeductWallet)}
+                    className={`p-3 rounded-2xl border transition cursor-pointer flex items-start gap-3 select-none ${
+                      optDeductWallet
+                        ? "bg-emerald-50/70 border-emerald-200"
+                        : "bg-amber-50/70 border-amber-300 hover:bg-amber-100/60"
+                    }`}
+                  >
                     <input
-                      type="text"
-                      value={payoutFormBankName}
-                      onChange={(e) => setPayoutFormBankName(e.target.value)}
-                      placeholder="VD: MBBank, VCB..."
-                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 outline-none focus:border-purple-600 focus:bg-white transition"
+                      type="checkbox"
+                      checked={optDeductWallet}
+                      onChange={(e) => setOptDeductWallet(e.target.checked)}
+                      className="mt-1 w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer"
                     />
-                  </div>
-                  <div>
-                    <label className="text-[11px] font-bold text-slate-600 mb-1 block">Số tài khoản:</label>
-                    <input
-                      type="text"
-                      value={payoutFormAccountNumber}
-                      onChange={(e) => setPayoutFormAccountNumber(e.target.value)}
-                      placeholder="VD: 0987654321..."
-                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1.5 text-xs font-mono text-slate-800 outline-none focus:border-purple-600 focus:bg-white transition"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[11px] font-bold text-slate-600 mb-1 block">Chủ tài khoản:</label>
-                    <input
-                      type="text"
-                      value={payoutFormAccountName}
-                      onChange={(e) => setPayoutFormAccountName(e.target.value)}
-                      placeholder="VD: NGUYEN VAN A..."
-                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1.5 text-xs uppercase text-slate-800 outline-none focus:border-purple-600 focus:bg-white transition"
-                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-black text-slate-900">
+                          2. Có cấn trừ vào Số Dư Ví khả dụng?
+                        </span>
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                            optDeductWallet ? "bg-emerald-600 text-white" : "bg-amber-600 text-white"
+                          }`}
+                        >
+                          {optDeductWallet ? "BẬT: Trừ ví" : "TẮT: KHÔNG trừ ví"}
+                        </span>
+                      </div>
+                      <p className="text-[11px] mt-0.5 leading-normal">
+                        {optDeductWallet ? (
+                          <span className="text-emerald-700">
+                            ✓ Trừ {formatMoney(numAmount)} khỏi Số dư khả dụng của thành viên, tránh thành viên bấm rút trùng trên Web/Bot.
+                          </span>
+                        ) : (
+                          <span className="text-amber-800 font-semibold">
+                            ⚠️ KHÔNG trừ vào ví (Dành cho <strong>đơn cũ đã thanh toán trước đây</strong>, giúp ví thành viên không bị âm tiền).
+                          </span>
+                        )}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Các nút hành động */}
-              <div className="border-t border-slate-100 pt-3 flex flex-col sm:flex-row items-center justify-between gap-2.5">
-                <button
-                  type="button"
-                  disabled={isExecutingPayout}
-                  onClick={() => setShowPayoutConfirmModal(false)}
-                  className="w-full sm:w-auto px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition cursor-pointer order-3 sm:order-1"
-                >
-                  Hủy bỏ
-                </button>
+                {/* Luôn luôn đánh dấu ĐÃ THANH TOÁN */}
+                <div className="bg-sky-50/70 border border-sky-200 rounded-xl px-3 py-2 flex items-center gap-2 text-xs text-sky-800">
+                  <i className="fa-solid fa-check-double text-sky-600 shrink-0"></i>
+                  <span>
+                    Toàn bộ <strong>{activeOrders.length} đơn hàng</strong> trên sẽ được chuyển sang trạng thái{" "}
+                    <strong className="text-emerald-700">ĐÃ THANH TOÁN</strong>.
+                  </span>
+                </div>
 
-                <div className="w-full sm:w-auto flex flex-col sm:flex-row items-center gap-2 order-1 sm:order-2">
+                {/* Form Inputs */}
+                {(optCreatePayout || optDeductWallet) && (
+                  <div className="space-y-3 pt-1 border-t border-slate-100">
+                    {/* Số tiền quyết toán */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-xs font-black text-slate-700 uppercase">
+                          Số tiền chi trả / cấn trừ: <span className="text-rose-500">*</span>
+                        </label>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <button
+                            type="button"
+                            onClick={() => setPayoutFormAmount(String(activeTotalComm || 0))}
+                            className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-orange-100 text-orange-800 hover:bg-orange-200 transition cursor-pointer"
+                          >
+                            Bằng {activeOrders.length} đơn ({formatMoney(activeTotalComm)})
+                          </button>
+                          {availableBalance > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => setPayoutFormAmount(String(availableBalance))}
+                              className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-emerald-100 text-emerald-800 hover:bg-emerald-200 transition cursor-pointer"
+                            >
+                              Toàn bộ ví ({formatMoney(availableBalance)})
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      <input
+                        type="text"
+                        value={payoutFormAmount ? Number(String(payoutFormAmount).replace(/[^0-9]/g, "")).toLocaleString("vi-VN") : ""}
+                        onChange={(e) => {
+                          const raw = e.target.value.replace(/[^0-9]/g, "");
+                          setPayoutFormAmount(raw);
+                        }}
+                        placeholder="VD: 50.000"
+                        className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm font-mono font-black text-slate-900 outline-none focus:border-indigo-600 focus:bg-white transition"
+                      />
+                    </div>
+
+                    {/* Ghi chú */}
+                    <div>
+                      <label className="text-xs font-black text-slate-700 uppercase mb-1 block">
+                        Ghi Chú Giao Dịch:
+                      </label>
+                      <input
+                        type="text"
+                        value={payoutFormNote}
+                        onChange={(e) => setPayoutFormNote(e.target.value)}
+                        placeholder="VD: Chi trả hoa hồng cho các đơn đã chọn..."
+                        className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 outline-none focus:border-indigo-600 focus:bg-white transition"
+                      />
+                    </div>
+
+                    {/* Thông tin Ngân hàng */}
+                    {optCreatePayout && (
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                        <div>
+                          <label className="text-[11px] font-bold text-slate-600 mb-1 block">Ngân hàng:</label>
+                          <input
+                            type="text"
+                            value={payoutFormBankName}
+                            onChange={(e) => setPayoutFormBankName(e.target.value)}
+                            placeholder="VD: MBBank..."
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 outline-none focus:border-indigo-600 focus:bg-white transition"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[11px] font-bold text-slate-600 mb-1 block">Số tài khoản:</label>
+                          <input
+                            type="text"
+                            value={payoutFormAccountNumber}
+                            onChange={(e) => setPayoutFormAccountNumber(e.target.value)}
+                            placeholder="VD: 0987..."
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1.5 text-xs font-mono text-slate-800 outline-none focus:border-indigo-600 focus:bg-white transition"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[11px] font-bold text-slate-600 mb-1 block">Chủ tài khoản:</label>
+                          <input
+                            type="text"
+                            value={payoutFormAccountName}
+                            onChange={(e) => setPayoutFormAccountName(e.target.value)}
+                            placeholder="VD: NGUYEN VAN A..."
+                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1.5 text-xs uppercase text-slate-800 outline-none focus:border-indigo-600 focus:bg-white transition"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Nút hành động */}
+                <div className="border-t border-slate-100 pt-3 flex flex-col sm:flex-row items-center justify-between gap-2.5">
                   <button
                     type="button"
                     disabled={isExecutingPayout}
-                    onClick={() => handleConfirmPayoutAndMarkPaid(false)}
-                    className="w-full sm:w-auto px-3.5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl text-xs font-black transition cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
-                    title="Chỉ chuyển các đơn này sang trạng thái Đã Thanh Toán để tiện theo dõi, không đụng vào ví hay tạo lệnh rút"
+                    onClick={() => {
+                      setShowPayoutConfirmModal(false);
+                      setModalTargetOrders(null);
+                    }}
+                    className="w-full sm:w-auto px-4 py-2.5 text-xs font-bold text-slate-500 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition cursor-pointer order-2 sm:order-1"
                   >
-                    <span>○ Chỉ đánh dấu đơn (Không cấn trừ ví)</span>
+                    Hủy bỏ
                   </button>
 
                   <button
                     type="button"
                     disabled={isExecutingPayout}
-                    onClick={() => handleConfirmPayoutAndMarkPaid(true)}
-                    className="w-full sm:w-auto px-4 py-2.5 bg-gradient-to-r from-purple-600 via-indigo-600 to-teal-600 hover:from-purple-700 hover:to-teal-700 text-white rounded-xl text-xs font-black transition cursor-pointer flex items-center justify-center gap-1.5 shadow-md shadow-purple-500/25 disabled:opacity-50 active:scale-95"
-                    title="Tạo lệnh rút tiền thủ công (trừ ví khả dụng, tăng đã nhận) và đánh dấu các đơn này là ĐÃ THANH TOÁN"
+                    onClick={handleConfirmPayoutAndMarkPaid}
+                    className={`w-full sm:w-auto px-4 py-2.5 text-white rounded-xl text-xs font-black transition cursor-pointer flex items-center justify-center gap-1.5 shadow-md active:scale-95 disabled:opacity-50 order-1 sm:order-2 ${
+                      optCreatePayout && optDeductWallet
+                        ? "bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 hover:from-emerald-700 hover:to-indigo-700 shadow-emerald-500/25"
+                        : optCreatePayout && !optDeductWallet
+                        ? "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-blue-500/25"
+                        : !optCreatePayout && optDeductWallet
+                        ? "bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 shadow-orange-500/25"
+                        : "bg-slate-700 hover:bg-slate-800 shadow-slate-500/25"
+                    }`}
                   >
                     {isExecutingPayout ? (
                       <i className="fa-solid fa-spinner fa-spin text-xs"></i>
                     ) : (
-                      <i className="fa-solid fa-shield-check text-xs"></i>
+                      <i className="fa-solid fa-bolt text-xs"></i>
                     )}
-                    <span>✓ Tạo Lệnh Rút & Cấn Trừ Ví (Khuyên dùng)</span>
+                    <span>
+                      {optCreatePayout && optDeductWallet
+                        ? `⚡ Xác nhận (Tạo lệnh & Cấn trừ ví)`
+                        : optCreatePayout && !optDeductWallet
+                        ? `⚡ Xác nhận (Tạo lệnh, KHÔNG trừ ví)`
+                        : !optCreatePayout && optDeductWallet
+                        ? `⚡ Xác nhận (Cấn trừ ví, KHÔNG tạo lệnh)`
+                        : `⚡ Xác nhận (Chỉ đánh dấu ĐÃ THANH TOÁN)`}
+                    </span>
                   </button>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* MODAL XÁC NHẬN BỎ ĐÁNH DẤU & HỦY TOÀN BỘ CÁC ĐƠN CÙNG LỆNH RÚT */}
         {unmarkConfirmData && (

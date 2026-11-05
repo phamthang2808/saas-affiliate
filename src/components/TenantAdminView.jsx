@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { formatMoney, formatDate } from "../utils/formatters";
+import { formatMoney, formatDate, normalizeOrderDate } from "../utils/formatters";
 import { APP_CONFIG } from "../config/api";
 import { MemberDetailModal } from "./MemberDetailModal";
 import { TemplatePreviewModal } from "./TemplatePreviewModal";
@@ -1451,7 +1451,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
           if (tenantHoldingDays > 0) {
             const dateStr = o.completeTime || o.completedAt || o.orderDate || o.createdAt;
             if (dateStr) {
-              const oDate = new Date(dateStr);
+              const oDate = normalizeOrderDate(dateStr, o.orderDate || o.createdAt) || new Date(dateStr);
               if (!isNaN(oDate.getTime())) {
                 if (oDate > thresholdTime) {
                   const oDay = new Date(oDate.getFullYear(), oDate.getMonth(), oDate.getDate());

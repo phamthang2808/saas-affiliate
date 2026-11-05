@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { formatMoney, formatDate } from "../utils/formatters";
+import { formatMoney, formatDate, normalizeOrderDate } from "../utils/formatters";
 import { BANKS } from "../constants/banks";
 
 export function PublicLookupView({
@@ -454,7 +454,7 @@ export function PublicLookupView({
     if (!holdingDays || holdingDays <= 0) return true;
     const dateStr = o.completeTime || o.completedAt || o.orderDate || o.createdAt;
     if (!dateStr) return true;
-    const oDate = new Date(dateStr);
+    const oDate = normalizeOrderDate(dateStr, o.orderDate || o.createdAt) || new Date(dateStr);
     if (isNaN(oDate.getTime())) return true;
 
     // 1. Đủ 24h * holdingDays
@@ -1220,7 +1220,7 @@ export function PublicLookupView({
                           )}
                           {(order.completeTime || order.completedAt) && (
                             <span>
-                              📅 Hoàn thành: <strong className="text-emerald-700">{formatDate(order.completeTime || order.completedAt)}</strong>
+                              📅 Hoàn thành: <strong className="text-emerald-700">{formatDate(order.completeTime || order.completedAt, order.orderDate)}</strong>
                             </span>
                           )}
                         </div>

@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
+import { normalizeOrderDate } from "../utils/formatters";
 
 const removeAccents = (str) =>
   String(str || "")
@@ -302,7 +303,7 @@ export function MemberDetailModal({
     if (holdingDays <= 0) return true;
     const dateStr = o.completeTime || o.completedAt || o.orderDate || o.createdAt;
     if (!dateStr) return true;
-    const oDate = new Date(dateStr);
+    const oDate = normalizeOrderDate(dateStr, o.orderDate || o.createdAt) || new Date(dateStr);
     if (isNaN(oDate.getTime())) return true;
     const now = new Date();
     const thresholdTime = new Date(now.getTime() - holdingDays * 24 * 60 * 60 * 1000);
@@ -1175,10 +1176,10 @@ export function MemberDetailModal({
     return sum + calculateUserComm(o);
   }, 0);
 
-  const formatDateTime = (dateStr) => {
+  const formatDateTime = (dateStr, orderDateStr) => {
     if (!dateStr) return "—";
     try {
-      const d = new Date(dateStr);
+      let d = normalizeOrderDate(dateStr, orderDateStr) || new Date(dateStr);
       if (isNaN(d.getTime())) return String(dateStr);
       return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
     } catch {
@@ -2051,7 +2052,7 @@ export function MemberDetailModal({
                           <div>{formatDateTime(o.orderDate || o.purchaseTime || o.createdAt)}</div>
                           {(o.completeTime || o.completedAt) && (
                             <div className="text-[10px] text-emerald-600 font-semibold">
-                              ✓ Xong: {formatDateTime(o.completeTime || o.completedAt)}
+                              ✓ Xong: {formatDateTime(o.completeTime || o.completedAt, o.orderDate)}
                             </div>
                           )}
                         </td>

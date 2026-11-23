@@ -158,7 +158,7 @@ export function AdminReelsConfigTab({ token, apiRoot, tenantSlug, showNotificati
     }
   };
 
-  const validVideoCount = videoIds
+  const validVideoCount = String(videoIds || "")
     .split(/[,\n\r;]+/)
     .map((v) => v.trim())
     .filter((v) => v.length > 0).length;

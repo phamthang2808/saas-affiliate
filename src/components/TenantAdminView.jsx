@@ -4280,7 +4280,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
           token={token}
           apiRoot={apiRoot}
           tenantSlug={activeTenant?.slug}
-          showNotification={showToast}
+          showNotification={showNotification}
         />
       )}
 

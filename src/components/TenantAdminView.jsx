@@ -3,6 +3,7 @@ import { formatMoney, formatDate, normalizeOrderDate } from "../utils/formatters
 import { APP_CONFIG } from "../config/api";
 import { MemberDetailModal } from "./MemberDetailModal";
 import { TemplatePreviewModal } from "./TemplatePreviewModal";
+import { AdminReelsConfigTab } from "./AdminReelsConfigTab";
 
 const removeAccents = (str) =>
   String(str || "")
@@ -2092,6 +2093,7 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
           <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-1.5">
             {[
               { key: "settings", icon: "fa-solid fa-gear", label: "Cấu hình" },
+              { key: "reels_config", icon: "fa-brands fa-facebook", label: "Cấu hình Reels" },
               { key: "templates", icon: "fa-solid fa-robot", label: "Mẫu Tin Nhắn Bot" },
               { key: "zalo_bot", icon: "fa-solid fa-qrcode", label: `Kết Nối Bot Zalo (${tenantBots.length})` },
             ].map((tab) => {
@@ -4270,6 +4272,16 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
             </button>
           </div>
         </form>
+      )}
+
+      {/* ===================== TAB: CẤU HÌNH REELS ===================== */}
+      {activeTab === "reels_config" && !isLoading && (
+        <AdminReelsConfigTab
+          token={token}
+          apiRoot={apiRoot}
+          tenantSlug={activeTenant?.slug}
+          showNotification={showToast}
+        />
       )}
 
 

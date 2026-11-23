@@ -3704,6 +3704,14 @@ export function TenantAdminView({ apiRoot, currentTenant, availableTenants, onSe
                 <div><code className="font-semibold text-orange-600">{`{ma_don_hang}`}</code>: Mã đơn hàng</div>
                 <div className="text-[10px] text-slate-500 bg-slate-50 px-2 py-0.5 rounded mt-1.5">👉 VD: 28378388192</div>
               </div>
+              <div className="p-2.5 bg-white rounded-lg border border-slate-200 flex flex-col justify-between shadow-2xs">
+                <div><code className="font-semibold text-orange-600">{`{muc_mua_qua_reels}`}</code>: Mục Mua qua Reels</div>
+                <div className="text-[10px] text-slate-500 bg-slate-50 px-2 py-0.5 rounded mt-1.5 truncate">👉 VD: 🎬 Mua qua Reels: 7.5% (~23.000đ)... (Tự ẩn nếu ko đủ đk)</div>
+              </div>
+              <div className="p-2.5 bg-white rounded-lg border border-slate-200 flex flex-col justify-between shadow-2xs">
+                <div><code className="font-semibold text-orange-600">{`{link_mua_qua_reels}`}</code>: Link Reels FB</div>
+                <div className="text-[10px] text-slate-500 bg-slate-50 px-2 py-0.5 rounded mt-1.5 truncate">👉 VD: https://www.facebook.com/reel/...</div>
+              </div>
             </div>
           </div>
 

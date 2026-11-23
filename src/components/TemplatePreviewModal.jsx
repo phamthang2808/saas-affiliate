@@ -74,6 +74,30 @@ export const VARIABLE_DEFINITIONS = {
     desc: "Link tiếp thị liên kết rút gọn đã gắn mã định danh SubID riêng của khách.",
     source: "Bot tự động tạo qua Shopee API"
   },
+  muc_mua_qua_reels: {
+    name: "{muc_mua_qua_reels}",
+    example: "🎬 Mua qua Reels (+5% hoa hồng Shopee):\n👉 Link Reels: https://www.facebook.com/reel/1509788077681223/?comment_id=1676204887382501\n💰 Hoa hồng Reels: 8.0% (đ10.864) [Shopee: 7.5% | Shop: 0.5%]\n(Bấm vào link Reels trên ➔ Mở bình luận bấm link mua để được tăng hoa hồng sàn lên 7.5% nhé!)",
+    desc: "Khối hướng dẫn Mua qua Reels Facebook (+5% hoa hồng sàn Shopee). Tự động ẩn nếu sản phẩm không đủ điều kiện Reels.",
+    source: "Hệ thống tự động tạo kèm link bình luận Facebook Reel"
+  },
+  link_mua_qua_reels: {
+    name: "{link_mua_qua_reels}",
+    example: "https://www.facebook.com/reel/1509788077681223/?comment_id=1676204887382501",
+    desc: "Link bài viết Reel hoặc link bình luận Facebook Reel trực tiếp.",
+    source: "Facebook Graph API / Cấu hình Reels"
+  },
+  reels_hoahong_phantram: {
+    name: "{reels_hoahong_phantram}",
+    example: "8.0",
+    desc: "Tổng % hoa hồng khi mua qua Reels (Hoa hồng Shop + 7.5% hoa hồng sàn).",
+    source: "Tính toán tự động theo chính sách Reels"
+  },
+  reels_hoahong_tien: {
+    name: "{reels_hoahong_tien}",
+    example: "đ10.864",
+    desc: "Số tiền hoa hồng nhận được khi mua qua Reels (đã cộng thêm sàn 7.5%).",
+    source: "Tính toán tự động: Giá sản phẩm × % hoa hồng Reels"
+  },
   link_tra_cuu: {
     name: "{link_tra_cuu}",
     example: "https://28affihub.store/phamnga/1d3xolsyioywf",
@@ -493,6 +517,12 @@ export function TemplatePreviewModal({
     shop_commission: "đ2,716",
     link_mua_sam: "https://s.shopee.vn/an_redir?origin_link=https%3A%2F%2Fshopee.vn%2Fproduct%2F78513158%2F29153753715&affiliate_id=17322520644&sub_id=PhamThang&deep_and_deferred=1",
     affiliate_link: "https://s.shopee.vn/an_redir?origin_link=https%3A%2F%2Fshopee.vn%2Fproduct%2F78513158%2F29153753715&affiliate_id=17322520644&sub_id=PhamThang&deep_and_deferred=1",
+    muc_mua_qua_reels: "🎬 Mua qua Reels (+5% hoa hồng Shopee):\n👉 Link Reels: https://www.facebook.com/reel/1509788077681223/?comment_id=1676204887382501\n💰 Hoa hồng Reels: 9.5% (đ12.901) [Shopee: 7.5% | Shop: 2%]\n(Bấm vào link Reels trên ➔ Mở bình luận bấm link mua để được tăng hoa hồng sàn lên 7.5% nhé!)",
+    link_mua_qua_reels: "https://www.facebook.com/reel/1509788077681223/?comment_id=1676204887382501",
+    reels_hoahong_phantram: "9.5",
+    reels_hoahong_tien: "đ12.901",
+    reels_shopee_phantram: "7.5",
+    reels_shopee_tien: "đ10.185",
     link_tra_cuu: lookupUrl,
     link: lookupUrl,
     so_du_vi: testHoldingDays > 0 ? "37.824đ" : "62.824đ",
